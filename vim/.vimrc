@@ -20,13 +20,13 @@ set shiftwidth=2    " indentation width
 set expandtab       " use spaces instead of literal tabs
 
 " shortcutting split navigation (avoid C-w)
-nnoremap <C-h> <C-w>h
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-l> <C-w>l
+noremap <C-h> <C-w>h
+noremap <C-j> <C-w>j
+noremap <C-k> <C-w>k
+noremap <C-l> <C-w>l
 
 " <Esc> also clear search highlights
-nnoremap <silent> <Esc> :noh<CR><Esc>
+noremap <silent> <Esc> :noh<CR><Esc>
 
 " :RetabAll to replace ALL tabs with spaces using current settings
 command! RetabAll %retab!

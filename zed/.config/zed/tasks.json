@@ -1,0 +1,9 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+[
+  {
+    "label": "Copy selection range to clipboard",
+    "command": "python3 - <<'PY'\nimport os, subprocess\nfp = os.environ.get('ZED_FILE','')\nfn = os.path.basename(fp) or os.environ.get('ZED_FILENAME','')\nrow = os.environ.get('ZED_ROW')\ncaret = int(row) if row and row.isdigit() else None\nwith open(fp, 'r', encoding='utf-8', errors='ignore') as f:\n    content = f.read()\nsel = os.environ.get('ZED_SELECTED_TEXT','')\nstart = end = None\nif sel:\n    # find all occurrences; pick the one covering the caret row\n    matches = []\n    i = 0\n    while True:\n        j = content.find(sel, i)\n        if j == -1: break\n        sline = content.count('\\n', 0, j) + 1\n        nlines = len(sel.splitlines()) or 1\n        eline = sline + nlines - 1\n        matches.append((sline, eline))\n        i = j + 1\n    if caret is not None:\n        for s, e in matches:\n            if s <= caret <= e:\n                start, end = s, e\n                break\n    if start is None and matches:\n        start, end = matches[0]\nif start is None:\n    # fallback: no selection, use current line\n    start = end = caret or 1\nout = f\"{fn}:{start}-{end}\"\nsubprocess.run(['pbcopy'], input=out.encode('utf-8'))\nprint(out)\nPY",
+    "reveal": "never",
+    "hide": "on_success"
+  }
+]

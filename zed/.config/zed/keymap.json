@@ -15,7 +15,13 @@
   {
     "context": "Workspace",
     "bindings": {
-      "cmd-alt-c": [
+      "cmd-shift-c": null
+    }
+  },
+  {
+    "context": "Editor && mode == full",
+    "bindings": {
+      "cmd-shift-c": [
         "task::Spawn",
         { "task_name": "Copy selection range to clipboard" }
       ]

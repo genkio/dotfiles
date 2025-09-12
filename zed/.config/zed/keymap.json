@@ -26,5 +26,13 @@
         { "task_name": "Copy selection range to clipboard" }
       ]
     }
+  },
+  // Default overwrites
+  {
+    "context": "Workspace",
+    "use_key_equivalents": true,
+    "bindings": {
+      "cmd-shift-a": "git_panel::ToggleFocus"
+    }
   }
 ]

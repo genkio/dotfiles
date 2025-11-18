@@ -5,10 +5,11 @@ return {
       max_length = 0, -- Maximum length of selection (0 for no limit)
       silent = false, -- Disable message on successful copy
       trim = false, -- Trim surrounding whitespaces before copy
+      tmux_passthrough = true, -- Use tmux passthrough (requires allow-passthrough on)
     }
 
-    -- Auto-copy to clipboard on yank when over SSH
-    if os.getenv 'SSH_CONNECTION' then
+    -- Auto-copy to clipboard on yank when over SSH or in tmux
+    if os.getenv 'SSH_CONNECTION' or os.getenv 'TMUX' then
       vim.api.nvim_create_autocmd('TextYankPost', {
         callback = function()
           if vim.v.event.operator == 'y' then

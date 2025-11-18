@@ -10,6 +10,8 @@ source <(fzf --zsh)
 
 # Alias
 alias ip='ipconfig getifaddr en0'
+alias lg='lazygit'
+alias dev='tmuxp load -y $HOME/tmuxp.yaml'
 
 # Tmux wrapper - set compatible TERM before launching
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then

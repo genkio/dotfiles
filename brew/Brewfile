@@ -11,6 +11,7 @@ brew "awscli"
 brew "neovim"
 brew "fzf"
 brew "zoxide"
+brew "ripgrep"
 
 cask "raycast"
 cask "brave-browser"

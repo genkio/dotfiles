@@ -9,6 +9,8 @@ brew "tldr"
 brew "jq"
 brew "awscli"
 brew "neovim"
+brew "fzf"
+brew "zoxide"
 
 cask "raycast"
 cask "brave-browser"

@@ -40,9 +40,15 @@ local function copy_range_with_lines()
     out = string.format('%s:%d-%d', fn, start_line, end_line)
   end
 
-  -- Copy to + (system clipboard) and unnamed register
-  vim.fn.setreg('+', out)
+  -- Copy to unnamed register
   vim.fn.setreg('"', out)
+
+  local ok, osc52 = pcall(require, 'osc52')
+  if ok then
+    osc52.copy(out)
+  else
+    pcall(vim.fn.setreg, '+', out)
+  end
 
   vim.notify('Copied: ' .. out)
 end

@@ -168,6 +168,9 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Automatically pick up external file changes
+vim.o.autoread = true
+
 -- Set indentation to 2 spaces
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
@@ -223,6 +226,26 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
     vim.hl.on_yank()
+  end,
+})
+
+-- Auto reload files changed outside of Neovim
+local autoread_group = vim.api.nvim_create_augroup('kickstart-autoread', { clear = true })
+vim.api.nvim_create_autocmd({ 'FocusGained', 'TermClose', 'TermLeave', 'BufEnter', 'CursorHold' }, {
+  desc = 'Reload on external changes',
+  group = autoread_group,
+  callback = function(event)
+    if vim.bo[event.buf].buftype == '' then
+      vim.cmd.checktime()
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd('FileChangedShellPost', {
+  desc = 'Notify when file reloaded from disk',
+  group = autoread_group,
+  callback = function()
+    vim.notify('File changed on disk. Buffer reloaded.', vim.log.levels.INFO, { title = 'AutoReload' })
   end,
 })
 

@@ -410,16 +410,9 @@ require('lazy').setup({
 
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
-      require('telescope').setup {
-        -- You can put your default mappings / updates / etc. in here
-        --  All the info you're looking for is in `:help telescope.setup()`
-        --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+      local telescope = require 'telescope'
+
+      telescope.setup {
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -428,23 +421,64 @@ require('lazy').setup({
       }
 
       -- Enable Telescope extensions if they are installed
-      pcall(require('telescope').load_extension, 'fzf')
-      pcall(require('telescope').load_extension, 'ui-select')
+      pcall(telescope.load_extension, 'fzf')
+      pcall(telescope.load_extension, 'ui-select')
+
+      local hidden_search_roots = {
+        vim.fs.normalize(vim.fn.expand '~/dotfiles'),
+      }
+      local uv = vim.uv or vim.loop
+
+      local function project_wants_hidden()
+        local cwd = uv.cwd() or vim.fn.getcwd()
+        if not cwd then
+          return false
+        end
+        cwd = vim.fs.normalize(cwd)
+        for _, root in ipairs(hidden_search_roots) do
+          if cwd:sub(1, #root) == root then
+            return true
+          end
+        end
+        return false
+      end
+
+      local function extend_live_grep_args(base)
+        local args = {}
+        vim.list_extend(args, base or {})
+        if project_wants_hidden() then
+          vim.list_extend(args, { '--hidden', '--glob', '!.git/*' })
+        end
+        return args
+      end
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', function()
+        local opts = nil
+        if project_wants_hidden() then
+          opts = { hidden = true }
+        end
+        builtin.find_files(opts)
+      end, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', function()
         builtin.live_grep {
           additional_args = function()
-            return { '-F' }
+            return extend_live_grep_args { '-F' }
           end,
         }
       end, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('n', '<leader>sG', function()
+        builtin.live_grep {
+          additional_args = function()
+            return extend_live_grep_args()
+          end,
+        }
+      end, { desc = '[S]earch by [G]rep (regex)' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
@@ -466,7 +500,7 @@ require('lazy').setup({
           grep_open_files = true,
           prompt_title = 'Live Grep in Open Files',
           additional_args = function()
-            return { '-F' }
+            return extend_live_grep_args { '-F' }
           end,
         }
       end, { desc = '[S]earch [/] in Open Files' })

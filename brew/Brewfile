@@ -29,3 +29,12 @@ cask "zed"
 cask "input-source-pro"
 cask "sublime-text"
 cask "keka"
+cask "openinterminal-lite"
+
+if `uname -m`.strip == "arm64"
+  cask "battery"
+  cask "chatgpt"
+end
+
+if `uname -m`.strip == "x86_64"
+end

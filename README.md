@@ -25,6 +25,7 @@ Install stow:
 - `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
 - `stow vim` or `stow git`
 - Or everything: `stow */`
+- Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
 
 ## Remove symlinks
 

@@ -52,6 +52,19 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
+-- Save commands (work in normal buffers and netrw):
+-- ZZ: Save with auto-format, then close window (built-in Vim command)
+-- ZQ: Close window without saving (built-in Vim command)
+-- ZW: Save file without triggering auto-format (custom command)
+vim.keymap.set('n', 'ZW', function()
+  -- Temporarily disable format_on_save
+  vim.g.disable_autoformat = true
+  -- Save the file
+  vim.cmd 'write'
+  -- Re-enable format_on_save
+  vim.g.disable_autoformat = false
+end, { noremap = true, silent = true, desc = 'Save without auto-format' })
+
 -- LSP keymaps
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'LSP: Go to definition' })
 vim.keymap.set('n', 'gh', vim.lsp.buf.hover, { desc = 'LSP: Hover (preview)' })

@@ -829,6 +829,10 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
+        -- Check if auto-format is temporarily disabled (e.g., by ZW command)
+        if vim.g.disable_autoformat then
+          return nil
+        end
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.

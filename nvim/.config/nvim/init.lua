@@ -774,6 +774,24 @@ require('lazy').setup({
             },
           },
         },
+
+        -- Emmet LSP for HTML/CSS abbreviation expansion
+        -- Type "div" then trigger completion to expand to <div></div>
+        -- Type "div.container" to expand to <div class="container"></div>
+        -- Type "ul>li*3" to create nested lists, etc.
+        emmet_ls = {
+          filetypes = {
+            'html',
+            'css',
+            'scss',
+            'javascript',
+            'javascriptreact',
+            'typescript',
+            'typescriptreact',
+            'vue',
+            'svelte',
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed

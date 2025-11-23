@@ -6,6 +6,12 @@ return {
   {
     'lewis6991/gitsigns.nvim',
     opts = {
+      current_line_blame = true, -- Show blame info inline on current line
+      current_line_blame_opts = {
+        virt_text = true,
+        virt_text_pos = 'eol', -- 'eol' | 'overlay' | 'right_align'
+        delay = 300, -- delay in ms before showing blame
+      },
       on_attach = function(bufnr)
         local gitsigns = require 'gitsigns'
 

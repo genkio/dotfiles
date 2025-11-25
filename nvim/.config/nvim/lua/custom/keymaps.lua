@@ -83,3 +83,58 @@ vim.keymap.set('n', '<leader>dv', lsp_def_in 'vsplit', { desc = 'LSP: Definition
 vim.keymap.set('n', '<leader>dh', lsp_def_in 'split', { desc = 'LSP: Definition in hsplit' })
 vim.keymap.set('n', 'gh', vim.lsp.buf.hover, { desc = 'LSP: Hover (preview)' })
 vim.keymap.set('n', 'gr', vim.lsp.buf.references, { desc = 'LSP: List references' })
+vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = 'LSP: Rename symbol' })
+vim.keymap.set('n', '<leader>rf', function()
+  local buf = vim.api.nvim_get_current_buf()
+  local ts_client = nil
+  for _, client in ipairs(vim.lsp.get_active_clients { bufnr = buf }) do
+    if client.name == 'ts_ls' or client.name == 'tsserver' then
+      ts_client = client
+      break
+    end
+  end
+  if not ts_client then
+    vim.notify('No TypeScript LSP attached', vim.log.levels.WARN)
+    return
+  end
+
+  local old_name = vim.api.nvim_buf_get_name(buf)
+  local new_name = vim.fn.input('New filename: ', old_name, 'file')
+  if new_name == '' or new_name == old_name then
+    return
+  end
+
+  local params = {
+    command = '_typescript.applyRenameFile',
+    arguments = {
+      {
+        sourceUri = vim.uri_from_fname(old_name),
+        targetUri = vim.uri_from_fname(new_name),
+      },
+    },
+  }
+
+  ts_client.request('workspace/executeCommand', params, function(err, res)
+    if err then
+      vim.schedule(function()
+        vim.notify('LSP rename failed: ' .. err.message, vim.log.levels.ERROR)
+      end)
+      return
+    end
+    if res then
+      vim.lsp.util.apply_workspace_edit(res, ts_client.offset_encoding)
+    end
+
+    local ok, rename_err = os.rename(old_name, new_name)
+    if not ok then
+      vim.schedule(function()
+        vim.notify('File move failed: ' .. rename_err, vim.log.levels.ERROR)
+      end)
+      return
+    end
+
+    vim.schedule(function()
+      vim.cmd('edit ' .. vim.fn.fnameescape(new_name))
+    end)
+  end)
+end, { desc = 'LSP: Rename file (ts)' })

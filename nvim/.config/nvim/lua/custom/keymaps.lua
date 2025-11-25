@@ -10,7 +10,7 @@ vim.api.nvim_create_autocmd('FileType', {
   callback = function()
     vim.keymap.set('n', '%', function()
       -- Get the current directory from netrw
-      local dir = vim.fn.expand('%:p:h')
+      local dir = vim.fn.expand '%:p:h'
 
       -- Create a function to handle the fzf selection
       local function fzf_open_file()
@@ -65,7 +65,21 @@ vim.keymap.set('n', 'ZW', function()
   vim.g.disable_autoformat = false
 end, { noremap = true, silent = true, desc = 'Save without auto-format' })
 
+-- Window navigation (tmux-safe)
+vim.keymap.set('n', '<leader>wh', '<C-w>h', { desc = 'Window: focus left' })
+vim.keymap.set('n', '<leader>wj', '<C-w>j', { desc = 'Window: focus down' })
+vim.keymap.set('n', '<leader>wk', '<C-w>k', { desc = 'Window: focus up' })
+vim.keymap.set('n', '<leader>wl', '<C-w>l', { desc = 'Window: focus right' })
+
 -- LSP keymaps
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'LSP: Go to definition' })
+local function lsp_def_in(split_cmd)
+  return function()
+    vim.cmd(split_cmd)
+    vim.lsp.buf.definition()
+  end
+end
+vim.keymap.set('n', '<leader>dv', lsp_def_in 'vsplit', { desc = 'LSP: Definition in vsplit' })
+vim.keymap.set('n', '<leader>dh', lsp_def_in 'split', { desc = 'LSP: Definition in hsplit' })
 vim.keymap.set('n', 'gh', vim.lsp.buf.hover, { desc = 'LSP: Hover (preview)' })
 vim.keymap.set('n', 'gr', vim.lsp.buf.references, { desc = 'LSP: List references' })

@@ -436,6 +436,12 @@ require('lazy').setup({
       local telescope = require 'telescope'
 
       telescope.setup {
+        defaults = {
+          layout_strategy = 'vertical',
+          layout_config = {
+            preview_height = 0.7,
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -480,9 +486,9 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', function()
-        local opts = nil
+        local opts = {}
         if project_wants_hidden() then
-          opts = { hidden = true }
+          opts.hidden = true
         end
         builtin.find_files(opts)
       end, { desc = '[S]earch [F]iles' })

@@ -407,6 +407,7 @@ require('lazy').setup({
         end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
+      { 'nvim-telescope/telescope-live-grep-args.nvim' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
@@ -435,6 +436,8 @@ require('lazy').setup({
       -- See `:help telescope` and `:help telescope.setup()`
       local telescope = require 'telescope'
 
+      local lga_actions = require 'telescope-live-grep-args.actions'
+
       telescope.setup {
         defaults = {
           layout_strategy = 'vertical',
@@ -446,12 +449,22 @@ require('lazy').setup({
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
+          live_grep_args = {
+            auto_quoting = false, -- allow raw ripgrep flags like --glob '!*.yaml' or --glob 'packages/backend/**'
+            mappings = {
+              i = {
+                ['<C-k>'] = lga_actions.quote_prompt(), -- toggle quoting
+                ['<C-f>'] = lga_actions.quote_prompt { postfix = ' --glob ' }, -- insert glob flag
+              },
+            },
+          },
         },
       }
 
       -- Enable Telescope extensions if they are installed
       pcall(telescope.load_extension, 'fzf')
       pcall(telescope.load_extension, 'ui-select')
+      pcall(telescope.load_extension, 'live_grep_args')
 
       local hidden_search_roots = {
         vim.fs.normalize(vim.fn.expand '~/dotfiles'),
@@ -508,6 +521,20 @@ require('lazy').setup({
           end,
         }
       end, { desc = '[S]earch by [G]rep (regex)' })
+      vim.keymap.set('n', '<leader>sa', function()
+        local ok, lga = pcall(function()
+          return require('telescope').extensions.live_grep_args.live_grep_args
+        end)
+        if not ok or not lga then
+          vim.notify('telescope-live-grep-args not available', vim.log.levels.WARN)
+          return
+        end
+        lga {
+          additional_args = function()
+            return extend_live_grep_args()
+          end,
+        }
+      end, { desc = '[S]earch with live grep [A]rgs' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })

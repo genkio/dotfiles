@@ -1018,17 +1018,36 @@ require('lazy').setup({
     'folke/tokyonight.nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
-        },
-      }
+      -- Detect if we're in a terminal that supports true color
+      -- Ghostty and modern terminals set COLORTERM=truecolor
+      local has_truecolor = os.getenv('COLORTERM') == 'truecolor' or vim.fn.has('gui_running') == 1
 
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-moon'
+      -- Only enable termguicolors if terminal supports it
+      if has_truecolor then
+        vim.opt.termguicolors = true
+
+        ---@diagnostic disable-next-line: missing-fields
+        require('tokyonight').setup {
+          styles = {
+            comments = { italic = false }, -- Disable italics in comments
+          },
+        }
+
+        -- Use tokyonight for terminals with true color support (like Ghostty)
+        local colorscheme = 'tokyonight-moon' -- default to dark theme
+        if vim.o.background == 'light' then
+          colorscheme = 'tokyonight-day'
+        end
+        vim.cmd.colorscheme(colorscheme)
+      else
+        -- For Mac Terminal or other terminals without true color,
+        -- use a built-in colorscheme that works better with limited colors
+        if vim.o.background == 'light' then
+          vim.cmd.colorscheme('shine')
+        else
+          vim.cmd.colorscheme('default')
+        end
+      end
     end,
   },
 

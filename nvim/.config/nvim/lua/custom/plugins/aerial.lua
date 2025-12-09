@@ -12,13 +12,32 @@ return {
     -- Use treesitter first for better performance, fallback to LSP
     backends = { 'treesitter', 'lsp', 'markdown', 'asciidoc', 'man' },
 
-    -- Layout and appearance
+    -- Layout and appearance - floating window in center
     layout = {
-      max_width = { 40, 0.2 }, -- 40 cols or 20% of editor width, whichever is smaller
-      width = nil, -- Use max_width setting
-      min_width = 20,
-      default_direction = 'prefer_right', -- Open on right side
-      placement = 'window', -- 'window' or 'edge'
+      max_width = { 60, 0.4 }, -- 60 cols or 40% of editor width
+      width = nil,
+      min_width = 30,
+      default_direction = 'float', -- Open as floating window
+      placement = 'window',
+    },
+
+    -- Floating window configuration
+    float = {
+      border = 'rounded',
+      relative = 'editor',
+      max_height = 0.8,
+      min_height = 0.2,
+      height = nil, -- Auto-size based on content
+      override = function(conf, source_winid)
+        -- Center the window
+        local padding = 4
+        conf.anchor = 'NW'
+        conf.row = padding
+        -- Ensure width is set, use a default if nil
+        local width = conf.width or 60
+        conf.col = math.floor((vim.o.columns - width) / 2)
+        return conf
+      end,
     },
 
     -- Show box drawings for hierarchy
@@ -82,10 +101,8 @@ return {
     },
   },
   keys = {
-    -- Toggle aerial window
-    { '<leader>a', '<cmd>AerialToggle!<CR>', desc = 'Toggle [A]erial outline' },
     -- Open aerial and jump to location
-    { '<leader>A', '<cmd>AerialOpen<CR>', desc = 'Open [A]erial outline' },
+    { '<leader>a', '<cmd>AerialOpen<CR>', desc = 'Open [A]erial outline' },
     -- Navigate symbols with telescope (if telescope is available)
     {
       '<leader>so',
@@ -100,7 +117,7 @@ return {
 
     -- Enable telescope integration if available
     pcall(function()
-      require('telescope').load_extension('aerial')
+      require('telescope').load_extension 'aerial'
     end)
   end,
 }

@@ -1078,6 +1078,12 @@ require('lazy').setup({
       require('mini.ai').setup { n_lines = 500 }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
+      -- Examples:
+      --   saiw) - [S]urround [A]dd [I]nner [W]ord with [)]paren
+      --   sd"   - [S]urround [D]elete ["]quotes
+      --   sr)"  - [S]urround [R]eplace [)] with ["]quotes
+      --   sf)   - [S]urround [F]ind next [)]paren
+      --   sh"   - [S]urround [H]ighlight ["]quotes
       require('mini.surround').setup {
         mappings = {
           add = 'sa',

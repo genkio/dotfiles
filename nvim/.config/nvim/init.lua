@@ -179,6 +179,13 @@ vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 vim.o.expandtab = true
 
+-- Folding settings (Treesitter-based)
+vim.o.foldmethod = 'expr'
+vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.o.foldenable = false -- Start with folds open by default
+vim.o.foldlevel = 99 -- Open all folds by default
+vim.o.foldtext = '' -- Use Treesitter for fold text
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 

@@ -452,7 +452,9 @@ require('lazy').setup({
         defaults = {
           layout_strategy = 'vertical',
           layout_config = {
-            preview_height = 0.7,
+            vertical = {
+              preview_height = 0.7,
+            },
           },
         },
         extensions = {

@@ -73,6 +73,39 @@ vim.keymap.set('n', '<leader>wl', '<C-w>l', { desc = 'Window: focus right' })
 
 -- LSP keymaps
 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = 'LSP: Go to definition' })
+
+-- Auto-import: trigger code action filtered for import actions
+vim.keymap.set('n', '<leader>ci', function()
+  vim.lsp.buf.code_action {
+    filter = function(action)
+      return action.kind and string.match(action.kind, 'source%.addMissingImports')
+    end,
+    apply = true,
+  }
+end, { desc = 'LSP: Add missing imports' })
+
+-- Organize imports
+vim.keymap.set('n', '<leader>co', function()
+  vim.lsp.buf.code_action {
+    filter = function(action)
+      return action.kind and string.match(action.kind, 'source%.organizeImports')
+    end,
+    apply = true,
+  }
+end, { desc = 'LSP: Organize imports' })
+
+-- Quick import for symbol under cursor (like VSCode Ctrl+.)
+vim.keymap.set('n', '<leader>ca', function()
+  vim.lsp.buf.code_action {
+    filter = function(action)
+      -- Filter for import-related actions or all quickfix actions
+      return action.kind and (
+        string.match(action.kind, 'quickfix') or
+        string.match(action.kind, 'refactor%.rewrite%.import')
+      )
+    end,
+  }
+end, { desc = 'LSP: Code action (imports)' })
 local function lsp_def_in(split_cmd)
   return function()
     vim.cmd(split_cmd)

@@ -93,6 +93,9 @@ vim.g.maplocalleader = ' '
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = false
 
+-- Forces Vim’s CWD to stay in sync with whichever directory you are browsing in Netrw.
+vim.g.netrw_keepdir = 0
+
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
@@ -1020,7 +1023,7 @@ require('lazy').setup({
     config = function()
       -- Detect if we're in a terminal that supports true color
       -- Ghostty and modern terminals set COLORTERM=truecolor
-      local has_truecolor = os.getenv('COLORTERM') == 'truecolor' or vim.fn.has('gui_running') == 1
+      local has_truecolor = os.getenv 'COLORTERM' == 'truecolor' or vim.fn.has 'gui_running' == 1
 
       -- Only enable termguicolors if terminal supports it
       if has_truecolor then
@@ -1043,9 +1046,9 @@ require('lazy').setup({
         -- For Mac Terminal or other terminals without true color,
         -- use a built-in colorscheme that works better with limited colors
         if vim.o.background == 'light' then
-          vim.cmd.colorscheme('shine')
+          vim.cmd.colorscheme 'shine'
         else
-          vim.cmd.colorscheme('default')
+          vim.cmd.colorscheme 'default'
         end
       end
     end,

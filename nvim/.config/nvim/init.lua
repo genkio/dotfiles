@@ -508,19 +508,33 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+
+      -- Helper function to get git root or fallback to current directory
+      local function get_git_root()
+        local cwd = vim.fn.getcwd()
+        local git_root = vim.fn.systemlist('git -C ' .. vim.fn.shellescape(cwd) .. ' rev-parse --show-toplevel')[1]
+        if vim.v.shell_error == 0 then
+          return git_root
+        end
+        return cwd
+      end
+
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', function()
-        local opts = {}
+        local opts = { cwd = get_git_root() }
         if project_wants_hidden() then
           opts.hidden = true
         end
         builtin.find_files(opts)
       end, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-      vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
+      vim.keymap.set('n', '<leader>sw', function()
+        builtin.grep_string { cwd = get_git_root() }
+      end, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', function()
         builtin.live_grep {
+          cwd = get_git_root(),
           additional_args = function()
             return extend_live_grep_args { '-F' }
           end,
@@ -528,6 +542,7 @@ require('lazy').setup({
       end, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sG', function()
         builtin.live_grep {
+          cwd = get_git_root(),
           additional_args = function()
             return extend_live_grep_args()
           end,
@@ -542,6 +557,7 @@ require('lazy').setup({
           return
         end
         lga {
+          cwd = get_git_root(),
           additional_args = function()
             return extend_live_grep_args()
           end,

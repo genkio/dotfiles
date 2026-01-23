@@ -9,9 +9,11 @@ source <(fzf --zsh)
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 
 # Alias
-alias ip='ipconfig getifaddr en0'
+alias cc='claude'
+alias cx='codex'
 alias lg='lazygit'
-alias dev='tmuxp load -y $HOME/tmuxp.yaml'
+alias ld='lazydocker'
+alias ip='ipconfig getifaddr en0'
 
 # Tmux wrapper - set compatible TERM before launching
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then

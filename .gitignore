@@ -1,0 +1,2 @@
+# Override global .claude ignore for stow package
+!claude/.claude/

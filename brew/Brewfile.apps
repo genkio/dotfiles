@@ -12,9 +12,9 @@ cask "rustdesk"
 cask "shottr"
 cask "sublime-text"
 cask "tableplus"
-cask "tailscale-app"
 cask "visual-studio-code"
 
 if `uname -m`.strip == "arm64"
+  cask "battery"
   cask "chatgpt"
 end

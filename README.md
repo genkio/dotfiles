@@ -30,3 +30,17 @@ Install stow:
 ## Remove symlinks
 
 - `stow -D vim`
+
+## Homebrew (optional)
+
+Install everything (base + apps):
+
+- `brew bundle --file brew/Brewfile`
+
+Only base:
+
+- `brew bundle --file brew/Brewfile.base`
+
+Only apps:
+
+- `brew bundle --file brew/Brewfile.apps`

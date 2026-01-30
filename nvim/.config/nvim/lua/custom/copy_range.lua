@@ -19,13 +19,27 @@ local function copy_range_with_lines()
 
   local total = vim.api.nvim_buf_line_count(0)
 
-  -- Prefer relative path to cwd unless it goes through ..
-  local rel = vim.fn.expand '%:.'
-  local fn
-  if rel ~= '' and not rel:match '^%.%.' then
-    fn = rel
+  -- Get absolute path of current file
+  local abs_path = vim.fn.expand '%:p'
+  if abs_path == '' then
+    abs_path = '[No Name]'
+  end
+
+  -- Find git root, fall back to cwd
+  local git_root = vim.fn.systemlist('git -C ' .. vim.fn.shellescape(vim.fn.expand '%:p:h') .. ' rev-parse --show-toplevel')[1]
+  local root
+  if vim.v.shell_error == 0 and git_root and git_root ~= '' then
+    root = git_root
   else
-    fn = vim.fn.expand '%:t'
+    root = vim.fn.getcwd()
+  end
+
+  -- Make path relative to root
+  local fn
+  if abs_path:sub(1, #root) == root then
+    fn = abs_path:sub(#root + 2) -- +2 to skip the trailing slash
+  else
+    fn = vim.fn.expand '%:t' -- fallback to just filename
   end
   if fn == '' then
     fn = '[No Name]'

@@ -173,3 +173,6 @@ vim.keymap.set('n', '<leader>rf', function()
     end)
   end)
 end, { desc = 'LSP: Rename file (ts)' })
+
+-- ESC alternative for insert mode (useful in browser terminals like ttyd)
+vim.keymap.set('i', 'jk', '<Esc>', { noremap = true, silent = true, desc = 'Exit insert mode' })

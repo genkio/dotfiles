@@ -11,9 +11,12 @@ source <(fzf --zsh)
 # Alias
 alias cc='claude'
 alias cx='codex'
+alias oc='opencode'
 alias lg='lazygit'
 alias ld='lazydocker'
 alias ip='ipconfig getifaddr en0'
+alias tx='tmux'
+alias txp='[ -f "$HOME/tmuxp.yaml" ] && tmuxp load -y $HOME/tmuxp.yaml || tmux new-session -s tmp'
 
 # Tmux wrapper - set compatible TERM before launching
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then

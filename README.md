@@ -6,7 +6,7 @@ Managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 Clone the repo:
 
-- `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
+- `git clone https://github.com/genkio/dotfiles.git && cd ~/dotfiles`
 
 Install stow:
 

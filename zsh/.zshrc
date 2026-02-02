@@ -1,6 +1,17 @@
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
-plugins=(git)
+plugins=()
+
+# Auto-install Oh My Zsh if missing (keep existing .zshrc)
+if [ ! -d "$ZSH" ]; then
+  if command -v curl >/dev/null 2>&1; then
+    echo "Oh My Zsh not found. Installing to $ZSH..."
+    RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \
+      "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  else
+    echo "Oh My Zsh not found and curl is missing. Please install curl and rerun."
+  fi
+fi
 
 source $ZSH/oh-my-zsh.sh
 source <(fzf --zsh)
@@ -26,9 +37,6 @@ ssht() {
 alias gs='git status'
 alias glo='git log --pretty --oneline -5'
 alias gad='git add .'
-
-# Avoid conflicts with oh-my-zsh git aliases
-unalias gcm gpl gundo gpu gpuf gbr gco 2>/dev/null
 
 alias gco='git checkout'
 # list 10 most recent branches with commit dates

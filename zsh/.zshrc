@@ -16,7 +16,11 @@ alias lg='lazygit'
 alias ld='lazydocker'
 alias ip='ipconfig getifaddr en0'
 alias tx='tmux'
-alias txp='[ -f "$HOME/tmuxp.yaml" ] && tmuxp load -y $HOME/tmuxp.yaml || tmux new-session -s tmp'
+alias txp='tmuxp load -y'
+
+ssht() {
+  TERM=xterm-256color ssh -t "$1" "tmux new -A -s tmp"
+}
 
 # Git shortcuts (custom)
 alias gs='git status'

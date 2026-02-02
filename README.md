@@ -47,9 +47,7 @@ Only apps:
 
 ## Opionionated flow
 
-```bash
-git clone https://github.com/genkio/dotfiles.git && cd ~/dotfiles
-brew bundle --file brew/Brewfile.base
-stow brew lazygit nvim tmux vim zsh
-brew bundle --file brew/Brewfile.apps
-```
+Run the automated script:
+
+- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh`
+- Add `--include-apps` to install apps too.

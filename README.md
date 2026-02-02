@@ -44,3 +44,12 @@ Only base:
 Only apps:
 
 - `brew bundle --file brew/Brewfile.apps`
+
+## Opionionated flow
+
+```bash
+git clone https://github.com/genkio/dotfiles.git && cd ~/dotfiles
+brew bundle --file brew/Brewfile.base
+stow brew lazygit nvim tmux vim zsh
+brew bundle --file brew/Brewfile.apps
+```

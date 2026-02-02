@@ -13,13 +13,13 @@ if [ -z "$client_tty" ]; then
     client_tty=$(tmux display-message -p '#{client_tty}' 2>/dev/null || true)
   fi
 
-  if [ -z "$client_tty" ]; then
+  if [ -z "$client_tty" ] && tty -s; then
     client_tty=$(tty 2>/dev/null || true)
   fi
 fi
 
 # Send OSC52 to the tmux client if we have its TTY
-if [ -n "$client_tty" ]; then
+if [ -n "$client_tty" ] && [ -c "$client_tty" ]; then
   encoded=$(printf -- '%s' "$selection" | base64 | tr -d '\r\n')
   printf -- '\033]52;c;%s\a' "$encoded" > "$client_tty"
 fi

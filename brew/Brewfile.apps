@@ -1,6 +1,8 @@
 cask "aldente"
 cask "appcleaner"
 cask "brave-browser"
+cask "claude-code"
+cask "codex"
 cask "fliqlo"
 cask "docker-desktop"
 cask "homerow"

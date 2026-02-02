@@ -18,6 +18,54 @@ alias ip='ipconfig getifaddr en0'
 alias tx='tmux'
 alias txp='[ -f "$HOME/tmuxp.yaml" ] && tmuxp load -y $HOME/tmuxp.yaml || tmux new-session -s tmp'
 
+# Git shortcuts (custom)
+alias gs='git status'
+alias glo='git log --pretty --oneline -5'
+alias gad='git add .'
+
+# Avoid conflicts with oh-my-zsh git aliases
+unalias gcm gpl gundo gpu gpuf gbr gco 2>/dev/null
+
+alias gco='git checkout'
+# list 10 most recent branches with commit dates
+alias gbr='git for-each-ref --sort=-committerdate refs/heads/ --format="%(committerdate:short) %(refname:short)" --count=10'
+# list staged file names
+alias gst='git diff --name-only --cached'
+
+# git commit -m "<message>"
+gcm() {
+  if [ $# -eq 0 ]; then
+    echo "usage: gcm <message>" >&2
+    return 1
+  fi
+  git commit -m "$*"
+}
+
+# git pull origin <current-branch>
+gpl() {
+  local br
+  br=$(git symbolic-ref --short HEAD) || return
+  git pull origin "$br"
+}
+
+# git push origin <current-branch>
+gpu() {
+  local br
+  br=$(git symbolic-ref --short HEAD) || return
+  git push origin "$br"
+}
+
+# git push origin <current-branch> --force-with-lease
+gpuf() {
+  local br
+  br=$(git symbolic-ref --short HEAD) || return
+  git push origin "$br" --force-with-lease
+}
+
+gundo() {
+  git reset --soft HEAD~1
+}
+
 # Tmux wrapper - set compatible TERM before launching
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
   alias tmux='TERM=tmux-256color tmux'

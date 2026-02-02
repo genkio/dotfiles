@@ -9,4 +9,4 @@ if [ -z "$text" ]; then
 fi
 
 # Feed the text to the shared OSC52 helper (it will auto-detect the tmux client TTY)
-printf -- '%s' "$text" | /Users/neo/dotfiles/tmux/bin/osc52-copy.sh
+printf -- '%s' "$text" | $HOME/dotfiles/tmux/bin/osc52-copy.sh

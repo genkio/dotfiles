@@ -50,4 +50,5 @@ stow brew lazygit nvim tmux vim zsh
 
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
+  stow claude ghostty
 fi

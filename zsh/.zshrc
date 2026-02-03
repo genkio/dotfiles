@@ -32,6 +32,7 @@ alias lg='lazygit'
 alias ld='lazydocker'
 alias ip='ipconfig getifaddr en0'
 alias txp='tmuxp load -y'
+alias txl='tmux ls'
 
 TMUX_DEFAULT_SESSION="tmp"
 

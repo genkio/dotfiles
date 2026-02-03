@@ -16,6 +16,8 @@ fi
 source $ZSH/oh-my-zsh.sh
 source <(fzf --zsh)
 
+set -o vi
+
 # Local env (only if it exists)
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 

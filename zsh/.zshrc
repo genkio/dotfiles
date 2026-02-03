@@ -26,11 +26,20 @@ alias oc='opencode'
 alias lg='lazygit'
 alias ld='lazydocker'
 alias ip='ipconfig getifaddr en0'
-alias tx='tmux'
 alias txp='tmuxp load -y'
 
+TMUX_DEFAULT_SESSION="tmp"
+
+tx() {
+  if [[ -n "$1" ]]; then
+    tmux a -t "$1"
+  else
+    tmux new -A -s "$TMUX_DEFAULT_SESSION"
+  fi
+}
+
 ssht() {
-  TERM=xterm-256color ssh -t "$1" "tmux new -A -s tmp"
+  TERM=xterm-256color ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
 }
 
 # Git shortcuts (custom)

@@ -21,8 +21,9 @@ source <(fzf --zsh)
 
 set -o vi
 
-# Local env (only if it exists)
-[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+# Machine-specific env / config (not tracked by git)
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # Alias
 alias cc='claude'
@@ -35,7 +36,7 @@ alias ld='lazydocker'
 alias cat="bat"
 alias cl="clear"
 alias ls="eza --group-directories-first"
-alias ll="eza --group-directories-first -lh"
+alias ll="eza --group-directories-first --all -lh"
 alias lt="eza --group-directories-first --tree --level=2 --icons"
 
 alias ip='ipconfig getifaddr en0'
@@ -117,9 +118,6 @@ export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 eval "$(zoxide init zsh)"
-
-# Machine-specific config (not tracked by git)
-[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"

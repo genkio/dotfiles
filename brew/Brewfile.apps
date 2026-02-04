@@ -1,5 +1,4 @@
 cask "aldente"
-cask "appcleaner"
 cask "brave-browser"
 cask "claude-code"
 cask "codex"
@@ -13,7 +12,6 @@ cask "monitorcontrol"
 cask "openinterminal-lite"
 cask "raycast"
 cask "shottr"
-cask "stats"
 cask "sublime-text"
 cask "tableplus"
 

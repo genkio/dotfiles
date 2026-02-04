@@ -38,6 +38,7 @@ alias cl="clear"
 alias ls="eza --group-directories-first"
 alias ll="eza --group-directories-first --all -lh"
 alias lt="eza --group-directories-first --tree --level=2 --icons"
+alias vi="nvim ."
 
 alias ip='ipconfig getifaddr en0'
 alias txp='tmuxp load -y'

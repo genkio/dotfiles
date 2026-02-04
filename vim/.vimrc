@@ -13,6 +13,9 @@ set hlsearch
 set splitbelow
 set splitright
 
+set undofile
+set undodir=~/.vim/undo
+
 set autoindent
 set tabstop=8       " how many spaces a <Tab> counts for (display)
 set softtabstop=2   " how many spaces <Tab> inserts when editing

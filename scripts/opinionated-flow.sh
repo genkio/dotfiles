@@ -46,7 +46,7 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 brew bundle --file brew/Brewfile.base
-stow brew lazygit nvim tmux vim zsh
+stow brew lazygit nvim tmux zsh
 
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps

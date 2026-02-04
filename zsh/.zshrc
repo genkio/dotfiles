@@ -30,6 +30,10 @@ alias cx='codex'
 alias oc='opencode'
 alias lg='lazygit'
 alias ld='lazydocker'
+alias cl="clear"
+alias ls="eza --group-directories-first"
+alias ll="eza --group-directories-first -lh"
+alias lt="eza --group-directories-first --tree --level=2 --icons"
 alias ip='ipconfig getifaddr en0'
 alias txp='tmuxp load -y'
 alias txl='tmux ls'

@@ -21,6 +21,39 @@ return {
           vim.keymap.set(mode, l, r, opts)
         end
 
+        local function resolve_main_base()
+          local bufname = vim.api.nvim_buf_get_name(bufnr)
+          local dir = bufname ~= '' and vim.fn.fnamemodify(bufname, ':p:h') or vim.fn.getcwd()
+
+          local function git_out(args)
+            local cmd = { 'git', '-C', dir }
+            vim.list_extend(cmd, args)
+            local out = vim.fn.systemlist(cmd)
+            if vim.v.shell_error ~= 0 then
+              return nil
+            end
+            return out
+          end
+
+          local function git_ok(args)
+            local cmd = { 'git', '-C', dir }
+            vim.list_extend(cmd, args)
+            vim.fn.system(cmd)
+            return vim.v.shell_error == 0
+          end
+
+          local head = git_out { 'symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD' }
+          if head and head[1] and head[1] ~= '' then
+            return head[1]
+          end
+
+          for _, name in ipairs { 'main', 'master', 'origin/main', 'origin/master' } do
+            if git_ok { 'rev-parse', '--verify', '--quiet', name } then
+              return name
+            end
+          end
+        end
+
         -- Navigation
         map('n', ']c', function()
           if vim.wo.diff then
@@ -58,6 +91,14 @@ return {
         map('n', '<leader>hD', function()
           gitsigns.diffthis '@'
         end, { desc = 'git [D]iff against last commit' })
+        map('n', '<leader>hm', function()
+          local base = resolve_main_base()
+          if not base then
+            vim.notify('Could not find main/master to diff against', vim.log.levels.WARN)
+            return
+          end
+          gitsigns.diffthis(base, { vertical = true })
+        end, { desc = 'git diff against [m]ain/master' })
         -- Toggles
         map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
         map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = '[T]oggle git show [D]eleted' })

@@ -6,6 +6,7 @@ return {
   {
     'lewis6991/gitsigns.nvim',
     opts = {
+      gh = true,
       current_line_blame = true, -- Show blame info inline on current line
       current_line_blame_opts = {
         virt_text = true,
@@ -87,6 +88,9 @@ return {
         map('n', '<leader>hR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
         map('n', '<leader>hp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
         map('n', '<leader>hb', gitsigns.blame_line, { desc = 'git [b]lame line' })
+        map('n', '<leader>hB', function()
+          gitsigns.blame_line { full = true }
+        end, { desc = 'git [B]lame line (full)' })
         map('n', '<leader>hd', gitsigns.diffthis, { desc = 'git [d]iff against index' })
         map('n', '<leader>hD', function()
           gitsigns.diffthis '@'

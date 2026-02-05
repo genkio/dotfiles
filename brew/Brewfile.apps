@@ -1,7 +1,5 @@
 cask "aldente"
 cask "brave-browser"
-cask "claude-code"
-cask "codex"
 cask "fliqlo"
 cask "ghostty"
 cask "iina"

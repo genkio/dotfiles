@@ -33,7 +33,6 @@ alias cx='codex'
 alias lg='lazygit'
 alias ld='lazydocker'
 
-alias cat="bat"
 alias cl="clear"
 alias ls="eza --group-directories-first"
 alias ll="eza --group-directories-first --all -lh"

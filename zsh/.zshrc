@@ -28,7 +28,7 @@ set -o vi
 # Alias
 alias cc='claude'
 alias cx='codex'
-alias co='opencode'
+# alias co='opencode'
 
 alias lg='lazygit'
 alias ld='lazydocker'

@@ -1,3 +1,4 @@
+--[[
 return {
   'NickvanDyke/opencode.nvim',
   dependencies = {
@@ -72,3 +73,6 @@ return {
     end, { desc = 'opencode half page down' })
   end,
 }
+--]]
+
+return {}

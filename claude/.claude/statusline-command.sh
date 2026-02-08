@@ -17,5 +17,21 @@ total_tokens=$((total_input + total_output))
 total_k=$((total_tokens / 1000))
 context_k=$((context_size / 1000))
 
-# Output: model · tokens (percentage)
-printf "%s · %dk/%dk tokens (%s%%)" "$model_id" "$total_k" "$context_k" "$used_percent"
+# Current working directory (shorten home path to ~)
+cwd=$(pwd)
+cwd_display=$cwd
+if [ -n "$HOME" ] && [[ "$cwd_display" == "$HOME"* ]]; then
+  cwd_display="~${cwd_display#"$HOME"}"
+elif [[ "$cwd_display" == "/Users/neo"* ]]; then
+  cwd_display="~${cwd_display#/Users/neo}"
+fi
+
+# Git branch
+git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+# Output: model · tokens (percentage) · pwd · branch
+if [ -n "$git_branch" ]; then
+  printf "%s · %dk/%dk tokens (%s%%) · %s · %s" "$model_id" "$total_k" "$context_k" "$used_percent" "$cwd_display" "$git_branch"
+else
+  printf "%s · %dk/%dk tokens (%s%%) · %s" "$model_id" "$total_k" "$context_k" "$used_percent" "$cwd_display"
+fi

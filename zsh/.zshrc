@@ -26,7 +26,7 @@ set -o vi
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # Alias
-alias cc='claude'
+alias cc='echo "/usage" | claude'
 alias cx='codex'
 # alias co='opencode'
 

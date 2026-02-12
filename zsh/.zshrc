@@ -27,7 +27,6 @@ set -o vi
 
 # Alias
 alias cc='claude'
-alias ccu='echo "/usage" | claude'
 alias cx='codex'
 # alias co='opencode'
 

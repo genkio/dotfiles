@@ -1,12 +1,11 @@
 window-save-state = "always"
+macos-option-as-alt = true
 
 # Next/previous pane
 keybind = cmd+k=goto_split:next
 keybind = cmd+j=goto_split:previous
 # Inserts a new line for multi-line prompts without immediately running the command
 keybind = shift+enter=text:\n
-
-theme = Atom One Light
 
 # Enable OSC 52 clipboard support for SSH
 clipboard-read = allow

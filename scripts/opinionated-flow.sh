@@ -4,14 +4,18 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/genkio/dotfiles.git}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 INCLUDE_APPS=0
+BOOTSTRAP_MACOS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --include-apps)
       INCLUDE_APPS=1
       ;;
+    --bootstrap-macos)
+      BOOTSTRAP_MACOS=1
+      ;;
     -h|--help)
-      echo "Usage: $(basename "$0") [--include-apps]"
+      echo "Usage: $(basename "$0") [--include-apps] [--bootstrap-macos]"
       exit 0
       ;;
     *)
@@ -51,4 +55,18 @@ stow brew lazygit nvim tmux zsh
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
   stow claude ghostty
+fi
+
+if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Error: --bootstrap-macos is only supported on macOS." >&2
+    exit 1
+  fi
+
+  if [[ ! -f scripts/macos-bootstrap.sh ]]; then
+    echo "Error: scripts/macos-bootstrap.sh not found." >&2
+    exit 1
+  fi
+
+  bash scripts/macos-bootstrap.sh
 fi

@@ -45,9 +45,10 @@ Only apps:
 
 - `brew bundle --file brew/Brewfile.apps`
 
-## Opionionated flow
+## Opinionated flow
 
 Run the automated script:
 
-- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh`
-- Add `--include-apps` to install apps too.
+- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --include-apps --bootstrap-macos`
+- `--include-apps` to install apps too.
+- `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).

@@ -47,6 +47,8 @@ vi() {
 }
 
 alias ip='ipconfig getifaddr en0'
+# Copy the last command to clipboard
+alias cp1='fc -ln -1 | awk "{\$1=\$1;print}" | pbcopy'
 alias txp='tmuxp load -y'
 alias txl='tmux ls'
 
@@ -54,7 +56,7 @@ TMUX_DEFAULT_SESSION="tmp"
 
 tx() {
   if [[ -n "$1" ]]; then
-    tmux a -t "$1"
+    tmux new -A -s "$1"
   else
     tmux new -A -s "$TMUX_DEFAULT_SESSION"
   fi

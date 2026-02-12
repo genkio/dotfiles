@@ -195,21 +195,18 @@ get_usage_info() {
 usage_info=$(get_usage_info 2>/dev/null || echo "")
 
 if [[ -n "$usage_info" ]]; then
-    # Build: model · tokens (ctx%) · 7pm (26%)/Sun 10pm (49%) · cwd · branch
-    if [[ -n "$git_branch" ]]; then
-        printf "%s · %dk/%dk (%s%%) · %s · %s · %s" \
-            "$model_id" "$total_k" "$context_k" "$used_percent" "$usage_info" "$cwd_display" "$git_branch"
-    else
-        printf "%s · %dk/%dk (%s%%) · %s · %s" \
-            "$model_id" "$total_k" "$context_k" "$used_percent" "$usage_info" "$cwd_display"
-    fi
+    # First line: model/tokens/usage summary
+    printf "%s · %dk/%dk (%s%%) · %s" \
+        "$model_id" "$total_k" "$context_k" "$used_percent" "$usage_info"
 else
-    # Fallback without usage info
-    if [[ -n "$git_branch" ]]; then
-        printf "%s · %dk/%dk (%s%%) · %s · %s" \
-            "$model_id" "$total_k" "$context_k" "$used_percent" "$cwd_display" "$git_branch"
-    else
-        printf "%s · %dk/%dk (%s%%) · %s" \
-            "$model_id" "$total_k" "$context_k" "$used_percent" "$cwd_display"
-    fi
+    # First line fallback without usage info
+    printf "%s · %dk/%dk (%s%%)" \
+        "$model_id" "$total_k" "$context_k" "$used_percent"
+fi
+
+# Second line: cwd and optional branch
+if [[ -n "$git_branch" ]]; then
+    printf "\n%s · %s" "$cwd_display" "$git_branch"
+else
+    printf "\n%s" "$cwd_display"
 fi

@@ -32,6 +32,7 @@ Everything below comes from personal configuration (commits to this repo).
 | `tx <name>` | Attach to named session |
 | `txp <profile>` | `tmuxp load -y <profile>` |
 | `txl` | `tmux ls` |
+| `ssh` | SSH with `TERM=xterm-256color` (wrapper) |
 | `ssht <host>` | SSH + auto-attach tmux on remote |
 
 **Git shortcuts**

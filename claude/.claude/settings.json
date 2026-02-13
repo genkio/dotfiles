@@ -14,5 +14,10 @@
       "Read(**/.aws/**)",
       "Read(**/.ssh/**)"
     ]
-  }
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "outputStyle": "Explanatory"
 }

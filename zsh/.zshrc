@@ -61,8 +61,12 @@ tx() {
   fi
 }
 
+ssh() {
+  TERM=xterm-256color command ssh "$@"
+}
+
 ssht() {
-  TERM=xterm-256color ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
+  TERM=xterm-256color command ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
 }
 
 # Git shortcuts (custom)

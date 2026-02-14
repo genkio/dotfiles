@@ -40,8 +40,14 @@ fi
 cd "$DOTFILES_DIR"
 
 if ! command -v brew >/dev/null 2>&1; then
-  echo "Error: Homebrew not found. Install brew first." >&2
-  exit 1
+  echo "Homebrew not found. Installing..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # Add brew to PATH for this session (Apple Silicon vs Intel)
+  if [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -f /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
 fi
 
 if ! command -v stow >/dev/null 2>&1; then

@@ -82,6 +82,17 @@ echo "Screen Saver: Require password immediately"
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
+echo "Screen Saver: Set to Fliqlo"
+FLIQLO_PATH="/Library/Screen Savers/Fliqlo.saver"
+if [[ -d "$FLIQLO_PATH" ]]; then
+  defaults -currentHost write com.apple.screensaver moduleDict -dict \
+    moduleName -string "Fliqlo" \
+    path -string "$FLIQLO_PATH" \
+    type -int 0
+else
+  echo "  Skipping: Fliqlo not installed (brew install --cask fliqlo)"
+fi
+
 ###############################################################################
 # Spotlight
 ###############################################################################
@@ -130,6 +141,18 @@ pl["orderedItems"] = items
 out = plistlib.dumps(pl, fmt=plistlib.FMT_XML)
 run("defaults", "import", domain, "-", input_bytes=out)
 PY
+
+###############################################################################
+# Desktop Background
+###############################################################################
+
+echo "Desktop: Set solid black background"
+BLACK_PNG="/System/Library/Desktop Pictures/Solid Colors/Black.png"
+if [[ -f "$BLACK_PNG" ]]; then
+  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$BLACK_PNG\""
+else
+  echo "  Skipping: $BLACK_PNG not found"
+fi
 
 ###############################################################################
 # Security

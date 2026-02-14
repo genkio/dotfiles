@@ -71,6 +71,41 @@ defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 echo "Dock: Hide recent applications"
 defaults write com.apple.dock show-recents -bool false
 
+echo "Dock: Remove all apps, keep Launchpad and Terminal"
+python3 - <<'PY'
+import plistlib
+import os
+import subprocess
+
+dock_plist = os.path.expanduser("~/Library/Preferences/com.apple.dock.plist")
+
+# Read current plist
+data = subprocess.run(["defaults", "export", "com.apple.dock", "-"], capture_output=True, check=True)
+pl = plistlib.loads(data.stdout)
+
+# Apps to add (Finder is always first, no need to add)
+apps = [
+    "/System/Applications/Launchpad.app",
+    "/System/Applications/Utilities/Terminal.app",
+]
+
+def make_dock_entry(path):
+    return {
+        "tile-data": {
+            "file-data": {
+                "_CFURLString": path,
+                "_CFURLStringType": 0,
+            }
+        }
+    }
+
+pl["persistent-apps"] = [make_dock_entry(app) for app in apps]
+
+# Write back
+out = plistlib.dumps(pl, fmt=plistlib.FMT_XML)
+subprocess.run(["defaults", "import", "com.apple.dock", "-"], input=out, check=True)
+PY
+
 ###############################################################################
 # Screen Saver & Lock
 ###############################################################################

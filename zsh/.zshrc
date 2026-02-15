@@ -26,6 +26,7 @@ set -o vi
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # Alias
+alias icloud='$HOME/Library/Mobile\ Documents/com~apple~CloudDocs'
 alias cc='claude'
 alias cx='codex'
 # alias co='opencode'

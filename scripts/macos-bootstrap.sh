@@ -118,12 +118,11 @@ defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 echo "Screen Saver: Set to Fliqlo"
-FLIQLO_PATH="/Library/Screen Savers/Fliqlo.saver"
+FLIQLO_PATH="$HOME/Library/Screen Savers/Fliqlo.saver"
 if [[ -d "$FLIQLO_PATH" ]]; then
-  defaults -currentHost write com.apple.screensaver moduleDict -dict \
-    moduleName -string "Fliqlo" \
-    path -string "$FLIQLO_PATH" \
-    type -int 0
+  defaults -currentHost write com.apple.screensaver moduleName -string "Fliqlo"
+  defaults -currentHost write com.apple.screensaver modulePath -string "$FLIQLO_PATH"
+  defaults -currentHost write com.apple.screensaver moduleDict -dict moduleName Fliqlo path "$FLIQLO_PATH" type 0
 else
   echo "  Skipping: Fliqlo not installed (brew install --cask fliqlo)"
 fi

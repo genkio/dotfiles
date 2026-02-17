@@ -117,6 +117,10 @@ echo "Screen Saver: Require password immediately"
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
+echo "Hot Corners: Bottom-left to Lock Screen"
+defaults write com.apple.dock wvous-bl-corner -int 13
+defaults write com.apple.dock wvous-bl-modifier -int 0
+
 ###############################################################################
 # Spotlight
 ###############################################################################

@@ -1,5 +1,6 @@
 window-save-state = "always"
 macos-option-as-alt = true
+confirm-close-surface = false
 
 # Next/previous pane
 keybind = cmd+k=goto_split:next

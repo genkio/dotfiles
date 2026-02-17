@@ -1,6 +1,7 @@
 export LANG=en_US.UTF-8
 export LC_MESSAGES=en_US.UTF-8
 
+export PATH="$HOME/.local/bin:$PATH"
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()
@@ -26,13 +27,13 @@ set -o vi
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
 # Alias
-alias icloud='$HOME/Library/Mobile\ Documents/com~apple~CloudDocs'
-alias cc='claude'
-alias cx='codex'
-# alias co='opencode'
+alias icloud="$HOME/Library/Mobile\ Documents/com~apple~CloudDocs"
+alias cc="CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 claude"
+alias cx="codex"
+# alias co="opencode"
 
-alias lg='lazygit'
-alias ld='lazydocker'
+alias lg="lazygit"
+alias ld="lazydocker"
 
 alias cl="clear"
 alias ls="eza --group-directories-first"
@@ -46,11 +47,11 @@ vi() {
   fi
 }
 
-alias ip='ipconfig getifaddr en0'
+alias ip="ipconfig getifaddr en0"
 # Copy the last command to clipboard
-alias cp1='fc -ln -1 | awk "{\$1=\$1;print}" | pbcopy'
-alias txp='tmuxp load -y'
-alias txl='tmux ls'
+alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
+alias txp="tmuxp load -y"
+alias txl="tmux ls"
 
 TMUX_DEFAULT_SESSION="tmp"
 
@@ -71,15 +72,15 @@ ssht() {
 }
 
 # Git shortcuts (custom)
-alias gs='git status'
-alias glo='git log --pretty --oneline -5'
-alias gad='git add .'
+alias gs="git status"
+alias glo="git log --pretty --oneline -5"
+alias gad="git add ."
 
-alias gco='git checkout'
+alias gco="git checkout"
 # list 10 most recent branches with commit dates
-alias gbr='git for-each-ref --sort=-committerdate refs/heads/ --format="%(committerdate:short) %(refname:short)" --count=10'
+alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"
 # list staged file names
-alias gst='git diff --name-only --cached'
+alias gst="git diff --name-only --cached"
 
 # git commit -m "<message>"
 gcm() {
@@ -117,7 +118,7 @@ gundo() {
 
 # Tmux wrapper - set compatible TERM before launching
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-  alias tmux='TERM=tmux-256color tmux'
+  alias tmux="TERM=tmux-256color tmux"
 fi
 
 # Volta

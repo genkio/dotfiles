@@ -15,8 +15,16 @@ CACHE_TTL=60
 # === Read context from Claude Code (stdin) ===
 input=$(cat)
 
-# Extract model ID
+# Extract model ID (strip 'claude-' prefix for brevity)
 model_id=$(echo "$input" | jq -r '.model.id // "unknown"')
+model_id=${model_id#claude-}
+
+# Extract effort level from settings
+SETTINGS_FILE="$HOME/.claude/settings.json"
+effort=$(jq -r '.effortLevel // empty' "$SETTINGS_FILE" 2>/dev/null)
+if [[ -n "$effort" ]]; then
+    model_id="$model_id ($effort)"
+fi
 
 # Extract token usage
 total_input=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')

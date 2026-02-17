@@ -1,3 +1,4 @@
+.claude
 # Claude Code stow package - track settings, ignore runtime files
 !claude/.claude/
 claude/.claude/.credentials.json

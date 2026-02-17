@@ -204,6 +204,13 @@ echo "System: Install Rosetta 2"
 sudo softwareupdate --install-rosetta --agree-to-license || true
 
 ###############################################################################
+# OpenInTerminal-Lite
+###############################################################################
+
+echo "OpenInTerminal-Lite: Set default terminal to Ghostty"
+defaults write wang.jianing.app.OpenInTerminal-Lite LiteDefaultTerminal Ghostty
+
+###############################################################################
 # Apply Changes
 ###############################################################################
 

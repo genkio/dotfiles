@@ -29,6 +29,8 @@ set -o vi
 # Alias
 alias icloud="$HOME/Library/Mobile\ Documents/com~apple~CloudDocs"
 alias cc="CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 claude"
+alias ccd="claude --dangerously-skip-permissions"
+alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
 alias cx="codex"
 # alias co="opencode"
 

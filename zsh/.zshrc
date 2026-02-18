@@ -79,6 +79,7 @@ alias glo="git log --pretty --oneline -5"
 alias gad="git add ."
 
 alias gco="git checkout"
+alias gcof="git checkout -f && git clean -df"
 # list 10 most recent branches with commit dates
 alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"
 # list staged file names

@@ -51,6 +51,9 @@ defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 echo "Finder: Show path bar"
 defaults write com.apple.finder ShowPathbar -bool true
 
+echo "Finder: Show status bar"
+defaults write com.apple.finder ShowStatusBar -bool true
+
 echo "Finder: New windows show Downloads"
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"

@@ -8,6 +8,7 @@ need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "Missing command: $1" >&2
 need_cmd defaults
 need_cmd /usr/bin/python3
 need_cmd killall
+need_cmd pmset
 need_cmd softwareupdate
 
 # Ask for admin once up front (used by Firewall, FileVault, Rosetta, and Spotlight mds refresh).
@@ -123,6 +124,16 @@ defaults write com.apple.screensaver askForPasswordDelay -int 0
 echo "Hot Corners: Bottom-left to Lock Screen"
 defaults write com.apple.dock wvous-bl-corner -int 13
 defaults write com.apple.dock wvous-bl-modifier -int 0
+
+###############################################################################
+# Power
+###############################################################################
+
+echo "Power: Disable system sleep (AC and battery)"
+sudo pmset -a sleep 0
+
+echo "Power: Disable Power Nap (AC and battery)"
+sudo pmset -a powernap 0
 
 ###############################################################################
 # Spotlight

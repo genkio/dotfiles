@@ -75,7 +75,7 @@ defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 echo "Dock: Hide recent applications"
 defaults write com.apple.dock show-recents -bool false
 
-echo "Dock: Remove all apps, keep Launchpad and Terminal"
+echo "Dock: Remove all apps, keep app launcher and Terminal"
 python3 - <<'PY'
 import plistlib
 import os
@@ -87,11 +87,19 @@ dock_plist = os.path.expanduser("~/Library/Preferences/com.apple.dock.plist")
 data = subprocess.run(["defaults", "export", "com.apple.dock", "-"], capture_output=True, check=True)
 pl = plistlib.loads(data.stdout)
 
+# App launcher: Launchpad (pre-Tahoe) or Apps (Tahoe+)
+app_launcher = None
+for launcher in ["/System/Applications/Apps.app", "/System/Applications/Launchpad.app"]:
+    if os.path.exists(launcher):
+        app_launcher = launcher
+        break
+
 # Apps to add (Finder is always first, no need to add)
-apps = [
-    "/System/Applications/Launchpad.app",
+candidate_apps = [
+    app_launcher,
     "/System/Applications/Utilities/Terminal.app",
 ]
+apps = [app for app in candidate_apps if app and os.path.exists(app)]
 
 def make_dock_entry(path):
     return {

@@ -10,7 +10,7 @@
       "Read(**/.ssh/**)"
     ]
   },
-  "model": "opus",
+  "model": "claude-opus-4-5",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -19,6 +19,5 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true
-  },
-  "effortLevel": "medium"
+  }
 }

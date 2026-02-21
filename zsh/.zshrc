@@ -26,8 +26,11 @@ set -o vi
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
+# Create iCloud symlink if missing (macOS only)
+[[ -d "$HOME/Library/Mobile Documents/com~apple~CloudDocs" && ! -e ~/icloud ]] && \
+  ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" ~/icloud
+
 # Alias
-alias icloud="$HOME/Library/Mobile\ Documents/com~apple~CloudDocs"
 alias cc="CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 claude"
 alias ccd="claude --dangerously-skip-permissions"
 alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"

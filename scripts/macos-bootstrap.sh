@@ -9,6 +9,7 @@ need_cmd defaults
 need_cmd /usr/bin/python3
 need_cmd killall
 need_cmd pmset
+need_cmd nvram
 need_cmd softwareupdate
 
 # Ask for admin once up front (used by Firewall, FileVault, Rosetta, and Spotlight mds refresh).
@@ -41,6 +42,24 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad DragLock -bool
 
 echo "Keyboard: Disable automatic capitalization"
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+
+###############################################################################
+# Sound
+###############################################################################
+
+echo "Sound: Mute output by default"
+osascript -e "set volume with output muted"
+
+echo "Sound: Always show volume icon in menu bar"
+defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
+defaults -currentHost write com.apple.controlcenter Sound -int 18
+
+echo "Sound: Disable startup sound"
+if sudo nvram StartupMute=%01 >/dev/null 2>&1; then
+  :
+else
+  echo "  Skipping: could not set StartupMute NVRAM flag"
+fi
 
 ###############################################################################
 # Finder
@@ -248,6 +267,7 @@ defaults write wang.jianing.app.OpenInTerminal-Lite LiteDefaultTerminal Ghostty
 
 echo "Applying changes..."
 killall cfprefsd 2>/dev/null || true
+killall ControlCenter 2>/dev/null || true
 killall Dock 2>/dev/null || true
 killall Finder 2>/dev/null || true
 sudo killall mds 2>/dev/null || true

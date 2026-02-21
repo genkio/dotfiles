@@ -55,6 +55,16 @@ defaults write com.apple.finder ShowPathbar -bool true
 echo "Finder: Show status bar"
 defaults write com.apple.finder ShowStatusBar -bool true
 
+echo "Finder: Use list view by default"
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
+echo "Finder: Show Hard disks in sidebar Locations"
+defaults write com.apple.finder disksEnabled -bool true
+defaults write com.apple.finder SidebarDevicesSectionDisclosedState -bool true
+
+echo "Finder: Hide Recent from sidebar Favorites"
+defaults write com.apple.finder recentsEnabled -bool false
+
 echo "Finder: New windows show Downloads"
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"

@@ -2,6 +2,7 @@ export LANG=en_US.UTF-8
 export LC_MESSAGES=en_US.UTF-8
 
 export PATH="$HOME/.local/bin:$PATH"
+export GPG_TTY=$(tty)
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()

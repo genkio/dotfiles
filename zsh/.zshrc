@@ -127,6 +127,31 @@ if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
   alias tmux="TERM=tmux-256color tmux"
 fi
 
+# Tailscale File Send
+# Usage: fsend <path/to/file> <machine_name>
+fsend() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: fsend <file> <machine_name>"
+    return 1
+  fi
+
+  local file="$1"
+  local machine="$2"
+
+  # Tailscale requires a trailing colon after the machine name/IP
+  tailscale file cp "$file" "${machine}:"
+}
+
+# Tailscale File Get
+# Usage: fget [destination_directory]
+fget() {
+  # Defaults to ~/Downloads/ if no destination is provided
+  local dest="${1:-$HOME/Downloads/}"
+
+  echo "Pulling waiting Tailscale files into $dest..."
+  tailscale file get "$dest"
+}
+
 # Volta
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"

@@ -129,18 +129,18 @@ if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
 fi
 
 # Tailscale File Send
-# Usage: fsend <path/to/file> <machine_name>
+# Usage: fsend <machine_name> <file1> [file2 ...]
 fsend() {
   if [[ $# -lt 2 ]]; then
-    echo "Usage: fsend <file> <machine_name>"
+    echo "Usage: fsend <machine_name> <file1> [file2 ...]"
     return 1
   fi
 
-  local file="$1"
-  local machine="$2"
+  local machine="$1"
+  shift  # Remove machine from args, leaving only files
 
   # Tailscale requires a trailing colon after the machine name/IP
-  tailscale file cp "$file" "${machine}:"
+  tailscale file cp "$@" "${machine}:"
 }
 
 # Tailscale File Get
@@ -168,3 +168,10 @@ eval "$(zoxide init zsh)"
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR=$(brew --prefix sdkman-cli)/libexec
 [[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
+
+# bun completions
+[ -s "/Users/wu/.bun/_bun" ] && source "/Users/wu/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"

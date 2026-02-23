@@ -80,14 +80,15 @@ ssht() {
 # Git shortcuts (custom)
 alias gs="git status"
 alias glo="git log --pretty --oneline -5"
-alias gad="git add ."
+alias ga="git add"
+alias gaa="git add ."
+alias gau="git restore --staged ."
+alias gd="git diff"
 
 alias gco="git checkout"
 alias gcof="git checkout -f && git clean -df"
 # list 10 most recent branches with commit dates
 alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"
-# list staged file names
-alias gst="git diff --name-only --cached"
 
 # git commit -m "<message>"
 gcm() {

@@ -146,6 +146,9 @@ vim.o.timeoutlen = 300
 vim.o.splitright = true
 vim.o.splitbelow = true
 
+-- Auto detect (Japanese) encodings
+vim.opt.fileencodings = { 'utf-8', 'cp932', 'euc-jp', 'latin1' }
+
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
@@ -1135,7 +1138,7 @@ require('lazy').setup({
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     config = function()
       ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter').setup({
+      require('nvim-treesitter').setup {
         ensure_installed = {
           'bash',
           'c',
@@ -1149,7 +1152,7 @@ require('lazy').setup({
           'vim',
           'vimdoc',
         },
-      })
+      }
 
       -- Enable treesitter-based highlighting and indentation (built into Neovim)
       vim.treesitter.language.register('markdown', 'mdx')

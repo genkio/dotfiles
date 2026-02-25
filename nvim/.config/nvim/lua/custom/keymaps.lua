@@ -1,19 +1,68 @@
 -- Custom keymaps
 -- This file contains all custom keybindings separate from init.lua
 
+local function open_netrw_fresh()
+  vim.w.netrw_q_return_stack = {}
+  vim.cmd 'Ex'
+end
+
 -- In normal buffers: q -> open netrw in this file's directory
 -- In netrw-opened files: q -> return to netrw at previous cursor location
 vim.keymap.set('n', 'q', function()
   vim.cmd 'silent! Rexplore'
   if vim.bo.filetype ~= 'netrw' then
-    vim.cmd 'Ex'
+    open_netrw_fresh()
   end
 end, { noremap = true, silent = true })
 
--- Netrw: Use fzf when pressing % in netrw buffers
+-- Netrw: directory return stack and fzf integration
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'netrw',
   callback = function()
+    vim.keymap.set('n', '<CR>', function()
+      local curdir = vim.b.netrw_curdir
+      local entry = vim.fn.expand '<cfile>'
+      local entry_name = entry:gsub('/+$', '')
+
+      if type(curdir) == 'string' and curdir ~= '' and entry ~= '' and entry_name ~= '.' and entry_name ~= '..' then
+        local entry_path = curdir .. '/' .. entry
+        if vim.fn.isdirectory(entry_path) == 1 then
+          local stack = vim.w.netrw_q_return_stack or {}
+          local current_line = vim.fn.line '.'
+          local top = stack[#stack]
+
+          if not top or top.dir ~= curdir or top.lnum ~= current_line then
+            table.insert(stack, { dir = curdir, lnum = current_line })
+          end
+          vim.w.netrw_q_return_stack = stack
+        end
+      end
+
+      local keys = vim.api.nvim_replace_termcodes('<Plug>NetrwLocalBrowseCheck', true, false, true)
+      vim.api.nvim_feedkeys(keys, 'm', false)
+    end, { buffer = true, noremap = true, silent = true, desc = 'Netrw enter with return point' })
+
+    vim.keymap.set('n', 'q', function()
+      local stack = vim.w.netrw_q_return_stack
+      while type(stack) == 'table' and #stack > 0 and stack[#stack].dir == vim.b.netrw_curdir do
+        table.remove(stack)
+      end
+
+      if type(stack) == 'table' and #stack > 0 then
+        local target = table.remove(stack)
+        vim.w.netrw_q_return_stack = stack
+
+        vim.cmd('Explore ' .. vim.fn.fnameescape(target.dir))
+        pcall(vim.fn.cursor, target.lnum, 1)
+        return
+      end
+
+      vim.cmd 'silent! Rexplore'
+      if vim.bo.filetype ~= 'netrw' then
+        open_netrw_fresh()
+      end
+    end, { buffer = true, noremap = true, silent = true, desc = 'Netrw return' })
+
     vim.keymap.set('n', '%', function()
       -- Get the current directory from netrw
       local dir = vim.fn.expand '%:p:h'

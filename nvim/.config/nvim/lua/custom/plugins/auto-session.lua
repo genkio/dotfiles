@@ -4,6 +4,19 @@
 return {
   'rmagatti/auto-session',
   lazy = false,
+  init = function()
+    local group = vim.api.nvim_create_augroup('custom-autosession-swapexists', { clear = true })
+    vim.api.nvim_create_autocmd('SwapExists', {
+      group = group,
+      desc = 'Skip swap prompts while auto-session is restoring',
+      callback = function()
+        local ok, autosession = pcall(require, 'auto-session')
+        if ok and autosession.restore_in_progress then
+          vim.v.swapchoice = 'e'
+        end
+      end,
+    })
+  end,
   opts = {
     -- Automatically save session on exit and restore on startup
     auto_save_enabled = true,
@@ -28,6 +41,20 @@ return {
     -- Only restore session if opening nvim without file arguments
     -- This prevents restoring when you do "nvim file.txt"
     args_allow_single_directory = true,
+
+    -- Keep auto-save enabled if a stale swap file appears during restore
+    restore_error_handler = function(error_msg)
+      if type(error_msg) == 'string' then
+        -- Treat stale swap files and missing local cwd paths as recoverable restore errors.
+        if string.find(error_msg, 'E325', 1, true) or string.find(error_msg, 'E344', 1, true) then
+          return true
+        end
+      end
+      return require('auto-session').default_restore_error_handler(error_msg)
+    end,
+
+    -- Make sure restore keeps going even if one command inside a session file fails.
+    continue_restore_on_error = true,
 
     -- Don't save/restore certain buffer types
     bypass_session_save_file_types = {

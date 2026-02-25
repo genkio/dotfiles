@@ -15,9 +15,5 @@
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
-  "outputStyle": "Explanatory",
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true
-  }
+  "outputStyle": "Explanatory"
 }

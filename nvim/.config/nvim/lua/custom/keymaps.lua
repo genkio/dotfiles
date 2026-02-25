@@ -2,7 +2,13 @@
 -- This file contains all custom keybindings separate from init.lua
 
 -- In normal buffers: q -> open netrw in this file's directory
-vim.keymap.set('n', 'q', '<cmd>Ex<CR>', { noremap = true, silent = true })
+-- In netrw-opened files: q -> return to netrw at previous cursor location
+vim.keymap.set('n', 'q', function()
+  vim.cmd 'silent! Rexplore'
+  if vim.bo.filetype ~= 'netrw' then
+    vim.cmd 'Ex'
+  end
+end, { noremap = true, silent = true })
 
 -- Netrw: Use fzf when pressing % in netrw buffers
 vim.api.nvim_create_autocmd('FileType', {

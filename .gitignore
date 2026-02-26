@@ -1,3 +1,4 @@
+.nvimlog
 .claude
 # Claude Code stow package - track only selected files
 claude/.claude/**

@@ -97,6 +97,8 @@ ssht() {
 
 # Git shortcuts (custom)
 alias gs="git status"
+alias gsh="git stash"
+alias gshp="git stash pop"
 alias glo="git log --pretty --oneline -5"
 alias ga="git add"
 alias gaa="git add ."

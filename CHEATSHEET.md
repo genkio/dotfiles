@@ -172,6 +172,15 @@ Sessions auto-save on exit and auto-restore per directory when opening `nvim` wi
 |---|---|
 | `<leader>lg` | Open LazyGit |
 
+**Diffview (PR diff / history)**
+
+| Key | Action |
+|---|---|
+| `<leader>gd` | Open `DiffviewOpen origin/HEAD...HEAD --imply-local` (merge-base PR diff; local/LSP side swapped to left) |
+| `<leader>gD` | Close Diffview |
+| `<leader>gf` | File history for current file |
+| `<leader>gF` | File history for repo |
+
 **Snacks GitHub (PR / Issues picker)**
 
 | Key | Action |

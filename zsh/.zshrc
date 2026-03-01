@@ -50,7 +50,7 @@ claude() {
 }
 
 cc() {
-  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 claude "$@"
+  claude "$@"
 }
 alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
 alias cx="codex"

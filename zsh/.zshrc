@@ -22,6 +22,15 @@ source $ZSH/oh-my-zsh.sh
 source <(fzf --zsh)
 
 set -o vi
+setopt HIST_IGNORE_SPACE
+
+# Prefill each interactive command line with a leading space so it is
+# ignored by history (works with HIST_IGNORE_SPACE).
+autoload -Uz add-zle-hook-widget
+_prefill_history_ignored_space() {
+  [[ -z "$BUFFER" ]] && LBUFFER=' '
+}
+add-zle-hook-widget line-init _prefill_history_ignored_space
 
 # Machine-specific env / config (not tracked by git)
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"

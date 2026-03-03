@@ -32,26 +32,7 @@ set -o vi
   ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" ~/icloud
 
 # Alias
-claude_native_bin() {
-  local versions_dir="$HOME/.local/share/claude/versions"
-  local latest
-  latest=$(command ls -1 "$versions_dir" 2>/dev/null | sort -V | tail -n 1)
-  [[ -n "$latest" ]] || return 1
-  echo "$versions_dir/$latest"
-}
-
-claude() {
-  local native_bin
-  native_bin=$(claude_native_bin) || {
-    echo "native Claude binary not found" >&2
-    return 127
-  }
-  "$native_bin" "$@"
-}
-
-cc() {
-  claude "$@"
-}
+alias cc="claude"
 alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
 alias cx="codex"
 # alias co="opencode"
@@ -76,6 +57,8 @@ alias ip="ipconfig getifaddr en0"
 alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
+alias src="source ~/.zshrc"
+alias his="vi ~/.zsh_history"
 
 TMUX_DEFAULT_SESSION="tmp"
 

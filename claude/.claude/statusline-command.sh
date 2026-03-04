@@ -10,7 +10,9 @@ KEYCHAIN_SERVICE="Claude Code-credentials"
 API_URL="https://api.anthropic.com/api/oauth/usage"
 BETA_HEADER="oauth-2025-04-20"
 CACHE_FILE="/tmp/claude_usage_cache.json"
-CACHE_TTL=60
+LOCK_FILE="/tmp/claude_usage_lock"
+CACHE_TTL=180   # 3 minutes - cache valid time
+LOCK_TTL=30     # 30 seconds - rate limit between API calls
 
 # === Read context from Claude Code (stdin) ===
 input=$(cat)
@@ -52,18 +54,10 @@ git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 # === Fetch Usage from API ===
 
 get_token() {
-    if [[ -f "$CREDENTIALS_FILE" ]]; then
-        local token
-        token=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDENTIALS_FILE" 2>/dev/null)
-        if [[ -n "$token" ]]; then
-            echo "$token"
-            return 0
-        fi
-    fi
-
+    # On macOS, prefer keychain (where Claude Code stores the active token)
     if [[ "$(uname)" == "Darwin" ]]; then
         local keychain_data
-        keychain_data=$(security find-generic-password -s "$KEYCHAIN_SERVICE" -w 2>/dev/null) || return 1
+        keychain_data=$(security find-generic-password -s "$KEYCHAIN_SERVICE" -w 2>/dev/null) || true
         if [[ -n "$keychain_data" ]]; then
             local token
             token=$(echo "$keychain_data" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
@@ -71,6 +65,16 @@ get_token() {
                 echo "$token"
                 return 0
             fi
+        fi
+    fi
+
+    # Fallback to credentials file (used on Linux, or if keychain fails)
+    if [[ -f "$CREDENTIALS_FILE" ]]; then
+        local token
+        token=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDENTIALS_FILE" 2>/dev/null)
+        if [[ -n "$token" ]]; then
+            echo "$token"
+            return 0
         fi
     fi
 
@@ -82,6 +86,18 @@ is_cache_valid() {
     local cache_age
     cache_age=$(($(date +%s) - $(stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0)))
     (( cache_age < CACHE_TTL ))
+}
+
+# Rate limit: only try API once per LOCK_TTL seconds
+is_rate_limited() {
+    [[ -f "$LOCK_FILE" ]] || return 1
+    local lock_age
+    lock_age=$(($(date +%s) - $(stat -f %m "$LOCK_FILE" 2>/dev/null || echo 0)))
+    (( lock_age < LOCK_TTL ))
+}
+
+touch_lock() {
+    touch "$LOCK_FILE" 2>/dev/null || true
 }
 
 fetch_usage() {
@@ -166,12 +182,27 @@ except:
 get_usage_info() {
     local usage_json=""
 
+    # Fast path: return cached data if still valid
     if is_cache_valid; then
         usage_json=$(cat "$CACHE_FILE")
     else
-        local token
-        token=$(get_token 2>/dev/null) || return 1
-        usage_json=$(fetch_usage "$token" 2>/dev/null) || return 1
+        # Cache expired - check rate limit before calling API
+        if is_rate_limited; then
+            # Rate limited: use stale cache if available
+            [[ -f "$CACHE_FILE" ]] && usage_json=$(cat "$CACHE_FILE")
+        else
+            # Not rate limited: try to fetch fresh data
+            touch_lock
+            local token
+            token=$(get_token 2>/dev/null) || true
+            if [[ -n "$token" ]]; then
+                usage_json=$(fetch_usage "$token" 2>/dev/null) || true
+            fi
+            # Fallback to stale cache if fetch failed
+            if [[ -z "$usage_json" && -f "$CACHE_FILE" ]]; then
+                usage_json=$(cat "$CACHE_FILE")
+            fi
+        fi
     fi
 
     [[ -z "$usage_json" ]] && return 1

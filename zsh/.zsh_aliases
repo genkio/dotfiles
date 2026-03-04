@@ -38,6 +38,10 @@ tx() {
   fi
 }
 
+txk() {
+  tmux kill-session -t "${1:-$TMUX_DEFAULT_SESSION}"
+}
+
 ssh() {
   TERM=xterm-256color command ssh "$@"
 }

@@ -1,0 +1,125 @@
+alias cc="claude"
+alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
+alias cx="codex"
+
+alias lg="lazygit"
+alias ld="lazydocker"
+
+alias cl="clear"
+alias ex="exit"
+alias ls="eza --group-directories-first"
+alias ll="eza --group-directories-first --all -lh"
+alias lt="eza --group-directories-first --tree --level=2 --icons"
+vi() {
+  if [[ $# -gt 0 ]]; then
+    nvim "$@"
+  else
+    nvim .
+  fi
+}
+
+alias ip="ipconfig getifaddr en0"
+# Copy the last command to clipboard
+alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
+alias txp="tmuxp load -y"
+alias txl="tmux ls"
+alias src="source ~/.zshrc"
+alias his="vi ~/.zsh_history"
+alias zrc="vi ~/.zshrc"
+
+TMUX_DEFAULT_SESSION="tmp"
+
+tx() {
+  if [[ -n "$1" ]]; then
+    tmux new -A -s "$1"
+  else
+    tmux new -A -s "$TMUX_DEFAULT_SESSION"
+  fi
+}
+
+ssh() {
+  TERM=xterm-256color command ssh "$@"
+}
+
+ssht() {
+  TERM=xterm-256color command ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
+}
+
+# Git shortcuts (custom)
+alias gs="git status"
+alias gsh="git stash"
+alias gshp="git stash pop"
+alias glo="git log --pretty --oneline -5"
+alias ga="git add"
+alias gaa="git add ."
+alias gau="git restore --staged ."
+alias gd="git diff"
+
+alias gco="git checkout"
+alias gcof="git checkout -f && git clean -df"
+# list 10 most recent branches with commit dates
+alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"
+
+# git commit -m "<message>"
+gcm() {
+  if [ $# -eq 0 ]; then
+    echo "usage: gcm <message>" >&2
+    return 1
+  fi
+  git commit -m "$*"
+}
+
+# git pull origin <current-branch>
+gpl() {
+  local br
+  br=$(git symbolic-ref --short HEAD) || return
+  git pull origin "$br"
+}
+
+# git push origin <current-branch>
+gpu() {
+  local br
+  br=$(git symbolic-ref --short HEAD) || return
+  git push origin "$br"
+}
+
+# git push origin <current-branch> --force-with-lease
+gpuf() {
+  local br
+  br=$(git symbolic-ref --short HEAD) || return
+  git push origin "$br" --force-with-lease
+}
+
+gundo() {
+  git reset --soft HEAD~1
+}
+
+# Tmux wrapper - set compatible TERM before launching
+if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+  alias tmux="TERM=tmux-256color tmux"
+fi
+
+# Tailscale File Send
+# Usage: fsend <machine_name> <file1> [file2 ...]
+fsend() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: fsend <machine_name> <file1> [file2 ...]"
+    return 1
+  fi
+
+  local machine="$1"
+  shift  # Remove machine from args, leaving only files
+
+  # Tailscale requires a trailing colon after the machine name/IP
+  tailscale file cp "$@" "${machine}:"
+}
+
+# Tailscale File Get
+# Usage: fget [destination_directory]
+fget() {
+  # Defaults to ~/Downloads/ if no destination is provided
+  local dest="${1:-$HOME/Downloads/}"
+
+  echo "Pulling waiting Tailscale files into $dest..."
+  tailscale file get "$dest"
+}

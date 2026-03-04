@@ -51,6 +51,27 @@ fi
 # Git branch
 git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 
+# Git change stats (files, +additions, -deletions)
+get_git_changes() {
+    # Get both staged and unstaged changes
+    local stats
+    stats=$(git diff --shortstat HEAD 2>/dev/null || git diff --shortstat 2>/dev/null || true)
+    [[ -z "$stats" ]] && return
+
+    # Parse: "X files changed, Y insertions(+), Z deletions(-)"
+    local files adds dels
+    files=$(echo "$stats" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo "0")
+    adds=$(echo "$stats" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+    dels=$(echo "$stats" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
+
+    # Only show if there are actual changes
+    if [[ "$files" != "0" ]]; then
+        echo "${files:-0},+${adds:-0},-${dels:-0}"
+    fi
+}
+
+git_changes=$(get_git_changes 2>/dev/null || true)
+
 # === Fetch Usage from API ===
 
 get_token() {
@@ -243,9 +264,13 @@ else
         "$model_id" "$total_k" "$context_k" "$used_percent"
 fi
 
-# Second line: cwd and optional branch
+# Second line: cwd, branch, and optional changes
 if [[ -n "$git_branch" ]]; then
-    printf "\n%s · %s" "$cwd_display" "$git_branch"
+    if [[ -n "$git_changes" ]]; then
+        printf "\n%s · %s · (%s)" "$cwd_display" "$git_branch" "$git_changes"
+    else
+        printf "\n%s · %s" "$cwd_display" "$git_branch"
+    fi
 else
     printf "\n%s" "$cwd_display"
 fi

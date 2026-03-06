@@ -8,3 +8,6 @@ claude/.claude/**
 
 # Lazygit state file (auto-generated)
 lazygit/Library/Application Support/lazygit/state.yml
+
+# Private git identity for the stowed git package
+git/.gitconfig.local

@@ -30,13 +30,14 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew lazygit nvim tmux zsh`). Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux zsh`). If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
 
 ## Stow Packages
 
 | Package | Target | Notes |
 |---------|--------|-------|
 | `brew` | `~/brew/` | Brewfiles |
+| `git` | `~/.gitconfig` | Shared Git config; private identity in `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f` |
@@ -80,3 +81,4 @@ Examples from history:
 Local overrides not tracked by git go in:
 - `~/.zshrc.local` — sourced at end of .zshrc
 - `~/.local/bin/env` — sourced at end of .zshrc
+- `~/.gitconfig.local` — included from `.gitconfig` for private Git identity

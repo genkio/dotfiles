@@ -58,6 +58,36 @@ fi
 brew bundle --file brew/Brewfile.base
 stow brew lazygit nvim tmux zsh
 
+if [[ ! -f "$HOME/.gitignore_global" ]]; then
+  case "$(uname -s)" in
+    Darwin)
+      GITIGNORE_URL="https://raw.githubusercontent.com/github/gitignore/master/Global/macOS.gitignore"
+      ;;
+    Linux)
+      GITIGNORE_URL="https://raw.githubusercontent.com/github/gitignore/master/Global/Linux.gitignore"
+      ;;
+    *)
+      GITIGNORE_URL=""
+      ;;
+  esac
+
+  if [[ -n "$GITIGNORE_URL" ]]; then
+    echo "Downloading standard global gitignore to ~/.gitignore_global"
+    curl -fsSL "$GITIGNORE_URL" -o "$HOME/.gitignore_global"
+  fi
+fi
+
+if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
+  echo "Skipping git stow: ~/.gitconfig already exists and is not a symlink."
+  echo "Move it aside and run 'cd $DOTFILES_DIR && stow git' when you're ready."
+else
+  stow git
+  if [[ ! -f "$HOME/.gitconfig.local" ]]; then
+    echo "Note: create ~/.gitconfig.local for your private Git identity."
+    echo "Example: $DOTFILES_DIR/git/.gitconfig.local.example"
+  fi
+fi
+
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
   stow claude ghostty

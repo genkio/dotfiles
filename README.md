@@ -27,6 +27,12 @@ Install stow:
 - Or everything: `stow */`
 - Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
 
+## Git config
+
+- Shared Git settings live in `git/.gitconfig`.
+- Private identity lives in `git/.gitconfig.local` and is ignored by git.
+- Start from `git/.gitconfig.local.example`, then `cd ~/dotfiles && stow git`.
+
 ## Remove symlinks
 
 - `stow -D vim`
@@ -52,4 +58,3 @@ Run the automated script:
 - `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --include-apps --bootstrap-macos`
 - `--include-apps` to install apps too.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
-

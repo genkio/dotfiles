@@ -77,6 +77,12 @@ if [[ ! -f "$HOME/.gitignore_global" ]]; then
   fi
 fi
 
+mkdir -p "$HOME/.codex"
+if [[ ! -f "$HOME/.codex/config.toml" ]]; then
+  cp codex/.codex/config.toml.example "$HOME/.codex/config.toml"
+  echo "Seeded ~/.codex/config.toml from codex/.codex/config.toml.example"
+fi
+
 if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
   echo "Skipping git stow: ~/.gitconfig already exists and is not a symlink."
   echo "Move it aside and run 'cd $DOTFILES_DIR && stow git' when you're ready."

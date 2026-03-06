@@ -33,6 +33,12 @@ Install stow:
 - Private identity lives in `git/.gitconfig.local` and is ignored by git.
 - Start from `git/.gitconfig.local.example`, then `cd ~/dotfiles && stow git`.
 
+## Codex config
+
+- Shared Codex defaults live in `codex/.codex/config.toml.example`.
+- Copy that file to `~/.codex/config.toml` to seed a new machine.
+- Codex persists `projects.<path>.trust_level` into `~/.codex/config.toml`, so this file is copied, not stowed.
+
 ## Remove symlinks
 
 - `stow -D vim`

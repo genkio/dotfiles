@@ -1,6 +1,7 @@
 alias cc="claude"
 alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
 alias cx="codex"
+alias cxq="codex -p quick"
 
 alias lg="lazygit"
 alias ld="lazydocker"

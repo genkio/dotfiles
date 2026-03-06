@@ -11,3 +11,6 @@ lazygit/Library/Application Support/lazygit/state.yml
 
 # Private git identity for the stowed git package
 git/.gitconfig.local
+
+# Optional repo-local Codex project config
+/.codex/config.toml

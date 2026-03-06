@@ -30,13 +30,14 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux zsh`). If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux zsh`). It also seeds `~/.codex/config.toml` from `codex/.codex/config.toml.example` if no Codex config exists yet. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
 
 ## Stow Packages
 
 | Package | Target | Notes |
 |---------|--------|-------|
 | `brew` | `~/brew/` | Brewfiles |
+| `codex` | `~/.codex/config.toml` | Shared Codex defaults are copied from `codex/.codex/config.toml.example`; Codex persists trust locally |
 | `git` | `~/.gitconfig` | Shared Git config; private identity in `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |

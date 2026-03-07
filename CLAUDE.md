@@ -30,7 +30,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux zsh`). It also seeds `~/.codex/config.toml` from `codex/.codex/config.toml.example` if no Codex config exists yet. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux zsh`). It also seeds `~/.codex/config.toml` from `codex/.codex/config.toml.example` if no Codex config exists yet, clones TPM into `~/.tmux/plugins/tpm` when missing, and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
 
 ## Stow Packages
 
@@ -41,7 +41,7 @@ cd ~/dotfiles && stow -D zsh
 | `git` | `~/.gitconfig` | Shared Git config; private identity in `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
-| `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f` |
+| `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `lazygit` | `~/.config/lazygit/` + `~/bin/` | Custom OSC52 clipboard |
 | `claude` | `~/.claude/` | Claude Code settings + statusline |

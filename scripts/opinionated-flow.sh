@@ -58,6 +58,20 @@ fi
 brew bundle --file brew/Brewfile.base
 stow brew lazygit nvim tmux zsh
 
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [[ -d "$TPM_DIR/.git" ]]; then
+  echo "TPM already installed at $TPM_DIR"
+elif [[ -e "$TPM_DIR" ]]; then
+  echo "Skipping TPM install: $TPM_DIR exists and is not a git repo."
+else
+  mkdir -p "$(dirname "$TPM_DIR")"
+  git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+fi
+if [[ -x "$TPM_DIR/bin/install_plugins" ]]; then
+  "$TPM_DIR/bin/install_plugins"
+  echo "Installed tmux plugins from ~/.tmux.conf"
+fi
+
 if [[ ! -f "$HOME/.gitignore_global" ]]; then
   case "$(uname -s)" in
     Darwin)

@@ -43,41 +43,6 @@ txk() {
   tmux kill-session -t "${1:-$TMUX_DEFAULT_SESSION}"
 }
 
-# Save one live tmux session (default: tmp) to a tmuxp workspace file.
-txsave() {
-  local session="${1:-$TMUX_DEFAULT_SESSION}"
-  local workspace_dir="${TMUXP_WORKSPACE_DIR:-$HOME/.tmuxp}"
-  local workspace_file="${workspace_dir}/${session}.yaml"
-
-  if ! tmux has-session -t "$session" 2>/dev/null; then
-    echo "tmux session '$session' does not exist" >&2
-    return 1
-  fi
-
-  mkdir -p "$workspace_dir" || return 1
-  tmuxp freeze "$session" -o "$workspace_file" || return 1
-  echo "Saved tmux session '$session' to $workspace_file"
-}
-
-# Restore one tmux session (default: tmp) from its tmuxp workspace file.
-txrestore() {
-  local session="${1:-$TMUX_DEFAULT_SESSION}"
-  local workspace_dir="${TMUXP_WORKSPACE_DIR:-$HOME/.tmuxp}"
-  local workspace_file="${workspace_dir}/${session}.yaml"
-
-  if [[ ! -f "$workspace_file" ]]; then
-    echo "No snapshot found at $workspace_file" >&2
-    return 1
-  fi
-
-  if tmux has-session -t "$session" 2>/dev/null; then
-    echo "tmux session '$session' already exists. Kill it first with: txk $session" >&2
-    return 1
-  fi
-
-  tmuxp load -y "$workspace_file"
-}
-
 ssh() {
   TERM=xterm-256color command ssh "$@"
 }

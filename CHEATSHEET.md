@@ -66,11 +66,16 @@ Everything below comes from personal configuration (commits to this repo).
 | `prefix y` | Toggle synchronize-panes |
 | `prefix T` | Set/edit pane label |
 | `prefix P` | Open GitHub PR from pane label number (needs `GH_PR_BASE_URL`) |
+| `prefix C-s` | Save tmux state (`tmux-resurrect`) |
+| `prefix C-r` | Restore tmux state (`tmux-resurrect`) |
+| `prefix I` | Install tmux plugins (`tpm`) |
 | `C-z` | Toggle zoom (no prefix needed) |
 | `C-h/j/k/l` | Navigate between panes (no prefix) |
 | `S-Left / S-Right` | Previous / next window (no prefix) |
 | `C-p / C-n` | Previous / next window (no prefix) |
 | `C-S-Left / C-S-Right` | Reorder window left/right (no prefix) |
+
+`tmux-continuum` auto-saves in the background and auto-restores on tmux server start.
 
 **Copy mode (vi keys)**
 

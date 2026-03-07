@@ -61,6 +61,6 @@ Only apps:
 
 Run the automated script:
 
-- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --include-apps --bootstrap-macos`
-- `--include-apps` to install apps too.
+- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-apps`
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
+- `--include-apps` to install apps too.

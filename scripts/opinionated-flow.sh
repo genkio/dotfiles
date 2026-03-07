@@ -96,9 +96,10 @@ if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
   echo "Move it aside and run 'cd $DOTFILES_DIR && stow git' when you're ready."
 else
   stow git
-  if [[ ! -f "$HOME/.gitconfig.local" ]]; then
-    echo "Note: create ~/.gitconfig.local for your private Git identity."
-    echo "Example: $DOTFILES_DIR/git/.gitconfig.local.example"
+  if [[ ! -e "$HOME/.gitconfig.local" ]]; then
+    cp "$DOTFILES_DIR/git/.gitconfig.local.example" "$HOME/.gitconfig.local"
+    echo "Seeded ~/.gitconfig.local from $DOTFILES_DIR/git/.gitconfig.local.example"
+    echo "Edit ~/.gitconfig.local for your private Git identity."
   fi
 fi
 

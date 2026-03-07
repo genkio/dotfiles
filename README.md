@@ -30,8 +30,9 @@ Install stow:
 ## Git config
 
 - Shared Git settings live in `git/.gitconfig`.
-- Private identity lives in `git/.gitconfig.local` and is ignored by git.
-- Start from `git/.gitconfig.local.example`, then `cd ~/dotfiles && stow git`.
+- Private identity lives in `~/.gitconfig.local`.
+- `git/.gitconfig.local.example` is a template only; `stow git` does not symlink it into `$HOME`.
+- Copy `git/.gitconfig.local.example` to `~/.gitconfig.local`, or let `scripts/opinionated-flow.sh` seed it automatically.
 
 ## Remove symlinks
 

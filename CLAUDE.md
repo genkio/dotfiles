@@ -37,7 +37,7 @@ cd ~/dotfiles && stow -D zsh
 | Package | Target | Notes |
 |---------|--------|-------|
 | `brew` | `~/brew/` | Brewfiles |
-| `git` | `~/.gitconfig` | Shared Git config; private identity in `~/.gitconfig.local` |
+| `git` | `~/.gitconfig` | Shared Git config; private identity in machine-local `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
@@ -81,4 +81,4 @@ Examples from history:
 Local overrides not tracked by git go in:
 - `~/.zshrc.local` — sourced at end of .zshrc
 - `~/.local/bin/env` — sourced at end of .zshrc
-- `~/.gitconfig.local` — included from `.gitconfig` for private Git identity
+- `~/.gitconfig.local` — included from `.gitconfig` for private Git identity; seeded from `git/.gitconfig.local.example`, not stowed

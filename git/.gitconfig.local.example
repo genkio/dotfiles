@@ -1,5 +1,5 @@
-# Copy this file to git/.gitconfig.local and customize it for this machine.
-# The real git/.gitconfig.local is ignored by the repo and stowed to ~/.gitconfig.local.
+# Copy this file to ~/.gitconfig.local and customize it for this machine.
+# This template lives in the repo, but the real ~/.gitconfig.local stays machine-local.
 
 [user]
 	name = Your Name

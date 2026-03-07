@@ -1,3 +1,4 @@
+alias y="yazi"
 alias cc="claude"
 alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
 alias cx="codex"
@@ -24,9 +25,10 @@ alias ip="ipconfig getifaddr en0"
 alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
-alias hrc="vi ~/.zsh_history"
 alias src="source ~/.zshrc"
 alias vrc="vi ~/.zshrc"
+alias vhi="vi ~/.zsh_history"
+alias vrca="vi ~/.zsh_aliases"
 
 TMUX_DEFAULT_SESSION="tmp"
 

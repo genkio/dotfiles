@@ -184,7 +184,13 @@ Sessions auto-save on exit and auto-restore per directory when opening `nvim` wi
 | `q` | Open Yazi at Git root and reveal current file |
 | `<leader>cw` | Open Yazi in current working directory |
 | `z` (inside Yazi) | Fuzzy find from Git root; outside Git, fuzzy find from current Yazi dir |
+| `Z` (inside Yazi) | Jump to a recent directory via zoxide |
 | `/` (inside Yazi) | Search filenames in current view |
+| `f` (inside Yazi) | Filter files by name |
+| `S` (inside Yazi) | Search file contents with ripgrep |
+| `,` (inside Yazi) | Open sort options |
+| `s` / `M` (inside sort options) | Sort by size / modified time (descending) |
+| `c` (inside Yazi) | Open copy options |
 | Status bar | Shows hovered file size in footer |
 | Hidden files | Shown by default |
 | `F1` (inside Yazi) | Show Yazi key help |

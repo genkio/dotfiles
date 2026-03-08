@@ -66,17 +66,3 @@ Run the automated script:
 - `--include-apps` to install GUI apps too.
 - `--include-coding-agents` to install `claude-code` and `codex`, restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
 
-## Coding agents
-
-- `brew/Brewfile.coding-agents` installs the `claude-code` and `codex` Homebrew casks.
-- `scripts/setup-coding-agents.sh` installs those CLIs, then runs both restore scripts below.
-- `scripts/restore-claude-settings.sh` stows the shared Claude Code config into `~/.claude`.
-- `scripts/restore-codex-config.sh` copies `codex/.codex/config.toml.example` to `~/.codex/config.toml` if that file does not already exist.
-- Codex config is copied, not stowed, because Codex persists project trust and permission state into `~/.codex/config.toml`.
-
-## Yazi
-
-- `brew/Brewfile.base` installs `yazi`.
-- `stow yazi` links shared config into `~/.config/yazi` and `~/.config/yazi-mobile`.
-- Plain shell `yazi` uses `~/.config/yazi`.
-- `yazi.nvim` reuses the same shared config and switches to `~/.config/yazi-mobile` on narrow Neovim UIs.

@@ -1,5 +1,7 @@
 .nvimlog
 /.claude
+# Repo-local Codex state is intentionally untracked; use codex/.codex/config.toml.example
+/.codex/
 # Claude Code runtime state inside the package directory
 claude/.claude/**
 !claude/.claude/

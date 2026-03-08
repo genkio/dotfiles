@@ -26,11 +26,12 @@ cd ~/dotfiles && stow -D zsh
 - `brew/Brewfile` — meta file that sources both base and apps
 - `brew/Brewfile.base` — CLI tools (always installed)
 - `brew/Brewfile.apps` — GUI apps (opt-in with `--include-apps`)
+- `brew/Brewfile.coding-agents` — coding-agent CLIs (`claude-code`, `codex`) for the explicit `--include-coding-agents` flow
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `ghostty`. Pass `--include-coding-agents` to install `claude-code` and `codex`, stow `claude`, and seed `~/.codex/config.toml` from the tracked example when missing.
 
 ## Stow Packages
 
@@ -85,3 +86,4 @@ Local overrides not tracked by git go in:
 - `~/.zshrc.local` — sourced at end of .zshrc
 - `~/.local/bin/env` — sourced at end of .zshrc
 - `~/.gitconfig.local` — included from `.gitconfig` for private Git identity; seeded from `git/.gitconfig.local.example`, not stowed
+- `~/.codex/config.toml` — machine-local Codex config; seeded from `codex/.codex/config.toml.example`, not stowed, because Codex persists project trust and permission state there

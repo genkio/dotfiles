@@ -4,6 +4,7 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/genkio/dotfiles.git}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 INCLUDE_APPS=0
+INCLUDE_CODING_AGENTS=0
 BOOTSTRAP_MACOS=0
 
 while [[ $# -gt 0 ]]; do
@@ -11,11 +12,14 @@ while [[ $# -gt 0 ]]; do
     --include-apps)
       INCLUDE_APPS=1
       ;;
+    --include-coding-agents)
+      INCLUDE_CODING_AGENTS=1
+      ;;
     --bootstrap-macos)
       BOOTSTRAP_MACOS=1
       ;;
     -h|--help)
-      echo "Usage: $(basename "$0") [--include-apps] [--bootstrap-macos]"
+      echo "Usage: $(basename "$0") [--include-apps] [--include-coding-agents] [--bootstrap-macos]"
       exit 0
       ;;
     *)
@@ -56,7 +60,7 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 brew bundle --file brew/Brewfile.base
-stow brew lazygit nvim tmux yazi zsh
+stow -t "$HOME" brew lazygit nvim tmux yazi zsh
 
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 if [[ -d "$TPM_DIR/.git" ]]; then
@@ -95,7 +99,7 @@ if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
   echo "Skipping git stow: ~/.gitconfig already exists and is not a symlink."
   echo "Move it aside and run 'cd $DOTFILES_DIR && stow git' when you're ready."
 else
-  stow git
+  stow -t "$HOME" git
   if [[ ! -e "$HOME/.gitconfig.local" ]]; then
     cp "$DOTFILES_DIR/git/.gitconfig.local.example" "$HOME/.gitconfig.local"
     echo "Seeded ~/.gitconfig.local from $DOTFILES_DIR/git/.gitconfig.local.example"
@@ -105,7 +109,11 @@ fi
 
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
-  stow claude ghostty
+  stow -t "$HOME" ghostty
+fi
+
+if [[ "$INCLUDE_CODING_AGENTS" -eq 1 ]]; then
+  bash scripts/setup-coding-agents.sh
 fi
 
 if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then

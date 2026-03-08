@@ -1,0 +1,3 @@
+# Default Yazi profile for Neovim.
+[mgr]
+show_hidden = true

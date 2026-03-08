@@ -99,8 +99,8 @@ Everything below comes from personal configuration (commits to this repo).
 
 | Key | Action |
 |---|---|
-| `q` | Open netrw (file explorer) in current file's dir |
-| `%` (in netrw) | Open fzf file picker with bat preview |
+| `q` | Open Yazi at Git root and reveal current file (falls back to current dir outside Git) |
+| `<leader>cw` | Open Yazi in Neovim's current working directory |
 
 **Save & quit**
 
@@ -176,6 +176,22 @@ Sessions auto-save on exit and auto-restore per directory when opening `nvim` wi
 | Key | Action |
 |---|---|
 | `<leader>lg` | Open LazyGit |
+
+**Yazi (file manager)**
+
+| Key | Action |
+|---|---|
+| `q` | Open Yazi at Git root and reveal current file |
+| `<leader>cw` | Open Yazi in current working directory |
+| `z` (inside Yazi) | Fuzzy find from Git root; outside Git, fuzzy find from current Yazi dir |
+| `/` (inside Yazi) | Search filenames in current view |
+| Hidden files | Shown by default |
+| `F1` (inside Yazi) | Show Yazi key help |
+| `C-v` / `C-x` / `C-t` (inside Yazi) | Open selected file in vsplit / hsplit / tab |
+| `C-q` (inside Yazi) | Send selected files to quickfix |
+| `C-\` (inside Yazi) | Change Neovim cwd to Yazi's current directory |
+
+On narrow UIs, Yazi switches to a mobile profile with a single main column.
 
 **Diffview (PR diff / history)**
 

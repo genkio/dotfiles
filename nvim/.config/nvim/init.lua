@@ -93,9 +93,6 @@ vim.g.maplocalleader = ' '
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = false
 
--- Forces Vim’s CWD to stay in sync with whichever directory you are browsing in Netrw.
-vim.g.netrw_keepdir = 0
-
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!

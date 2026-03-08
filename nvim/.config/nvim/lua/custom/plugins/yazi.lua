@@ -1,7 +1,10 @@
 local mobile_width_breakpoint = 100
 
 local function yazi_config_home(profile)
-  return vim.fn.stdpath('config') .. '/yazi/' .. profile
+  local xdg_config_home = vim.fs.dirname(vim.fn.stdpath('config'))
+  local name = profile == 'mobile' and 'yazi-mobile' or 'yazi'
+
+  return xdg_config_home .. '/' .. name
 end
 
 local function use_mobile_profile()

@@ -56,7 +56,7 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 brew bundle --file brew/Brewfile.base
-stow brew lazygit nvim tmux zsh
+stow brew lazygit nvim tmux yazi zsh
 
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 if [[ -d "$TPM_DIR/.git" ]]; then

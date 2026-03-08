@@ -185,6 +185,7 @@ Sessions auto-save on exit and auto-restore per directory when opening `nvim` wi
 | `<leader>cw` | Open Yazi in current working directory |
 | `z` (inside Yazi) | Fuzzy find from Git root; outside Git, fuzzy find from current Yazi dir |
 | `/` (inside Yazi) | Search filenames in current view |
+| Status bar | Shows hovered file size in footer |
 | Hidden files | Shown by default |
 | `F1` (inside Yazi) | Show Yazi key help |
 | `C-v` / `C-x` / `C-t` (inside Yazi) | Open selected file in vsplit / hsplit / tab |

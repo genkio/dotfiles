@@ -1,3 +1,4 @@
 # Default Yazi profile for Neovim.
 [mgr]
 show_hidden = true
+ratio = [0, 2, 3]

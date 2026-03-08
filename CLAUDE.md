@@ -30,7 +30,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `claude ghostty`.
 
 ## Stow Packages
 
@@ -41,6 +41,7 @@ cd ~/dotfiles && stow -D zsh
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
+| `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `lazygit` | `~/.config/lazygit/` + `~/bin/` | Custom OSC52 clipboard |
 | `claude` | `~/.claude/` | Claude Code settings + statusline |
@@ -56,6 +57,8 @@ Based on kickstart.nvim. Single-file core at `nvim/.config/nvim/init.lua` (~48k)
 - `plugins/` — additional lazy.nvim plugin specs (aerial, auto-session, gitsigns extensions, lazygit, snacks-gh, etc.)
 
 Plugin specs in `lua/kickstart/plugins/` are the upstream kickstart extras (gitsigns, debug, lint, neo-tree, etc.).
+
+Yazi config is stowed separately under `yazi/.config/`. The Neovim integration in `lua/custom/plugins/yazi.lua` points at the shared `~/.config/yazi` and `~/.config/yazi-mobile` homes so plain shell `yazi` and `yazi.nvim` share behavior.
 
 ## Clipboard / OSC52
 

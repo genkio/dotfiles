@@ -26,6 +26,7 @@ Install stow:
 - `stow vim` or `stow git`
 - Or everything: `stow */`
 - Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
+- Yazi: `stow yazi`
 
 ## Git config
 
@@ -59,3 +60,10 @@ Run the automated script:
 - `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-apps`
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - `--include-apps` to install apps too.
+
+## Yazi
+
+- `brew/Brewfile.base` installs `yazi`.
+- `stow yazi` links shared config into `~/.config/yazi` and `~/.config/yazi-mobile`.
+- Plain shell `yazi` uses `~/.config/yazi`.
+- `yazi.nvim` reuses the same shared config and switches to `~/.config/yazi-mobile` on narrow Neovim UIs.

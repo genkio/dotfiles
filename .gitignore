@@ -1,6 +1,6 @@
 .nvimlog
-.claude
-# Claude Code stow package - track only selected files
+/.claude
+# Claude Code runtime state inside the package directory
 claude/.claude/**
 !claude/.claude/
 !claude/.claude/settings.json

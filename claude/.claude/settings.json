@@ -30,5 +30,13 @@
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "outputStyle": "Explanatory",
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": true,
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  }
 }

@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_URL="${REPO_URL:-https://github.com/genkio/dotfiles.git}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 INCLUDE_APPS=0
-INCLUDE_CODING_AGENTS=0
+INCLUDE_DEV=0
 BOOTSTRAP_MACOS=0
 
 while [[ $# -gt 0 ]]; do
@@ -12,14 +12,14 @@ while [[ $# -gt 0 ]]; do
     --include-apps)
       INCLUDE_APPS=1
       ;;
-    --include-coding-agents)
-      INCLUDE_CODING_AGENTS=1
+    --include-dev)
+      INCLUDE_DEV=1
       ;;
     --bootstrap-macos)
       BOOTSTRAP_MACOS=1
       ;;
     -h|--help)
-      echo "Usage: $(basename "$0") [--include-apps] [--include-coding-agents] [--bootstrap-macos]"
+      echo "Usage: $(basename "$0") [--include-apps] [--include-dev] [--bootstrap-macos]"
       exit 0
       ;;
     *)
@@ -112,8 +112,8 @@ if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   stow -t "$HOME" ghostty
 fi
 
-if [[ "$INCLUDE_CODING_AGENTS" -eq 1 ]]; then
-  bash scripts/setup-coding-agents.sh
+if [[ "$INCLUDE_DEV" -eq 1 ]]; then
+  bash scripts/setup-dev.sh
 fi
 
 if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then

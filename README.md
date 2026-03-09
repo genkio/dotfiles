@@ -53,16 +53,16 @@ Only apps:
 
 - `brew bundle --file brew/Brewfile.apps`
 
-Only coding agents:
+Only dev tools:
 
-- `brew bundle --file brew/Brewfile.coding-agents`
+- `brew bundle --file brew/Brewfile.dev`
 
 ## Opinionated flow
 
 Run the automated script:
 
-- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-apps --include-coding-agents`
+- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-dev --include-apps`
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - `--include-apps` to install GUI apps too.
-- `--include-coding-agents` to install `claude-code` and `codex`, restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
+- `--include-dev` to install `claude-code` and `codex`, restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
 

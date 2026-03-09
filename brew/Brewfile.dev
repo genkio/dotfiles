@@ -1,2 +1,11 @@
+brew "awscli"
+brew "gh"
+brew "git-delta"
+brew "gnupg"
+brew "lazydocker"
+brew "lazygit"
+
 cask "claude-code"
 cask "codex"
+cask "docker-desktop"
+cask "ghostty"

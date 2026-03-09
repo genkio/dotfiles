@@ -1,6 +1,5 @@
 cask "aldente"
 cask "brave-browser"
-cask "ghostty"
 cask "iina"
 cask "jordanbaird-ice"
 cask "kap"
@@ -13,5 +12,4 @@ cask "sublime-text"
 cask "tableplus"
 
 # password required
-cask "docker-desktop"
 cask "homerow"

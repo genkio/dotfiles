@@ -60,7 +60,8 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 brew bundle --file brew/Brewfile.base
-stow -t "$HOME" brew lazygit nvim tmux yazi zsh
+sudo brew services start tailscale
+stow -t "$HOME" brew nvim tmux yazi zsh
 
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 if [[ -d "$TPM_DIR/.git" ]]; then
@@ -109,7 +110,6 @@ fi
 
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
-  stow -t "$HOME" ghostty
 fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then

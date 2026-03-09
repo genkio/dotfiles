@@ -26,12 +26,12 @@ cd ~/dotfiles && stow -D zsh
 - `brew/Brewfile` — meta file that sources both base and apps
 - `brew/Brewfile.base` — CLI tools (always installed)
 - `brew/Brewfile.apps` — GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` — dev tools (`claude-code`, `codex`) for the explicit `--include-dev` flow
+- `brew/Brewfile.dev` — dev tools (ghostty, docker, lazygit, gh, claude-code, codex, etc.) for the explicit `--include-dev` flow; version managers (volta, pyenv, bun, rust, sdkman) are installed via official curl installers in `setup-dev.sh`
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git lazygit nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to also install GUI apps and stow `ghostty`. Pass `--include-dev` to install `claude-code` and `codex`, stow `claude`, and seed `~/.codex/config.toml` from the tracked example when missing.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps. Pass `--include-dev` to install dev tools (ghostty, lazygit, docker, claude-code, codex, version managers, etc.), stow `ghostty`, `lazygit`, and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing.
 
 ## Stow Packages
 

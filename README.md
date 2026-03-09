@@ -64,5 +64,5 @@ Run the automated script:
 - `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-dev --include-apps`
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - `--include-apps` to install GUI apps too.
-- `--include-dev` to install `claude-code` and `codex`, restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
+- `--include-dev` to install dev tools (lazygit, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
 

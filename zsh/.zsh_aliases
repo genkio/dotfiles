@@ -1,7 +1,10 @@
 alias y="yazi"
 alias cc="claude"
-alias cct="npx -y @mariozechner/claude-trace --claude-path '$(volta which claude)'"
 alias cx="codex"
+
+cct() {
+  npx -y @mariozechner/claude-trace --claude-path "$(command -v claude)" "$@"
+}
 
 alias lg="lazygit"
 alias ld="lazydocker"

@@ -29,14 +29,14 @@
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
-  "outputStyle": "Explanatory",
-  "alwaysThinkingEnabled": true,
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
       "source": {
-        "source": "github",
-        "repo": "anthropics/claude-plugins-official"
+        "source": "git",
+        "url": "https://github.com/anthropics/claude-plugins-official.git"
       }
     }
-  }
+  },
+  "outputStyle": "Explanatory",
+  "alwaysThinkingEnabled": true
 }

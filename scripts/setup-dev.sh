@@ -34,12 +34,6 @@ PYTHON_LATEST=$(pyenv install --list | grep -E '^\s*3\.[0-9]+\.[0-9]+$' | tail -
 pyenv install -s "$PYTHON_LATEST"
 pyenv global "$PYTHON_LATEST"
 
-# Install Bun (JavaScript runtime)
-export BUN_INSTALL="$HOME/.bun"
-if [[ ! -x "$BUN_INSTALL/bin/bun" ]]; then
-  curl -fsSL https://bun.sh/install | bash
-fi
-
 # Install Rust via rustup
 if [[ ! -d "$HOME/.cargo" ]]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path

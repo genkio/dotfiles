@@ -26,7 +26,7 @@ cd ~/dotfiles && stow -D zsh
 - `brew/Brewfile` — meta file that sources both base and apps
 - `brew/Brewfile.base` — CLI tools (always installed)
 - `brew/Brewfile.apps` — GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` — dev tools (ghostty, docker, lazygit, gh, claude-code, codex, etc.) for the explicit `--include-dev` flow; version managers (volta, pyenv, bun, rust, sdkman) are installed via official curl installers in `setup-dev.sh`
+- `brew/Brewfile.dev` — dev tools (ghostty, docker, lazygit, gh, bun, claude-code, codex, etc.) for the explicit `--include-dev` flow; remaining version managers (volta, pyenv, rust, sdkman) are installed via official curl installers in `setup-dev.sh`
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup

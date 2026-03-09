@@ -1,4 +1,5 @@
 brew "awscli"
+brew "oven-sh/bun/bun"
 brew "gh"
 brew "git-delta"
 brew "gnupg"

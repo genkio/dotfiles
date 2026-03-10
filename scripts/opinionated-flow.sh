@@ -31,7 +31,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -d "$DOTFILES_DIR/.git" ]]; then
-  echo "Using existing repo at $DOTFILES_DIR"
+  if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Using existing repo at $DOTFILES_DIR"
+  else
+    echo "Error: $DOTFILES_DIR looks like a git repo, but it is incomplete or corrupt." >&2
+    echo "Remove it and rerun the bootstrap." >&2
+    exit 1
+  fi
 else
   if [[ -e "$DOTFILES_DIR" ]]; then
     echo "Error: $DOTFILES_DIR exists but is not a git repo." >&2

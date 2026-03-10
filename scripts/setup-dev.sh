@@ -17,32 +17,32 @@ stow -t "$HOME" ghostty lazygit
 
 # Install Volta (Node version manager)
 export VOLTA_HOME="$HOME/.volta"
-if [[ ! -d "$VOLTA_HOME" ]]; then
+export PATH="$VOLTA_HOME/bin:$PATH"
+if ! command -v volta >/dev/null 2>&1; then
   curl https://get.volta.sh | bash -s -- --skip-setup
 fi
-export PATH="$VOLTA_HOME/bin:$PATH"
 volta install node
 
 # Install pyenv (Python version manager)
 export PYENV_ROOT="$HOME/.pyenv"
-if [[ ! -d "$PYENV_ROOT" ]]; then
+export PATH="$PYENV_ROOT/bin:$PATH"
+if ! command -v pyenv >/dev/null 2>&1; then
   curl -fsSL https://pyenv.run | bash
 fi
-export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 PYTHON_LATEST=$(pyenv install --list | grep -E '^\s*3\.[0-9]+\.[0-9]+$' | tail -1 | tr -d ' ')
 pyenv install -s "$PYTHON_LATEST"
 pyenv global "$PYTHON_LATEST"
 
 # Install Rust via rustup
-if [[ ! -d "$HOME/.cargo" ]]; then
+export PATH="$HOME/.cargo/bin:$PATH"
+if ! command -v rustup >/dev/null 2>&1; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
 fi
-export PATH="$HOME/.cargo/bin:$PATH"
 
 # Install SDKMAN (JDK version manager)
 export SDKMAN_DIR="$HOME/.sdkman"
-if [[ ! -d "$SDKMAN_DIR" ]]; then
+if [[ ! -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
   curl -s "https://get.sdkman.io?rcupdate=false" | bash
 fi
 

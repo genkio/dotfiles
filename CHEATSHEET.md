@@ -171,6 +171,14 @@ Sessions auto-save on exit and auto-restore per directory when opening `nvim` wi
 
 **Autotag** - Auto-closes and auto-renames HTML/XML tags in insert mode.
 
+**Flash**
+
+| Key | Action |
+|---|---|
+| `s` | Jump to visible text in normal, visual, or operator-pending mode |
+
+Usage: press `s`, type one or two characters from the target, then press the label shown on screen. This replaces Vim's built-in `s` substitute mapping.
+
 **LazyGit**
 
 | Key | Action |

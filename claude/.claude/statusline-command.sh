@@ -268,23 +268,19 @@ if [[ "$STATUSLINE_MODE" == "advanced" ]]; then
     usage_info=$(get_usage_info 2>/dev/null || echo "")
 fi
 
-if [[ -n "$usage_info" ]]; then
-    # First line: model/tokens/usage summary
-    printf "%s · %dk/%dk (%s%%) · %s" \
-        "$model_id" "$total_k" "$context_k" "$used_percent" "$usage_info"
-else
-    # First line fallback without usage info
-    printf "%s · %dk/%dk (%s%%)" \
-        "$model_id" "$total_k" "$context_k" "$used_percent"
-fi
+# First line: model/tokens plus local repo context
+printf "%s · %dk/%dk (%s%%) · %s" \
+    "$model_id" "$total_k" "$context_k" "$used_percent" "$cwd_display"
 
-# Second line: cwd, branch, and optional changes
 if [[ -n "$git_branch" ]]; then
     if [[ -n "$git_changes" ]]; then
-        printf "\n%s · %s · (%s)" "$cwd_display" "$git_branch" "$git_changes"
+        printf " · %s · (%s)" "$git_branch" "$git_changes"
     else
-        printf "\n%s · %s" "$cwd_display" "$git_branch"
+        printf " · %s" "$git_branch"
     fi
-else
-    printf "\n%s" "$cwd_display"
+fi
+
+# Second line: usage info only when available in advanced mode
+if [[ -n "$usage_info" ]]; then
+    printf "\n%s" "$usage_info"
 fi

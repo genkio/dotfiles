@@ -5,6 +5,12 @@
 set -euo pipefail
 
 # === Configuration ===
+# Change to "basic" to disable usage API fetches.
+# Modes:
+#   basic    = only local/statusline data, no network usage fetch
+#   advanced = current behavior, including cached/API usage stats
+STATUSLINE_MODE="${CLAUDE_STATUSLINE_MODE:-basic}"
+
 CREDENTIALS_FILE="$HOME/.claude/.credentials.json"
 KEYCHAIN_SERVICE="Claude Code-credentials"
 API_URL="https://api.anthropic.com/api/oauth/usage"
@@ -13,6 +19,11 @@ CACHE_FILE="/tmp/claude_usage_cache.json"
 LOCK_FILE="/tmp/claude_usage_lock"
 CACHE_TTL=180   # 3 minutes - cache valid time
 LOCK_TTL=30     # 30 seconds - rate limit between API calls
+
+case "$STATUSLINE_MODE" in
+    basic|advanced) ;;
+    *) STATUSLINE_MODE="advanced" ;;
+esac
 
 # === Read context from Claude Code (stdin) ===
 input=$(cat)
@@ -251,8 +262,11 @@ get_usage_info() {
 
 # === Build Output ===
 
-# Get usage info (may fail silently)
-usage_info=$(get_usage_info 2>/dev/null || echo "")
+# Get usage info in advanced mode only (may fail silently)
+usage_info=""
+if [[ "$STATUSLINE_MODE" == "advanced" ]]; then
+    usage_info=$(get_usage_info 2>/dev/null || echo "")
+fi
 
 if [[ -n "$usage_info" ]]; then
     # First line: model/tokens/usage summary

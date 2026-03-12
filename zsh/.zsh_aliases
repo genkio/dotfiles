@@ -77,6 +77,44 @@ gcom() {
   git checkout "${target#origin/}"
 }
 alias gcof="git checkout -f && git clean -df"
+# git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
+gwto() {
+  if [[ $# -ne 1 ]]; then
+    echo "usage: gwto <branch>" >&2
+    return 1
+  fi
+
+  local branch="$1"
+  local repo_root project_name parent_dir target_dir
+
+  repo_root=$(git rev-parse --show-toplevel) || return
+  project_name=$(basename "$repo_root") || return
+  parent_dir=$(dirname "$repo_root") || return
+  target_dir="$parent_dir/$project_name-$branch"
+
+  git fetch origin "$branch" || return
+  git worktree add --track -b "$branch" "$target_dir" "origin/$branch"
+}
+
+# git worktree remove -f ../<project>-<branch> && git branch -d <branch>
+gwtd() {
+  if [[ $# -ne 1 ]]; then
+    echo "usage: gwtd <branch>" >&2
+    return 1
+  fi
+
+  local branch="$1"
+  local repo_root project_name parent_dir target_dir
+
+  repo_root=$(git rev-parse --show-toplevel) || return
+  project_name=$(basename "$repo_root") || return
+  parent_dir=$(dirname "$repo_root") || return
+  target_dir="$parent_dir/$project_name-$branch"
+
+  git worktree remove -f "$target_dir" || return
+  git branch -d "$branch"
+}
+
 # list 10 most recent branches with commit dates
 alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"
 

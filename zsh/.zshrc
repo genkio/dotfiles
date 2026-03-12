@@ -31,6 +31,27 @@ setopt HIST_REDUCE_BLANKS
 setopt HIST_SAVE_NO_DUPS
 setopt HIST_EXPIRE_DUPS_FIRST
 
+add-history-space() {
+  [[ $BUFFER == ' '* ]] && return
+
+  BUFFER=" $BUFFER"
+  (( CURSOR++ ))
+}
+
+remove-history-space() {
+  [[ $BUFFER != ' '* ]] && return
+
+  BUFFER="${BUFFER# }"
+  (( CURSOR > 0 )) && (( CURSOR-- ))
+}
+
+zle -N add-history-space
+zle -N remove-history-space
+bindkey -M viins '^[a' add-history-space
+bindkey -M emacs '^[a' add-history-space
+bindkey -M viins '^[d' remove-history-space
+bindkey -M emacs '^[d' remove-history-space
+
 # Machine-specific env / config (not tracked by git)
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

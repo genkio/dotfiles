@@ -14,15 +14,24 @@ Everything below comes from personal configuration (commits to this repo).
 | Alias / Fn | Expands To |
 |---|---|
 | `vi` / `vi <file>` | `nvim .` / `nvim <file>` |
+| `y` | `yazi` |
 | `cc` | `claude` |
 | `cx` | `codex` |
+| `cct` | Run Claude with `claude-trace` |
 | `lg` | `lazygit` |
 | `ld` | `lazydocker` |
 | `cl` | `clear` |
+| `ex` | `exit` |
+| `ff` | `fastfetch` |
 | `ls` | `eza --group-directories-first` |
 | `ll` | `eza --group-directories-first --all -lh` |
 | `lt` | `eza --group-directories-first --tree --level=2 --icons` |
 | `ip` | `ipconfig getifaddr en0` |
+| `cp1` | Copy the last command to clipboard |
+| `src` | `source ~/.zshrc` |
+| `vrc` | Open `~/.zshrc` |
+| `vhi` | Open `~/.zsh_history` |
+| `vrca` | Open `~/.zsh_aliases` |
 
 **Tmux helpers**
 
@@ -30,21 +39,35 @@ Everything below comes from personal configuration (commits to this repo).
 |---|---|
 | `tx` | Attach or create default tmux session (`tmp`) |
 | `tx <name>` | Attach to named session |
+| `txk [name]` | Kill named session, defaulting to `tmp` |
 | `txp <profile>` | `tmuxp load -y <profile>` |
 | `txl` | `tmux ls` |
 | `ssh` | SSH with `TERM=xterm-256color` (wrapper) |
 | `ssht <host>` | SSH + auto-attach tmux on remote |
+
+**Tailscale helpers**
+
+| Command | What it does |
+|---|---|
+| `fsend <machine> <file...>` | Send files with Tailscale file transfer |
+| `fget [dir]` | Pull waiting Tailscale files into `dir` or `~/Downloads/` |
 
 **Git shortcuts**
 
 | Alias / Fn | What it does |
 |---|---|
 | `gs` | `git status` |
+| `gsh` | `git stash` |
+| `gshp` | `git stash pop` |
 | `glo` | `git log --pretty --oneline -5` |
-| `gad` | `git add .` |
+| `ga` | `git add` |
+| `gaa` | `git add .` |
+| `gau` | `git restore --staged .` |
+| `gd` | `git diff` |
 | `gco` | `git checkout` |
+| `gcof` | `git checkout -f && git clean -df` |
+| `gcom` | Checkout the `origin` default branch |
 | `gbr` | 10 most recent branches with dates |
-| `gst` | List staged file names |
 | `gcm <msg>` | `git commit -m "<msg>"` |
 | `gpl` | Pull current branch from origin |
 | `gpu` | Push current branch to origin |

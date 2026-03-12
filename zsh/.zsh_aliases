@@ -66,6 +66,16 @@ alias gau="git restore --staged ."
 alias gd="git diff"
 
 alias gco="git checkout"
+gcom() {
+  local target
+
+  target=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || {
+    echo "gcom: origin/HEAD is not set for this repo" >&2
+    return 1
+  }
+
+  git checkout "${target#origin/}"
+}
 alias gcof="git checkout -f && git clean -df"
 # list 10 most recent branches with commit dates
 alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"

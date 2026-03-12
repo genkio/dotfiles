@@ -67,6 +67,7 @@ Everything below comes from personal configuration (commits to this repo).
 | `gco` | `git checkout` |
 | `gcof` | `git checkout -f && git clean -df` |
 | `gcom` | Checkout the `origin` default branch |
+| `grb` | Rebase onto the `origin` default branch |
 | `gbr` | 10 most recent branches with dates |
 | `gcm <msg>` | `git commit -m "<msg>"` |
 | `gpl` | Pull current branch from origin |

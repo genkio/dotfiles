@@ -38,9 +38,9 @@ grb() {
 }
 
 # git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
-gwto() {
+gwta() {
   if [[ $# -ne 1 ]]; then
-    echo "usage: gwto <branch>" >&2
+    echo "usage: gwta <branch>" >&2
     return 1
   fi
 
@@ -57,9 +57,9 @@ gwto() {
 }
 
 # git worktree remove -f ../<project>-<branch> && git branch -d <branch>
-gwtd() {
+gwtr() {
   if [[ $# -ne 1 ]]; then
-    echo "usage: gwtd <branch>" >&2
+    echo "usage: gwtr <branch>" >&2
     return 1
   fi
 

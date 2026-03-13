@@ -30,7 +30,7 @@ alias txp="tmuxp load -y"
 alias txl="tmux ls"
 alias src="source ~/.zshrc"
 alias vrc="vi ~/.zshrc"
-alias vhi="vi ~/.zsh_history"
+alias vrch="vi ~/.zsh_history"
 alias vrca="vi ~/.zsh_aliases"
 
 TMUX_DEFAULT_SESSION="tmp"

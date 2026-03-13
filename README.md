@@ -24,16 +24,9 @@ Install stow:
 
 - `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
 - `stow vim` or `stow git`
-- Or everything: `stow */`
+- Or everything after creating `~/.ssh`: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow */`
 - Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
 - Yazi: `stow yazi`
-
-## Git config
-
-- Shared Git settings live in `git/.gitconfig`.
-- Private identity lives in `~/.gitconfig.local`.
-- `git/.gitconfig.local.example` is a template only; `stow git` does not symlink it into `$HOME`.
-- Copy `git/.gitconfig.local.example` to `~/.gitconfig.local`, or let `scripts/opinionated-flow.sh` seed it automatically.
 
 ## Remove symlinks
 
@@ -62,7 +55,7 @@ Only dev tools:
 Run the automated script:
 
 - `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-dev --include-apps`
+- The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - `--include-apps` to install GUI apps too.
 - `--include-dev` to install dev tools (lazygit, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
-

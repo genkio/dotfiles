@@ -69,6 +69,15 @@ brew bundle --file brew/Brewfile.base
 sudo brew services start tailscale
 stow -t "$HOME" brew nvim tmux yazi zsh
 
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+if [[ -e "$HOME/.ssh/config" && ! -L "$HOME/.ssh/config" ]]; then
+  echo "Skipping ssh stow: ~/.ssh/config already exists and is not a symlink."
+  echo "Move it aside and run 'cd $DOTFILES_DIR && stow ssh' when you're ready."
+else
+  stow -t "$HOME" ssh
+fi
+
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 if [[ -d "$TPM_DIR/.git" ]]; then
   echo "TPM already installed at $TPM_DIR"

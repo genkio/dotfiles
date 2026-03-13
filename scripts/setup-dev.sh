@@ -40,12 +40,6 @@ if ! command -v rustup >/dev/null 2>&1; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
 fi
 
-# Install SDKMAN (JDK version manager)
-export SDKMAN_DIR="$HOME/.sdkman"
-if [[ ! -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
-  curl -s "https://get.sdkman.io?rcupdate=false" | bash
-fi
-
 # Restore Claude Code settings
 bash scripts/restore-claude-settings.sh
 

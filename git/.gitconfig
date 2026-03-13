@@ -8,10 +8,6 @@
 [delta]
 	navigate = true
 	dark = true
-[commit]
-	gpgsign = true
-[gpg]
-	program = gpg
 [merge]
 	conflictStyle = zdiff3
 [include]

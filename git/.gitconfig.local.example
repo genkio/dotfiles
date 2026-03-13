@@ -5,3 +5,7 @@
 	name = Your Name
 	email = you@example.com
 	signingkey = YOURKEYID
+[commit]
+	gpgsign = true
+[gpg]
+	program = gpg

@@ -1,10 +1,15 @@
 alias y="yazi"
-alias cc="claude"
-alias cx="codex"
-
-cct() {
-  npx -y @mariozechner/claude-trace --claude-path "$(command -v claude)" "$@"
+cc() {
+  if [[ $# -eq 0 ]]; then
+    claude
+  elif [[ "$1" == -* ]]; then
+    claude "$@"
+  else
+    claude -n "$*"
+  fi
 }
+
+alias cx="codex"
 
 alias lg="lazygit"
 alias ld="lazydocker"

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). Each top-level directory is a stow package — running `stow <package>` from `~/dotfiles` symlinks its contents into `$HOME`.
+Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). Most tool directories are stow packages, but this repo should use explicit package commands instead of `stow */` because `claude` and `codex` need special handling.
 
 ## Stow Commands
 
@@ -12,8 +12,13 @@ Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). E
 # Apply a single package (e.g. zsh config)
 cd ~/dotfiles && stow zsh
 
-# Apply all packages
-cd ~/dotfiles && stow */
+# Apply the core packages
+cd ~/dotfiles && stow brew git nvim tmux yazi zsh ssh
+
+# Apply optional dev packages
+cd ~/dotfiles && stow ghostty lazygit
+cd ~/dotfiles && bash scripts/restore-claude-settings.sh
+cd ~/dotfiles && bash scripts/restore-codex-config.sh
 
 # Remove symlinks for a package
 cd ~/dotfiles && stow -D zsh
@@ -45,7 +50,7 @@ cd ~/dotfiles && stow -D zsh
 | `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `lazygit` | `~/.config/lazygit/` + `~/bin/` | Custom OSC52 clipboard |
-| `claude` | `~/.claude/` | Claude Code settings + statusline |
+| `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; only `settings.json` and `statusline-command.sh` are linked |
 | `opencode` | `~/.config/opencode/` | OpenCode config |
 | `vim` | `~/.vimrc` | Legacy vim config |
 | `iterm2` | — | Empty/placeholder |

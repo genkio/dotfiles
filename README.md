@@ -24,7 +24,8 @@ Install stow:
 
 - `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
 - `stow vim` or `stow git`
-- Or everything after creating `~/.ssh`: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow */`
+- Core packages: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow brew git nvim tmux yazi zsh ssh`
+- Optional dev packages: `stow ghostty lazygit && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
 - Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
 - Yazi: `stow yazi`
 

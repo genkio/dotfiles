@@ -162,6 +162,10 @@ echo "Hot Corners: Bottom-left to Lock Screen"
 defaults write com.apple.dock wvous-bl-corner -int 13
 defaults write com.apple.dock wvous-bl-modifier -int 0
 
+echo "Hot Corners: Upper-right to Notification Center"
+defaults write com.apple.dock wvous-tr-corner -int 12
+defaults write com.apple.dock wvous-tr-modifier -int 0
+
 ###############################################################################
 # Power
 ###############################################################################

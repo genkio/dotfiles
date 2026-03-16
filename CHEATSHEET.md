@@ -26,6 +26,7 @@ Everything below comes from personal configuration (commits to this repo).
 | `ls` | `eza --group-directories-first` |
 | `ll` | `eza --group-directories-first --all -lh` |
 | `lt` | `eza --group-directories-first --tree --level=2 --icons` |
+| `lti` | `eza --group-directories-first --all --tree --icons` |
 | `ip` | `ipconfig getifaddr en0` |
 | `cp1` | Copy the last command to clipboard |
 | `src` | `source ~/.zshrc` |

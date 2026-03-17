@@ -2,7 +2,9 @@ os:
   # Ensure lazygit pipes the text to our OSC52 helper (works in tmux + SSH, mirrors to pbcopy locally)
   copyToClipboardCmd: "$HOME/dotfiles/lazygit/bin/osc52-clip.sh {{text}}"
 gui:
+  enlargedSideViewLocation: top
   portraitMode: always
+  screenMode: half
   showCommandLog: false
 git:
   pagers:

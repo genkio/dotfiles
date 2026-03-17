@@ -156,6 +156,17 @@ Everything below comes from personal configuration (commits to this repo).
 | `<leader>dv` | Definition in vertical split |
 | `<leader>dh` | Definition in horizontal split |
 
+**Markdown vault navigation**
+
+Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `.obsidian/` or `logseq/config.edn`), `gd` and `gr` are repurposed for note navigation:
+
+| Key | Action |
+|---|---|
+| `gd` on `[[note]]` | Open the linked note |
+| `gd` on `#tag` | Open a matching tag page if one exists; otherwise search that tag in the current vault |
+| `gr` on a note page | Search backlinks to the current note in the current vault |
+| `gr` on `#tag` | Search references to that tag in the current vault |
+
 **Copy range**
 
 | Key | Action |

@@ -1212,6 +1212,7 @@ require('lazy').setup({
 
 -- Load custom keymaps
 require 'custom.keymaps'
+require 'custom.markdown_vault'.setup()
 
 -- Load custom scripts
 require 'custom.copy_range'

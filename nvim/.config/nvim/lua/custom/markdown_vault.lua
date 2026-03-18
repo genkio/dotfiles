@@ -37,29 +37,150 @@ local function file_exists(path)
   return vim.uv.fs_stat(path) ~= nil
 end
 
-local function escape_glob(text)
-  return (text:gsub('([%*%?%[%]%{%}\\, ])', '\\%1'))
+local markdown_file_cache = {}
+local markdown_file_cache_ttl_ms = 2000
+
+local function markdown_files(root)
+  local now = vim.uv.now()
+  local cached = markdown_file_cache[root]
+  if cached and now - cached.at < markdown_file_cache_ttl_ms then
+    return cached.paths
+  end
+
+  local paths = nil
+  if vim.fn.executable 'git' == 1 and file_exists(root .. '/.git') then
+    local result = vim.system({
+      'git',
+      '-C',
+      root,
+      'ls-files',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+    }, { text = true }):wait()
+
+    if result.code == 0 then
+      paths = {}
+      for relative in result.stdout:gmatch '[^\r\n]+' do
+        if relative:match '%.md$' then
+          table.insert(paths, vim.fs.normalize(root .. '/' .. relative))
+        end
+      end
+    end
+  end
+
+  if not paths then
+    paths = vim.fn.globpath(root, '**/*.md', false, true)
+  end
+
+  table.sort(paths)
+  markdown_file_cache[root] = {
+    at = now,
+    paths = paths,
+  }
+  return paths
 end
 
-local function note_matches(root, target)
-  local patterns = {}
-  local escaped = escape_glob(target)
+local function note_completion_items(root, with_closing)
+  local counts = {}
+  local notes = {}
 
-  if target:match '%.%w+$' then
-    patterns = {
-      '**/' .. escaped,
-    }
-  else
-    patterns = {
-      '**/' .. escaped .. '.md',
-      '**/' .. escaped .. '/index.md',
-    }
+  for _, path in ipairs(markdown_files(root)) do
+    local basename = vim.fn.fnamemodify(path, ':t:r')
+    local relative = (vim.fs.relpath(root, path) or path):gsub('%.md$', '')
+
+    counts[basename] = (counts[basename] or 0) + 1
+    table.insert(notes, {
+      basename = basename,
+      relative = relative,
+    })
+  end
+
+  local items = {}
+  for _, note in ipairs(notes) do
+    local word = counts[note.basename] == 1 and note.basename or note.relative
+    local display = counts[note.basename] == 1 and note.basename or note.relative
+    local menu = counts[note.basename] == 1 and note.relative ~= note.basename and note.relative or nil
+
+    table.insert(items, {
+      word = word .. (with_closing and ']]' or ''),
+      abbr = display,
+      menu = menu,
+      dup = 1,
+    })
+  end
+
+  return items
+end
+
+local function tag_completion_items(root)
+  local seen = {}
+
+  for _, path in ipairs(markdown_files(root)) do
+    for _, line in ipairs(vim.fn.readfile(path)) do
+      for tag in line:gmatch '#([%w][%w_/%-]*)' do
+        seen[tag] = true
+      end
+    end
+  end
+
+  local items = {}
+  for tag in pairs(seen) do
+    table.insert(items, {
+      word = tag,
+      abbr = '#' .. tag,
+      menu = 'tag',
+      dup = 1,
+    })
+  end
+
+  table.sort(items, function(a, b)
+    return a.word < b.word
+  end)
+
+  return items
+end
+
+local function note_matches(root, target, origin)
+  local files = markdown_files(root)
+  local allowed = {}
+
+  for _, path in ipairs(files) do
+    allowed[vim.fs.normalize(path)] = true
   end
 
   local matches = {}
-  for _, pattern in ipairs(patterns) do
-    for _, path in ipairs(vim.fn.globpath(root, pattern, false, true)) do
-      matches[path] = true
+  local function add_if_allowed(path)
+    local normalized = vim.fs.normalize(path)
+    if allowed[normalized] then
+      matches[normalized] = true
+    end
+  end
+
+  if target:sub(1, 1) == '/' then
+    local absolute = vim.fs.normalize(root .. target)
+    add_if_allowed(absolute)
+    if not absolute:match '%.%w+$' then
+      add_if_allowed(absolute .. '.md')
+      add_if_allowed(absolute .. '/index.md')
+    end
+  elseif target:find '/' then
+    local relative = vim.fs.normalize(vim.fs.dirname(origin) .. '/' .. target)
+    add_if_allowed(relative)
+    local rooted = vim.fs.normalize(root .. '/' .. target)
+    add_if_allowed(rooted)
+
+    if not target:match '%.%w+$' then
+      add_if_allowed(relative .. '.md')
+      add_if_allowed(relative .. '/index.md')
+      add_if_allowed(rooted .. '.md')
+      add_if_allowed(rooted .. '/index.md')
+    end
+  else
+    for _, path in ipairs(files) do
+      if vim.fn.fnamemodify(path, ':t:r') == target or vim.fn.fnamemodify(path, ':t') == target then
+        matches[path] = true
+      end
     end
   end
 
@@ -111,7 +232,7 @@ local function parse_tag()
   local init = 1
 
   while true do
-    local start_col, end_col = line:find('#[%w_/%-]+', init)
+    local start_col, end_col = line:find('#[%w][%w_/%-]*', init)
     if not start_col then
       return nil
     end
@@ -122,6 +243,47 @@ local function parse_tag()
 
     init = end_col + 1
   end
+end
+
+local function completion_context()
+  local path = vim.api.nvim_buf_get_name(0)
+  local root = detect_vault_root(path)
+
+  if not root then
+    return nil
+  end
+
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  local prefix = line:sub(1, col)
+
+  local note_start = prefix:find('%[%[[^%]]*$')
+  if note_start then
+    local has_closing = line:sub(col + 1, col + 2) == ']]'
+
+    return {
+      kind = 'note',
+      root = root,
+      start_col = note_start + 1,
+      with_closing = not has_closing,
+    }
+  end
+
+  local tag_start = prefix:find('#[%w_/%-]*$')
+  if tag_start then
+    local first = prefix:sub(tag_start + 1, tag_start + 1)
+    local prev = tag_start > 1 and prefix:sub(tag_start - 1, tag_start - 1) or ''
+
+    if (first == '' or first:match '%w') and (tag_start == 1 or prev:match '[%s%-%(%[]') then
+      return {
+        kind = 'tag',
+        root = root,
+        start_col = tag_start,
+      }
+    end
+  end
+
+  return nil
 end
 
 local function search_anchor(anchor)
@@ -168,7 +330,7 @@ local function resolve_target_path(target, origin, root)
     end
   end
 
-  return note_matches(root, target)
+  return note_matches(root, target, origin)
 end
 
 function M.follow_link()
@@ -318,6 +480,57 @@ function M.show_references()
   require('telescope.builtin').lsp_references()
 end
 
+function M.omnifunc(findstart, _)
+  local context = completion_context()
+
+  if not context then
+    return findstart == 1 and -2 or { words = {} }
+  end
+
+  if findstart == 1 then
+    return context.start_col
+  end
+
+  if context.kind == 'note' then
+    return { words = note_completion_items(context.root, context.with_closing) }
+  end
+
+  return { words = tag_completion_items(context.root) }
+end
+
+local function trigger_completion()
+  vim.schedule(function()
+    local ok, blink = pcall(require, 'blink.cmp')
+    if ok then
+      blink.show { providers = { 'omni' } }
+    end
+  end)
+end
+
+function M.insert_open_bracket()
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  local line = vim.api.nvim_get_current_line()
+  local previous = col > 0 and line:sub(col, col) or ''
+
+  if previous == '[' then
+    trigger_completion()
+  end
+
+  return '['
+end
+
+function M.insert_hash()
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  local line = vim.api.nvim_get_current_line()
+  local previous = col > 0 and line:sub(col, col) or ''
+
+  if col == 0 or previous:match '[%s%-%(%[]' then
+    trigger_completion()
+  end
+
+  return '#'
+end
+
 function M.setup()
   local group = vim.api.nvim_create_augroup('custom-markdown-vault', { clear = true })
 
@@ -331,6 +544,8 @@ function M.setup()
         return
       end
 
+      vim.bo[event.buf].omnifunc = "v:lua.require'custom.markdown_vault'.omnifunc"
+
       vim.keymap.set('n', 'gd', M.goto_definition, {
         buffer = event.buf,
         desc = 'Notes: Follow link',
@@ -338,6 +553,16 @@ function M.setup()
       vim.keymap.set('n', 'gr', M.show_references, {
         buffer = event.buf,
         desc = 'Notes: Find references',
+      })
+      vim.keymap.set('i', '[', M.insert_open_bracket, {
+        buffer = event.buf,
+        expr = true,
+        desc = 'Notes: Trigger wikilink completion',
+      })
+      vim.keymap.set('i', '#', M.insert_hash, {
+        buffer = event.buf,
+        expr = true,
+        desc = 'Notes: Trigger tag completion',
       })
     end,
   })

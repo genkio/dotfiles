@@ -166,6 +166,8 @@ Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `
 | `gd` on `#tag` | Open a matching tag page if one exists; otherwise search that tag in the current vault |
 | `gr` on a note page | Search backlinks to the current note in the current vault |
 | `gr` on `#tag` | Search references to that tag in the current vault |
+| Type `[[` | Open completion for linkable notes in the current vault |
+| Type `#` | Open completion for known tags in the current vault |
 
 **Copy range**
 

@@ -11,9 +11,13 @@ fi
 
 cd "$REPO_ROOT"
 
-# Install CLI tools via Homebrew
+# Install dev tools via Homebrew
 brew bundle --file brew/Brewfile.dev
 stow -t "$HOME" ghostty lazygit
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  defaults write wang.jianing.app.OpenInEditor-Lite LiteDefaultEditor Ghostty
+fi
 
 # Install Volta (Node version manager)
 export VOLTA_HOME="$HOME/.volta"

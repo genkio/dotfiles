@@ -5,10 +5,8 @@ cask "jordanbaird-ice"
 cask "kap"
 cask "keka"
 cask "monitorcontrol"
-cask "openinterminal-lite"
 cask "raycast"
 cask "shottr"
-cask "sublime-text"
 cask "tableplus"
 
 # password required

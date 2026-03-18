@@ -5,6 +5,8 @@ local root_markers = {
   'logseq/config.edn',
 }
 
+local obsidian_app_cache = {}
+
 local function detect_vault_root(path)
   if path == '' then
     return nil
@@ -35,6 +37,28 @@ end
 
 local function file_exists(path)
   return vim.uv.fs_stat(path) ~= nil
+end
+
+local function read_obsidian_app(root)
+  if obsidian_app_cache[root] ~= nil then
+    return obsidian_app_cache[root]
+  end
+
+  local path = root .. '/.obsidian/app.json'
+  if not file_exists(path) then
+    obsidian_app_cache[root] = nil
+    return nil
+  end
+
+  local lines = vim.fn.readfile(path)
+  local ok, decoded = pcall(vim.json.decode, table.concat(lines, '\n'))
+  if not ok or type(decoded) ~= 'table' then
+    obsidian_app_cache[root] = nil
+    return nil
+  end
+
+  obsidian_app_cache[root] = decoded
+  return decoded
 end
 
 local markdown_file_cache = {}
@@ -79,6 +103,10 @@ local function markdown_files(root)
     paths = paths,
   }
   return paths
+end
+
+local function escape_regex(text)
+  return (text:gsub('([%^%$%(%)%%%.%[%]%*%+%-%?])', '\\%1'))
 end
 
 local function note_completion_items(root, with_closing)
@@ -187,6 +215,37 @@ local function note_matches(root, target, origin)
   local paths = vim.tbl_keys(matches)
   table.sort(paths)
   return paths
+end
+
+local function default_note_dir(root, origin)
+  local app = read_obsidian_app(root)
+  if app and app.newFileLocation == 'folder' and type(app.newFileFolderPath) == 'string' and app.newFileFolderPath ~= '' then
+    return vim.fs.normalize(root .. '/' .. app.newFileFolderPath)
+  end
+
+  if app and app.newFileLocation == 'current' and origin ~= '' then
+    return vim.fs.dirname(origin)
+  end
+
+  return root
+end
+
+local function new_note_path(root, target, origin)
+  local path = nil
+
+  if target:sub(1, 1) == '/' then
+    path = vim.fs.normalize(root .. target)
+  elseif target:find '/' then
+    path = vim.fs.normalize(vim.fs.dirname(origin) .. '/' .. target)
+  else
+    path = vim.fs.normalize(default_note_dir(root, origin) .. '/' .. target)
+  end
+
+  if not path:match '%.%w+$' then
+    path = path .. '.md'
+  end
+
+  return path
 end
 
 local function parse_wikilink()
@@ -301,6 +360,15 @@ local function open_note(path, anchor)
   search_anchor(anchor)
 end
 
+local function create_note(path)
+  local dir = vim.fs.dirname(path)
+  vim.fn.mkdir(dir, 'p')
+
+  if not file_exists(path) then
+    vim.fn.writefile({}, path)
+  end
+end
+
 local function resolve_target_path(target, origin, root)
   if target:sub(1, 1) == '/' then
     local absolute = vim.fs.normalize(root .. target)
@@ -349,7 +417,9 @@ function M.follow_link()
 
   local matches = resolve_target_path(target, origin, root)
   if #matches == 0 then
-    vim.notify('No note found for [[' .. target .. ']]', vim.log.levels.WARN)
+    local path = new_note_path(root, target, origin)
+    create_note(path)
+    open_note(path, anchor)
     return true
   end
 
@@ -403,11 +473,21 @@ function M.find_tag_references(tag)
     return false
   end
 
-  require('telescope.builtin').grep_string {
+  local root_namespace = current_tag:match '^([^/]+)/[^/]+$'
+  local pattern = nil
+  local prompt_title = 'Tag: ' .. current_tag
+
+  if root_namespace then
+    pattern = ('(^|[^[:alnum:]_/-])#%s(/[[:alnum:]_-]+)?([^[:alnum:]_/-]|$)'):format(escape_regex(root_namespace))
+    prompt_title = 'Tag namespace: #' .. root_namespace
+  else
+    pattern = ('(^|[^[:alnum:]_/-])#%s([^[:alnum:]_/-]|$)'):format(escape_regex(current_tag))
+  end
+
+  require('telescope.builtin').live_grep {
     cwd = root,
-    search = '#' .. current_tag,
-    use_regex = false,
-    prompt_title = 'Tag: ' .. current_tag,
+    default_text = pattern,
+    prompt_title = prompt_title,
     additional_args = function()
       return { '--glob', '*.md' }
     end,
@@ -531,6 +611,10 @@ function M.insert_hash()
   return '#'
 end
 
+function M.insert_tab()
+  return '  '
+end
+
 function M.setup()
   local group = vim.api.nvim_create_augroup('custom-markdown-vault', { clear = true })
 
@@ -564,10 +648,16 @@ function M.setup()
         expr = true,
         desc = 'Notes: Trigger tag completion',
       })
+      vim.keymap.set('i', '<Tab>', M.insert_tab, {
+        buffer = event.buf,
+        expr = true,
+        desc = 'Notes: Insert two spaces',
+      })
     end,
   })
 end
 
 M._detect_vault_root = detect_vault_root
+M._new_note_path = new_note_path
 
 return M

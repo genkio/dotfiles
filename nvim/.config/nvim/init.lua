@@ -927,6 +927,13 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        markdown = function(bufnr)
+          local path = vim.api.nvim_buf_get_name(bufnr)
+          if require('custom.markdown_vault')._detect_vault_root(path) then
+            return { 'vault_markdown_indent' }
+          end
+          return {}
+        end,
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -935,6 +942,17 @@ require('lazy').setup({
         typescript = { 'prettier', 'prettierd', stop_after_first = true },
         javascriptreact = { 'prettier', 'prettierd', stop_after_first = true },
         typescriptreact = { 'prettier', 'prettierd', stop_after_first = true },
+      },
+      formatters = {
+        vault_markdown_indent = {
+          meta = {
+            url = 'local',
+            description = 'Normalize nested markdown bullet indentation in note vaults.',
+          },
+          format = function(_, _, lines, callback)
+            callback(nil, require('custom.vault_markdown_formatter').format_lines(lines))
+          end,
+        },
       },
     },
   },

@@ -162,12 +162,13 @@ Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `
 
 | Key | Action |
 |---|---|
-| `gd` on `[[note]]` | Open the linked note |
+| `gd` on `[[note]]` | Open the linked note, or create it in the vault's configured new-note folder if missing |
 | `gd` on `#tag` | Open a matching tag page if one exists; otherwise search that tag in the current vault |
 | `gr` on a note page | Search backlinks to the current note in the current vault |
 | `gr` on `#tag` | Search references to that tag in the current vault |
 | Type `[[` | Open completion for linkable notes in the current vault |
 | Type `#` | Open completion for known tags in the current vault |
+| `Tab` | Insert two spaces |
 
 **Copy range**
 
@@ -392,6 +393,8 @@ LSP also auto-highlights all references of the symbol under your cursor after a 
 |---|---|
 | `<leader>f` | Format buffer manually |
 | (on save) | Auto-formats on save (Lua: stylua, JS/TS/JSX/TSX: prettier) |
+
+In markdown note vaults, formatting currently normalizes nested bullet indentation so a child list item is at most one indent level deeper than its parent list item.
 
 Disable auto-format temporarily with `ZW` (custom) or set `vim.g.disable_autoformat = true`.
 

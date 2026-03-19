@@ -302,6 +302,7 @@ Inline blame is ON by default (current line).
 | `<leader>hd` | Diff against index |
 | `<leader>hD` | Diff against last commit |
 | `<leader>hm` | Diff against main/master |
+| `<leader>ho` | Open PR/commit for blamed line (GitHub: PR → commit fallback, Bitbucket: commit page) |
 | `<leader>tb` | Toggle inline blame |
 | `<leader>tD` | Toggle deleted lines preview |
 

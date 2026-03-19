@@ -103,6 +103,67 @@ return {
           end
           gitsigns.diffthis(base, { vertical = true })
         end, { desc = 'git diff against [m]ain/master' })
+        -- Open PR for blamed commit
+        map('n', '<leader>ho', function()
+          local blame = vim.b.gitsigns_blame_line_dict
+          if not blame or not blame.sha or blame.sha:match '^0+$' then
+            vim.notify('No blame info for this line (uncommitted?)', vim.log.levels.WARN)
+            return
+          end
+          local sha = blame.sha
+
+          -- Parse remote URL into a base web URL
+          local function get_remote_info()
+            local remote = vim.trim(vim.fn.system { 'git', 'remote', 'get-url', 'origin' }
+            )
+            if vim.v.shell_error ~= 0 or remote == '' then
+              return nil
+            end
+            -- Normalize SSH and HTTPS URLs to https://host/org/repo
+            local host, path
+            -- SSH: git@host:org/repo.git or ssh://git@host/org/repo.git
+            host, path = remote:match 'git@([^:]+):(.+)'
+            if not host then
+              host, path = remote:match 'ssh://[^@]*@([^/]+)/(.+)'
+            end
+            if not host then
+              host, path = remote:match 'https?://([^/]+)/(.+)'
+            end
+            if not host or not path then
+              return nil
+            end
+            path = path:gsub('%.git$', '')
+            local base_url = 'https://' .. host .. '/' .. path
+            local is_bitbucket = host:find 'bitbucket' ~= nil
+            return { base_url = base_url, is_bitbucket = is_bitbucket }
+          end
+
+          local remote_info = get_remote_info()
+
+          -- GitHub: try gh CLI for PR lookup first
+          if remote_info and not remote_info.is_bitbucket then
+            local pr_json = vim.fn.system { 'gh', 'pr', 'list', '--search', sha, '--state', 'merged', '--json', 'url', '--limit', '1' }
+            if vim.v.shell_error == 0 then
+              local ok, parsed = pcall(vim.json.decode, pr_json)
+              if ok and parsed and #parsed > 0 then
+                vim.ui.open(parsed[1].url)
+                return
+              end
+            end
+            -- Fallback: GitHub commit page
+            vim.ui.open(remote_info.base_url .. '/commit/' .. sha)
+            return
+          end
+
+          -- Bitbucket: construct commit URL directly
+          if remote_info and remote_info.is_bitbucket then
+            vim.ui.open(remote_info.base_url .. '/commits/' .. sha)
+            return
+          end
+
+          vim.notify('Could not determine remote URL for ' .. sha:sub(1, 8), vim.log.levels.WARN)
+        end, { desc = 'git [o]pen PR for blamed line' })
+
         -- Toggles
         map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
         map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = '[T]oggle git show [D]eleted' })

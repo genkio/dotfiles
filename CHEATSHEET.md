@@ -156,6 +156,19 @@ Everything below comes from personal configuration (commits to this repo).
 | `<leader>dv` | Definition in vertical split |
 | `<leader>dh` | Definition in horizontal split |
 
+**Inline send (LLM tmux bridge)**
+
+Send code references and messages to an LLM running in a sibling tmux pane.
+
+| Key | Mode | Action |
+|---|---|---|
+| `<leader>ie` | visual | Select code, open float with file reference |
+| `<leader>ie` | normal | Open empty float (no file reference) |
+| `<leader>is` | in float | Send message to tmux pane |
+| `q` / `<Esc>` | in float | Cancel and close |
+
+With 2 panes, auto-sends to the other pane. With 3+, shows a picker.
+
 **Markdown vault navigation**
 
 Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `.obsidian/` or `logseq/config.edn`), `gd` and `gr` are repurposed for note navigation:

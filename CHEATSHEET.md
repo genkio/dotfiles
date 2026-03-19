@@ -94,6 +94,7 @@ Everything below comes from personal configuration (commits to this repo).
 | `prefix C-s` | Save tmux state (`tmux-resurrect`) |
 | `prefix C-r` | Restore tmux state (`tmux-resurrect`) |
 | `prefix I` | Install tmux plugins (`tpm`) |
+| `prefix q` | Show pane index numbers (press a number to jump to that pane) |
 | `C-z` | Toggle zoom (no prefix needed) |
 | `C-h/j/k/l` | Navigate between panes (no prefix) |
 | `S-Left / S-Right` | Previous / next window (no prefix) |
@@ -257,6 +258,7 @@ Usage: press `s`, type one or two characters from the target, then press the lab
 | `C-v` / `C-x` / `C-t` (inside Yazi) | Open selected file in vsplit / hsplit / tab |
 | `C-q` (inside Yazi) | Send selected files to quickfix |
 | `C-\` (inside Yazi) | Change Neovim cwd to Yazi's current directory |
+| `Enter` (files pane) | Toggle the expansion or collapse of the selected directory |
 
 On narrow UIs, Yazi switches to a mobile profile with a single main column.
 

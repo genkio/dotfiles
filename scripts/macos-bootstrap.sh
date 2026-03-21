@@ -244,13 +244,6 @@ fi
 echo "Security: Enable Firewall"
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
 
-echo "Security: Enable FileVault"
-if sudo fdesetup status | grep -qi "FileVault is On"; then
-  echo "  FileVault already enabled."
-else
-  sudo fdesetup enable
-fi
-
 ###############################################################################
 # System
 ###############################################################################
@@ -278,6 +271,13 @@ sudo killall mds 2>/dev/null || true
 
 if [[ -x /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings ]]; then
   /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
+fi
+
+echo "Security: Enable FileVault"
+if sudo fdesetup status | grep -qi "FileVault is On"; then
+  echo "  FileVault already enabled."
+else
+  sudo fdesetup enable
 fi
 
 echo "Done."

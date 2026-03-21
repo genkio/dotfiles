@@ -9,6 +9,10 @@ BOOTSTRAP_MACOS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --include-all)
+      INCLUDE_APPS=1
+      INCLUDE_DEV=1
+      ;;
     --include-apps)
       INCLUDE_APPS=1
       ;;
@@ -19,7 +23,7 @@ while [[ $# -gt 0 ]]; do
       BOOTSTRAP_MACOS=1
       ;;
     -h|--help)
-      echo "Usage: $(basename "$0") [--include-apps] [--include-dev] [--bootstrap-macos]"
+      echo "Usage: $(basename "$0") [--include-all] [--include-apps] [--include-dev] [--bootstrap-macos]"
       exit 0
       ;;
     *)

@@ -5,10 +5,12 @@ cask "iina"
 cask "jordanbaird-ice"
 cask "kap"
 cask "keka"
+cask "logseq"
 cask "monitorcontrol"
 cask "raycast"
 cask "shottr"
 cask "tableplus"
+cask "wechat"
 
 # password required
 cask "homerow"

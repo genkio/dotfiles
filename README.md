@@ -25,6 +25,7 @@ Install stow:
 - `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
 - `stow vim` or `stow git`
 - Core packages: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow brew git nvim tmux yazi zsh ssh`
+- Optional app packages: `stow hammerspoon`
 - Optional dev packages: `stow ghostty lazygit && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
 - Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
 - Yazi: `stow yazi`
@@ -58,5 +59,5 @@ Run the automated script:
 - `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-dev --include-apps`
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
-- `--include-apps` to install GUI apps too.
+- `--include-apps` to install GUI apps and stow `hammerspoon`.
 - `--include-dev` to install dev tools (lazygit, sdkman-cli, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.

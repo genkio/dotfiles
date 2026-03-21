@@ -1,5 +1,6 @@
 cask "aldente"
 cask "brave-browser"
+cask "hammerspoon"
 cask "iina"
 cask "jordanbaird-ice"
 cask "kap"

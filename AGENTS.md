@@ -15,6 +15,9 @@ cd ~/dotfiles && stow zsh
 # Apply the core packages
 cd ~/dotfiles && stow brew git nvim tmux yazi zsh ssh
 
+# Apply optional app packages
+cd ~/dotfiles && stow hammerspoon
+
 # Apply optional dev packages
 cd ~/dotfiles && stow ghostty lazygit
 cd ~/dotfiles && bash scripts/restore-claude-settings.sh
@@ -36,7 +39,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps. Pass `--include-dev` to install dev tools (ghostty, lazygit, docker, claude-code, codex, version managers, etc.), stow `ghostty`, `lazygit`, and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, lazygit, docker, claude-code, codex, version managers, etc.), stow `ghostty`, `lazygit`, and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing.
 
 ## Stow Packages
 
@@ -48,6 +51,7 @@ cd ~/dotfiles && stow -D zsh
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
 | `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
+| `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `lazygit` | `~/.config/lazygit/` + `~/bin/` | Custom OSC52 clipboard |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; only `settings.json` and `statusline-command.sh` are linked |

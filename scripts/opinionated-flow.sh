@@ -125,6 +125,7 @@ fi
 
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
+  stow -t "$HOME" hammerspoon
 fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then

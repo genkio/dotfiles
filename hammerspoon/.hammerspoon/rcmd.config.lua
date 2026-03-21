@@ -1,5 +1,7 @@
 return {
-	-- Values should be the app name, bundle ID, or full .app path Hammerspoon can open.
+	-- Values can be an app name/bundle ID/path, or a table with an action.
+	["1"] = { action = "window_left" },
+	["2"] = { action = "window_right" },
 	b = "Brave Browser",
 	c = "Calendar",
 	f = "Finder",
@@ -9,8 +11,10 @@ return {
 	k = "kap",
 	l = "Logseq",
 	m = "Mail",
+	n = { action = "notification_center" },
 	s = "Sublime Text",
 	t = "TablePlus",
 	r = "Shottr",
 	w = "WeChat",
+	z = "System Settings",
 }

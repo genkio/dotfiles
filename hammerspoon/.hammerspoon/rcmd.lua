@@ -78,7 +78,7 @@ local function normalizeBindings(config)
     return nil, "rcmd.config.lua must return a table"
   end
 
-  local appBindings = {}
+  local bindings = {}
 
   for key, target in pairs(config) do
     if type(key) ~= "string" then
@@ -91,14 +91,35 @@ local function normalizeBindings(config)
       return nil, "rcmd.config.lua keys must be single characters"
     end
 
-    if type(target) ~= "string" or target == "" then
-      return nil, "rcmd.config.lua values must be non-empty strings"
-    end
+    if type(target) == "string" then
+      if target == "" then
+        return nil, "rcmd.config.lua string values must be non-empty"
+      end
 
-    appBindings[normalizedKey] = target
+      bindings[normalizedKey] = {
+        kind = "app",
+        target = target,
+      }
+    elseif type(target) == "table" then
+      if type(target.app) == "string" and target.app ~= "" then
+        bindings[normalizedKey] = {
+          kind = "app",
+          target = target.app,
+        }
+      elseif type(target.action) == "string" and target.action ~= "" then
+        bindings[normalizedKey] = {
+          kind = "action",
+          target = target.action,
+        }
+      else
+        return nil, "rcmd.config.lua table values must define a non-empty app or action"
+      end
+    else
+      return nil, "rcmd.config.lua values must be strings or tables"
+    end
   end
 
-  return appBindings
+  return bindings
 end
 
 local function hasOnlyCommandModifier(flags)
@@ -194,8 +215,7 @@ local function lookupTargetFor(appTarget)
   return appTarget
 end
 
-local function openBoundApp(appBindings, key)
-  local appTarget = appBindings[key]
+local function openBoundApp(appTarget)
   local lookupTarget = lookupTargetFor(appTarget)
   local app = hs.application.open(appTarget)
 
@@ -223,6 +243,69 @@ local function openBoundApp(appBindings, key)
   end)
 end
 
+local function moveFocusedWindow(unitRect, missingWindowMessage)
+  local window = hs.window.focusedWindow()
+
+  if not window then
+    hs.alert.show(missingWindowMessage)
+    return
+  end
+
+  if window:isFullScreen() then
+    window:setFullScreen(false)
+    hs.timer.doAfter(0.4, function()
+      if window:id() then
+        window:moveToUnit(unitRect, 0)
+        window:focus()
+      end
+    end)
+    return
+  end
+
+  window:moveToUnit(unitRect, 0)
+  window:focus()
+end
+
+local function runAction(actionTarget)
+  local actionHandlers = {
+    notification_center = function()
+      hs.eventtap.keyStroke({ "fn" }, "n")
+    end,
+    notifications = function()
+      hs.eventtap.keyStroke({ "fn" }, "n")
+    end,
+    control_center = function()
+      hs.eventtap.keyStroke({ "fn" }, "c")
+    end,
+    window_left = function()
+      moveFocusedWindow(hs.layout.left50, "No focused window to move left")
+    end,
+    window_right = function()
+      moveFocusedWindow(hs.layout.right50, "No focused window to move right")
+    end,
+  }
+
+  local handler = actionHandlers[actionTarget]
+
+  if not handler then
+    hs.alert.show(("Unknown rcmd action: %s"):format(actionTarget))
+    return
+  end
+
+  handler()
+end
+
+local function triggerBinding(binding)
+  if binding.kind == "app" then
+    openBoundApp(binding.target)
+    return
+  end
+
+  if binding.kind == "action" then
+    runAction(binding.target)
+  end
+end
+
 function M.start()
   hs.hotkey.setLogLevel("warning")
 
@@ -233,16 +316,16 @@ function M.start()
     return false
   end
 
-  local appBindings, bindingError = normalizeBindings(config)
+  local bindings, bindingError = normalizeBindings(config)
 
-  if not appBindings then
+  if not bindings then
     notifyConfigProblem("rcmd disabled: fix rcmd.config.lua", bindingError)
     return false
   end
 
-  for key, _ in pairs(appBindings) do
+  for key, binding in pairs(bindings) do
     launcherHotkeys[key] = hs.hotkey.new({ "cmd" }, key, function()
-      openBoundApp(appBindings, key)
+      triggerBinding(binding)
     end)
   end
 

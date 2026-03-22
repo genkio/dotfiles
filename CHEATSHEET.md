@@ -43,7 +43,6 @@ Everything below comes from personal configuration (commits to this repo).
 | `txk [name]` | Kill named session, defaulting to `tmp` |
 | `txp <profile>` | `tmuxp load -y <profile>` |
 | `txl` | `tmux ls` |
-| `ssh` | SSH with `TERM=xterm-256color` (wrapper) |
 | `ssht <host>` | SSH + auto-attach tmux on remote |
 
 **Tailscale helpers**
@@ -118,6 +117,8 @@ Everything below comes from personal configuration (commits to this repo).
 | `Cmd+k` | Next split |
 | `Cmd+j` | Previous split |
 | `Shift+Enter` | Insert newline (multi-line prompt) |
+
+Ghostty shell integration enables `sudo`, `ssh-terminfo`, and `ssh-env` so SSH prefers `xterm-ghostty` when the remote host can support it and falls back cleanly when it cannot.
 
 ### Neovim - Custom Keymaps
 

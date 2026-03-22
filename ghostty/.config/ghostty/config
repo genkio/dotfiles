@@ -11,3 +11,6 @@ keybind = shift+enter=text:\x1b\r
 # Enable OSC 52 clipboard support for SSH
 clipboard-read = allow
 clipboard-write = allow
+
+# Preserve Ghostty terminfo through sudo and prefer native remote terminfo over TERM fallbacks.
+shell-integration-features = sudo,ssh-terminfo,ssh-env

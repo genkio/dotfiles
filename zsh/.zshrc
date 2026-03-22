@@ -9,6 +9,11 @@ export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()
 
+# Keep Ghostty shell integration active in shells launched by tmux or `exec zsh`.
+if [[ -n "$GHOSTTY_RESOURCES_DIR" && -r "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration" ]]; then
+  source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration"
+fi
+
 # Auto-install Oh My Zsh if missing (keep existing .zshrc)
 if [ ! -d "$ZSH" ]; then
   if command -v curl >/dev/null 2>&1; then

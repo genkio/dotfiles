@@ -53,20 +53,11 @@ txk() {
   tmux kill-session -t "${1:-$TMUX_DEFAULT_SESSION}"
 }
 
-ssh() {
-  TERM=xterm-256color command ssh "$@"
-}
-
 ssht() {
-  TERM=xterm-256color command ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
+  ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
 }
 
 [[ -f "${${(%):-%N}:A:h}/.zsh_git_aliases" ]] && source "${${(%):-%N}:A:h}/.zsh_git_aliases"
-
-# Tmux wrapper - set compatible TERM before launching
-if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-  alias tmux="TERM=tmux-256color tmux"
-fi
 
 # Tailscale File Send
 # Usage: fsend <machine_name> <file1> [file2 ...]

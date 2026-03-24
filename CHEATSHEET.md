@@ -238,6 +238,10 @@ Usage: press `s`, type one or two characters from the target, then press the lab
 | Key | Action |
 |---|---|
 | `<leader>lg` | Open LazyGit |
+| `o` (inside LazyGit) | Open in a new bottom tmux pane; jumps to the current line when LazyGit has one |
+| `e` (inside LazyGit) | Open in a new right tmux pane |
+
+Line jumps for `o` only work from line-aware views like the diff/patch pane. From the file list, LazyGit only knows the file path.
 
 **Yazi (file manager)**
 

@@ -83,3 +83,11 @@ fget() {
   echo "Pulling waiting Tailscale files into $dest..."
   tailscale file get "$dest"
 }
+
+ltail() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: ltail <file_or_directory>"
+    return 1
+  fi
+  lnav "$@"
+}

@@ -158,19 +158,6 @@ Ghostty shell integration enables `sudo`, `ssh-terminfo`, and `ssh-env` so SSH p
 | `<leader>dv` | Definition in vertical split |
 | `<leader>dh` | Definition in horizontal split |
 
-**Inline send (LLM tmux bridge)**
-
-Send code references and messages to an LLM running in a sibling tmux pane.
-
-| Key | Mode | Action |
-|---|---|---|
-| `<leader>ie` | visual | Select code, open float with file reference |
-| `<leader>ie` | normal | Open empty float (no file reference) |
-| `<leader>is` | in float | Send message to tmux pane |
-| `q` / `<Esc>` | in float | Cancel and close |
-
-With 2 panes, auto-sends to the other pane. With 3+, shows a picker.
-
 **Markdown vault navigation**
 
 Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `.obsidian/` or `logseq/config.edn`), `gd` and `gr` are repurposed for note navigation:
@@ -266,6 +253,28 @@ Line jumps for `o` only work from line-aware views like the diff/patch pane. Fro
 | `Enter` (files pane) | Toggle the expansion or collapse of the selected directory |
 
 On narrow UIs, Yazi switches to a mobile profile with a single main column.
+
+**Neogit (Diffview / Review Helpers)**
+
+| Key | Action |
+|---|---|
+| `d` then `m` | Open PR review diff against the repo default branch (`origin/HEAD`, or fallback `main` / `master`) |
+| `V` | Enter visual-line mode in a hunk so `s` / `u` can stage or unstage selected rows instead of the whole chunk |
+| `<Tab>` | Open the diff for the next file while staying in the diff panes |
+| `<S-Tab>` | Open the diff for the previous file while staying in the diff panes |
+| `<leader>e` | Focus the left file list pane |
+| `gf` | Open the actual local file from Diffview without closing the review tab |
+| `<leader>id` | Open a delta preview float for the current Diffview file |
+| `<leader>ic` | Open the GitHub inline comment composer from Diffview |
+| `<leader>ia` | Open the approve-PR composer from Diffview |
+| visual `<leader>ie` | Open the LLM inline-send composer with selected code reference |
+| normal `<leader>ie` | Open the LLM inline-send composer (or capture current Neogit diff line context) |
+| `<leader>is` in float | Send the inline-send message to the sibling tmux pane |
+| `<leader>ia` in review float | Approve the PR with the typed comment |
+| `<C-s>` in review float | Submit the current review action |
+| `q` / `<Esc>` in float | Cancel and close the inline composer |
+
+With 2 tmux panes, inline-send auto-targets the other pane. With 3+, it shows a picker.
 
 **Diffview (PR diff / history)**
 

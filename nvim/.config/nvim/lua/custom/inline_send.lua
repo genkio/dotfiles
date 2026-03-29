@@ -8,6 +8,348 @@ local state = {
   float_win = nil,
 }
 
+local function build_file_reference(path, start_line, end_line)
+  return string.format('File: %s:%d-%d', path, start_line, end_line)
+end
+
+local function is_neogit_diff_line_component(component)
+  return component
+    and (
+      component.options.line_hl == 'NeogitDiffContext'
+      or component.options.line_hl == 'NeogitDiffAdd'
+      or component.options.line_hl == 'NeogitDiffDelete'
+    )
+end
+
+local function neogit_diff_path(path)
+  local ok_git, git = pcall(require, 'neogit.lib.git')
+  local relative_path = vim.trim(path):match '-> (.+)$' or vim.trim(path)
+  if ok_git and git.repo and git.repo.worktree_root then
+    return vim.fs.joinpath(git.repo.worktree_root, relative_path)
+  end
+
+  return relative_path
+end
+
+local function resolve_diffview_path(path)
+  if not path:match '^diffview://' then
+    return path
+  end
+
+  local ok_lib, lib = pcall(require, 'diffview.lib')
+  if not ok_lib then
+    return path
+  end
+
+  local view = lib.get_current_view()
+  local entry = view and view.cur_entry or nil
+  if entry and entry.absolute_path then
+    return entry.absolute_path
+  end
+
+  return path
+end
+
+local function get_neogit_status_context()
+  local ok_status, status = pcall(require, 'neogit.buffers.status')
+  local ok_jump, jump = pcall(require, 'neogit.lib.jump')
+  if not ok_status or not ok_jump then
+    return nil, nil, 'Neogit is not available'
+  end
+
+  local status_buffer = status.instance(vim.uv.cwd())
+  if not status_buffer or not status_buffer.buffer or not status_buffer.buffer.ui then
+    return nil, nil, 'Neogit status buffer is not ready'
+  end
+
+  return status_buffer, jump
+end
+
+local function find_neogit_hunk(item, line)
+  if not item or not item.diff or not item.diff.hunks then
+    return nil
+  end
+
+  for _, hunk in ipairs(item.diff.hunks) do
+    if line > hunk.first and line <= hunk.last then
+      return hunk
+    end
+  end
+end
+
+local function resolve_neogit_diff_context()
+  if vim.bo.filetype ~= 'NeogitStatus' then
+    return nil
+  end
+
+  local status_buffer, jump, err = get_neogit_status_context()
+  if not status_buffer then
+    return nil, err
+  end
+
+  local item = status_buffer.buffer.ui:get_item_under_cursor()
+  if not item or not item.absolute_path then
+    return nil, 'Place cursor on a file in Neogit'
+  end
+
+  if not item.diff or not item.diff.hunks then
+    return nil, 'Place cursor on an expanded Neogit diff line'
+  end
+
+  local cursor_line = status_buffer.buffer:cursor_line()
+  local hunk = find_neogit_hunk(item, cursor_line)
+  if not hunk then
+    return nil, 'Place cursor on a diff content line'
+  end
+
+  local offset = cursor_line - hunk.first
+  local location = jump.translate_hunk_location(hunk, offset)
+  if not location then
+    return nil, 'Place cursor on a diff content line'
+  end
+
+  local prefix = string.sub(location.line, 1, 1)
+  if prefix ~= '+' and prefix ~= '-' and prefix ~= ' ' then
+    return nil, 'Place cursor on a diff content line'
+  end
+
+  local line_number = jump.adjust_row(hunk.disk_from, offset, hunk.lines, '-')
+  return {
+    file = item.absolute_path,
+    start_line = line_number,
+    end_line = line_number,
+    diff_line = location.line,
+  }
+end
+
+local function resolve_neogit_visual_context()
+  if vim.bo.filetype ~= 'NeogitStatus' then
+    return nil
+  end
+
+  local status_buffer, jump, err = get_neogit_status_context()
+  if not status_buffer then
+    return nil, err
+  end
+
+  local first_line = vim.fn.line "'<"
+  local last_line = vim.fn.line "'>"
+  if first_line == 0 or last_line == 0 then
+    return nil, 'No visual selection found'
+  end
+
+  local item = nil
+  for _, section in ipairs(status_buffer.buffer.ui.item_index or {}) do
+    for _, candidate in pairs(section.items or {}) do
+      if candidate.first and candidate.last and candidate.first <= first_line and candidate.last >= last_line then
+        item = candidate
+        break
+      end
+    end
+    if item then
+      break
+    end
+  end
+
+  if not item or not item.absolute_path then
+    return nil, 'Select lines within a single file in Neogit'
+  end
+
+  local first_hunk = find_neogit_hunk(item, first_line)
+  local last_hunk = find_neogit_hunk(item, last_line)
+  if not first_hunk or not last_hunk or first_hunk ~= last_hunk then
+    return nil, 'Select diff content lines within a single Neogit hunk'
+  end
+
+  local start_offset = first_line - first_hunk.first
+  local end_offset = last_line - first_hunk.first
+  local start_location = jump.translate_hunk_location(first_hunk, start_offset)
+  local end_location = jump.translate_hunk_location(first_hunk, end_offset)
+  if not start_location or not end_location then
+    return nil, 'Select diff content lines within a single Neogit hunk'
+  end
+
+  return {
+    file = item.absolute_path,
+    start_line = jump.adjust_row(first_hunk.disk_from, start_offset, first_hunk.lines, '-'),
+    end_line = jump.adjust_row(first_hunk.disk_from, end_offset, first_hunk.lines, '-'),
+  }
+end
+
+local function get_neogit_commit_view_context()
+  local ok_commit_view, commit_view = pcall(require, 'neogit.buffers.commit_view')
+  local ok_jump, jump = pcall(require, 'neogit.lib.jump')
+  if not ok_commit_view or not ok_jump then
+    return nil, nil, 'Neogit commit view is not available'
+  end
+
+  local view = commit_view.instance
+  if not view or not view.buffer or not view.buffer.ui then
+    return nil, nil, 'Neogit commit view is not ready'
+  end
+
+  return view, jump
+end
+
+local function resolve_neogit_commit_diff_context()
+  if vim.bo.filetype ~= 'NeogitCommitView' then
+    return nil
+  end
+
+  local view, jump, err = get_neogit_commit_view_context()
+  if not view then
+    return nil, err
+  end
+
+  local component = view.buffer.ui:get_component_under_cursor(is_neogit_diff_line_component)
+  if not component then
+    return nil, 'Place cursor on a diff content line in Neogit commit view'
+  end
+
+  local hunk_component = component.parent and component.parent.parent
+  local hunk = hunk_component and hunk_component.options.hunk
+  if not hunk or not hunk.file then
+    return nil, 'Unable to resolve file path in Neogit commit view'
+  end
+
+  local offset = view.buffer:cursor_line() - hunk_component.position.row_start
+  local location = jump.translate_hunk_location(hunk, offset)
+  if not location then
+    return nil, 'Place cursor on a diff content line in Neogit commit view'
+  end
+
+  local prefix = string.sub(location.line, 1, 1)
+  if prefix ~= '+' and prefix ~= '-' and prefix ~= ' ' then
+    return nil, 'Place cursor on a diff content line in Neogit commit view'
+  end
+
+  local line_number = prefix == '-' and location.old or location.new
+  return {
+    file = neogit_diff_path(hunk.file),
+    start_line = line_number,
+    end_line = line_number,
+    diff_line = location.line,
+  }
+end
+
+local function resolve_neogit_commit_visual_context()
+  if vim.bo.filetype ~= 'NeogitCommitView' then
+    return nil
+  end
+
+  local view, jump, err = get_neogit_commit_view_context()
+  if not view then
+    return nil, err
+  end
+
+  local first_line = vim.fn.line "'<"
+  local last_line = vim.fn.line "'>"
+  if first_line == 0 or last_line == 0 then
+    return nil, 'No visual selection found'
+  end
+
+  local first_component = view.buffer.ui:get_component_on_line(first_line, is_neogit_diff_line_component)
+  local last_component = view.buffer.ui:get_component_on_line(last_line, is_neogit_diff_line_component)
+  if not first_component or not last_component then
+    return nil, 'Select diff content lines in Neogit commit view'
+  end
+
+  local first_hunk_component = first_component.parent and first_component.parent.parent
+  local last_hunk_component = last_component.parent and last_component.parent.parent
+  if not first_hunk_component or first_hunk_component ~= last_hunk_component then
+    return nil, 'Select diff content lines within a single Neogit commit hunk'
+  end
+
+  local hunk = first_hunk_component.options.hunk
+  if not hunk or not hunk.file then
+    return nil, 'Unable to resolve file path in Neogit commit view'
+  end
+
+  local start_offset = first_line - first_hunk_component.position.row_start
+  local end_offset = last_line - first_hunk_component.position.row_start
+  local start_location = jump.translate_hunk_location(hunk, start_offset)
+  local end_location = jump.translate_hunk_location(hunk, end_offset)
+  if not start_location or not end_location then
+    return nil, 'Select diff content lines within a single Neogit commit hunk'
+  end
+
+  return {
+    file = neogit_diff_path(hunk.file),
+    start_line = string.sub(start_location.line, 1, 1) == '-' and start_location.old or start_location.new,
+    end_line = string.sub(end_location.line, 1, 1) == '-' and end_location.old or end_location.new,
+  }
+end
+
+local function resolve_context(from_visual)
+  local buf = vim.api.nvim_get_current_buf()
+  local file = vim.api.nvim_buf_get_name(buf)
+  local filetype = vim.bo[buf].filetype
+
+  if from_visual then
+    if filetype == 'NeogitCommitView' then
+      local neogit_context, err = resolve_neogit_commit_visual_context()
+      if neogit_context then
+        return neogit_context
+      end
+
+      return nil, err or 'Unable to resolve Neogit commit selection'
+    end
+
+    if filetype == 'NeogitStatus' then
+      local neogit_context, err = resolve_neogit_visual_context()
+      if neogit_context then
+        return neogit_context
+      end
+
+      return nil, err or 'Unable to resolve Neogit selection'
+    end
+
+    if file == '' then
+      return nil, 'Buffer has no file path'
+    end
+
+    local start_line = vim.fn.line "'<"
+    local end_line = vim.fn.line "'>"
+
+    return {
+      file = resolve_diffview_path(vim.fn.fnamemodify(file, ':p')),
+      start_line = start_line,
+      end_line = end_line,
+    }
+  end
+
+  if filetype == 'NeogitCommitView' then
+    local neogit_context, err = resolve_neogit_commit_diff_context()
+    if neogit_context then
+      return neogit_context
+    end
+
+    return nil, err or 'Unable to resolve Neogit commit diff context'
+  end
+
+  if filetype == 'NeogitStatus' then
+    local neogit_context, err = resolve_neogit_diff_context()
+    if neogit_context then
+      return neogit_context
+    end
+
+    return nil, err or 'Unable to resolve Neogit diff context'
+  end
+
+  if file == '' then
+    local neogit_context, err = resolve_neogit_diff_context()
+    if neogit_context then
+      return neogit_context
+    end
+
+    return nil, err or 'Buffer has no file path'
+  end
+
+  return {
+    file = resolve_diffview_path(vim.fn.fnamemodify(file, ':p')),
+  }
+end
+
 --- List other tmux panes in the current window.
 --- Returns list of { id, index, title, cmd } or nil + error message.
 local function list_other_panes()
@@ -129,14 +471,16 @@ local function send_message()
   end)
 end
 
---- Open float to compose a message. When from_visual is true, includes the selection as a file reference.
+--- Open float to compose a message. Visual mode includes the selection as a file reference.
+--- In Neogit status diffs, normal mode can also capture the diff line under the cursor.
 function M.open_editor(from_visual)
-  local buf = vim.api.nvim_get_current_buf()
-  local file = vim.api.nvim_buf_get_name(buf)
-  if file == '' then
-    vim.notify('Buffer has no file path', vim.log.levels.ERROR)
+  local context, err = resolve_context(from_visual)
+  if not context then
+    vim.notify(err, vim.log.levels.ERROR)
     return
   end
+
+  local file = context.file
 
   close_float()
 
@@ -144,17 +488,15 @@ function M.open_editor(from_visual)
   vim.bo[float_buf].buftype = 'nofile'
   vim.bo[float_buf].filetype = 'markdown'
 
-  local start_line, end_line
-  if from_visual then
-    start_line = vim.fn.line "'<"
-    end_line = vim.fn.line "'>"
-  end
-
-  -- Pre-populate with file reference if called from visual mode
+  -- Pre-populate with a file reference when line context is available
   local content = {}
+  local start_line = context.start_line
+  local end_line = context.end_line
   if start_line and start_line > 0 and end_line and end_line > 0 then
-    local abs_path = vim.fn.fnamemodify(file, ':p')
-    table.insert(content, string.format('File: %s:%d-%d', abs_path, start_line, end_line))
+    table.insert(content, build_file_reference(file, start_line, end_line))
+    if context.diff_line then
+      table.insert(content, string.format('Diff: %s', context.diff_line))
+    end
     table.insert(content, '')
   end
   if #content > 0 then

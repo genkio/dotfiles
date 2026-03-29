@@ -14,51 +14,7 @@ return {
     {
       '<leader>gd',
       function()
-        local group = vim.api.nvim_create_augroup('custom-diffview-swap', { clear = false })
-
-        -- Workaround: Diffview keeps old/new ordering fixed (A left, B right).
-        -- After opening with `--imply-local`, swap A/B windows to show local on the left.
-        vim.api.nvim_create_autocmd('User', {
-          group = group,
-          pattern = 'DiffviewViewOpened',
-          once = true,
-          callback = function()
-            local ok, lib = pcall(require, 'diffview.lib')
-            if not ok then
-              return
-            end
-
-            local view = lib.get_current_view()
-            local layout = view and view.cur_layout or nil
-            if not (layout and layout.a and layout.b) then
-              return
-            end
-
-            local win_a = layout.a.id
-            local win_b = layout.b.id
-            if not (vim.api.nvim_win_is_valid(win_a) and vim.api.nvim_win_is_valid(win_b)) then
-              return
-            end
-
-            local pos_a = vim.api.nvim_win_get_position(win_a)
-            local pos_b = vim.api.nvim_win_get_position(win_b)
-
-            local should_swap = false
-            if layout.name == 'diff2_horizontal' then
-              should_swap = pos_a[2] < pos_b[2]
-            elseif layout.name == 'diff2_vertical' then
-              should_swap = pos_a[1] < pos_b[1]
-            end
-
-            if should_swap then
-              vim.api.nvim_win_call(win_a, function()
-                vim.cmd 'wincmd x'
-              end)
-            end
-          end,
-        })
-
-        vim.cmd 'DiffviewOpen origin/HEAD...HEAD --imply-local'
+        require('custom.diffview_pr_review').open()
       end,
       desc = 'Git [D]iff vs merge-base (swapped)',
     },
@@ -66,5 +22,62 @@ return {
     { '<leader>gf', '<cmd>DiffviewFileHistory %<CR>', desc = 'Git [F]ile history' },
     { '<leader>gF', '<cmd>DiffviewFileHistory<CR>', desc = 'Git repo [F]ile history' },
   },
-  opts = {},
+  opts = function(_, opts)
+    opts = opts or {}
+    opts.keymaps = opts.keymaps or {}
+    opts.keymaps.view = opts.keymaps.view or {}
+
+    table.insert(opts.keymaps.view, {
+      'n',
+      '<leader>ic',
+      function()
+        require('custom.inline_review_comment').open(false, 'comment')
+      end,
+      { desc = 'GitHub inline review comment' },
+    })
+
+    table.insert(opts.keymaps.view, {
+      'x',
+      '<leader>ic',
+      function()
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'nx', false)
+        vim.schedule(function()
+          require('custom.inline_review_comment').open(true, 'comment')
+        end)
+      end,
+      { desc = 'GitHub inline review comment' },
+    })
+
+    table.insert(opts.keymaps.view, {
+      'n',
+      '<leader>ia',
+      function()
+        require('custom.inline_review_comment').open(false, 'approve')
+      end,
+      { desc = 'GitHub approve PR with comment' },
+    })
+
+    table.insert(opts.keymaps.view, {
+      'x',
+      '<leader>ia',
+      function()
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'nx', false)
+        vim.schedule(function()
+          require('custom.inline_review_comment').open(true, 'approve')
+        end)
+      end,
+      { desc = 'GitHub approve PR with comment' },
+    })
+
+    table.insert(opts.keymaps.view, {
+      'n',
+      '<leader>id',
+      function()
+        require('custom.diffview_delta_preview').open()
+      end,
+      { desc = 'Delta preview for current Diffview file' },
+    })
+
+    return opts
+  end,
 }

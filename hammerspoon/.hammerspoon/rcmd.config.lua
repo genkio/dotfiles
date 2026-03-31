@@ -17,6 +17,7 @@ return {
 	s = "Sublime Text",
 	t = "TablePlus",
 	r = "Shottr",
+	u = "UTM",
 	w = "WeChat",
 	z = "System Settings",
 }

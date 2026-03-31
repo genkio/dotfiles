@@ -26,8 +26,7 @@ Install stow:
 - `stow vim` or `stow git`
 - Core packages: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow brew git nvim tmux yazi zsh ssh`
 - Optional app packages: `stow hammerspoon`
-- Optional dev packages: `stow ghostty lazygit && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
-- Lazygit: macOS `stow lazygit`; Linux `stow --ignore='^Library/' lazygit`
+- Optional dev packages: `stow ghostty && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
 - Yazi: `stow yazi`
 
 ## Remove symlinks
@@ -61,4 +60,4 @@ Run the automated script:
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps and stow `hammerspoon`.
-- `--include-dev` to install dev tools (lazygit, sdkman-cli, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
+- `--include-dev` to install dev tools (sdkman-cli, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.

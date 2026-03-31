@@ -19,14 +19,12 @@ cd ~/dotfiles && stow brew git nvim tmux yazi zsh ssh
 cd ~/dotfiles && stow hammerspoon
 
 # Apply optional dev packages
-cd ~/dotfiles && stow ghostty lazygit
+cd ~/dotfiles && stow ghostty
 cd ~/dotfiles && bash scripts/restore-claude-settings.sh
 cd ~/dotfiles && bash scripts/restore-codex-config.sh
 
 # Remove symlinks for a package
 cd ~/dotfiles && stow -D zsh
-
-# On Linux, lazygit needs: stow --ignore='^Library/' lazygit
 ```
 
 ## Brewfile Structure
@@ -34,12 +32,12 @@ cd ~/dotfiles && stow -D zsh
 - `brew/Brewfile` — meta file that sources both base and apps
 - `brew/Brewfile.base` — CLI tools (always installed)
 - `brew/Brewfile.apps` — GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` — dev tools (ghostty, docker, lazygit, gh, bun, sdkman-cli, claude-code, codex, etc.) for the explicit `--include-dev` flow; remaining version managers (volta, pyenv, rust) are installed via official curl installers in `setup-dev.sh`
+- `brew/Brewfile.dev` — dev tools (ghostty, docker, gh, bun, sdkman-cli, claude-code, codex, etc.) for the explicit `--include-dev` flow; remaining version managers (volta, pyenv, rust) are installed via official curl installers in `setup-dev.sh`
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, lazygit, docker, claude-code, codex, version managers, etc.), stow `ghostty`, `lazygit`, and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
 
 ## Stow Packages
 
@@ -53,7 +51,6 @@ cd ~/dotfiles && stow -D zsh
 | `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
-| `lazygit` | `~/.config/lazygit/` + `~/bin/` | Custom OSC52 clipboard |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; only `settings.json` and `statusline-command.sh` are linked |
 | `opencode` | `~/.config/opencode/` | OpenCode config |
 | `vim` | `~/.vimrc` | Legacy vim config |
@@ -64,7 +61,7 @@ cd ~/dotfiles && stow -D zsh
 Based on kickstart.nvim. Single-file core at `nvim/.config/nvim/init.lua` (~48k). Custom extensions live in `nvim/.config/nvim/lua/custom/`:
 - `keymaps.lua` — custom key mappings
 - `copy_range.lua` — range copy utility
-- `plugins/` — additional lazy.nvim plugin specs (aerial, auto-session, gitsigns extensions, lazygit, snacks-gh, etc.)
+- `plugins/` — additional lazy.nvim plugin specs (aerial, auto-session, gitsigns extensions, snacks-gh, etc.)
 
 Plugin specs in `lua/kickstart/plugins/` are the upstream kickstart extras (gitsigns, debug, lint, neo-tree, etc.).
 
@@ -74,7 +71,6 @@ Yazi config is stowed separately under `yazi/.config/`. The Neovim integration i
 
 A recurring pattern across tools: clipboard integration uses OSC52 escape sequences so copy works over SSH and inside tmux.
 - `tmux/bin/osc52-copy.sh` — tmux copy helper
-- `lazygit/bin/osc52-clip.sh` — lazygit copy helper
 - Ghostty config enables `clipboard-read = allow` / `clipboard-write = allow`
 
 ## Commit Message Convention

@@ -13,7 +13,7 @@ cd "$REPO_ROOT"
 
 # Install dev tools via Homebrew
 brew bundle --file brew/Brewfile.dev
-stow -t "$HOME" ghostty lazygit
+stow -t "$HOME" ghostty
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
   defaults write wang.jianing.app.OpenInEditor-Lite LiteDefaultEditor Ghostty

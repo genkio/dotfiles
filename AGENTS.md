@@ -52,7 +52,6 @@ cd ~/dotfiles && stow -D zsh
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; only `settings.json` and `statusline-command.sh` are linked |
-| `opencode` | `~/.config/opencode/` | OpenCode config |
 | `vim` | `~/.vimrc` | Legacy vim config |
 | `iterm2` | — | Empty/placeholder |
 

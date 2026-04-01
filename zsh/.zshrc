@@ -27,71 +27,8 @@ fi
 
 source $ZSH/oh-my-zsh.sh
 
-prompt_short_path() {
-  if [[ $PWD == "/" ]]; then
-    print -r -- "/"
-    return
-  fi
-
-  local parent=${PWD:h:t}
-  local current=${PWD:t}
-
-  if [[ $PWD == $HOME ]]; then
-    print -r -- "~"
-  elif [[ ${PWD:h} == $HOME ]]; then
-    print -r -- "~/$current"
-  elif [[ $parent == "/" || $parent == $current ]]; then
-    print -r -- "$current"
-  else
-    print -r -- "$parent/$current"
-  fi
-}
-
-prompt_git_change_summary() {
-  __git_prompt_git rev-parse --git-dir &> /dev/null || return
-
-  local git_status
-  git_status=$(__git_prompt_git status --porcelain 2> /dev/null) || return
-  [[ -n $git_status ]] || return
-
-  if ! __git_prompt_git rev-parse --verify HEAD &> /dev/null; then
-    print -n " %{$fg[yellow]%}x%{$reset_color%}"
-    return
-  fi
-
-  local additions=0
-  local deletions=0
-  local added
-  local deleted
-  local file_path
-
-  while IFS=$'\t' read -r added deleted file_path; do
-    if [[ $added != "-" ]]; then
-      (( additions += ${added:-0} ))
-    fi
-
-    if [[ $deleted != "-" ]]; then
-      (( deletions += ${deleted:-0} ))
-    fi
-  done <<< "$(__git_prompt_git diff --numstat --no-renames HEAD -- 2> /dev/null)"
-
-  if (( additions > 0 || deletions > 0 )); then
-    print -n " with %{$fg[green]%}+${additions}%{$reset_color%},%{$fg[red]%}-${deletions}%{$reset_color%}"
-  else
-    print -n " with %{$fg[yellow]%}x%{$reset_color%}"
-  fi
-}
-
-# Two-line prompt: context on the first line, cursor on the second.
-PROMPT="%{$fg[yellow]%}${${HOST%%.*}[1,2]}%{$reset_color%} in "
-PROMPT+="%{$fg[cyan]%}\$(prompt_short_path)%{$reset_color%}"
-ZSH_THEME_GIT_PROMPT_PREFIX="%{$reset_color%} on %{$fg[red]%}"
-ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
-ZSH_THEME_GIT_PROMPT_CLEAN=""
-ZSH_THEME_GIT_PROMPT_DIRTY=""
-PROMPT+='$(git_prompt_info)$(prompt_git_change_summary)'
-PROMPT+=$'\n'
-PROMPT+="%{$fg_bold[green]%}>%{$reset_color%} "
+# Custom prompt (managed as ~/.zsh_prompt via stow)
+[[ -f ~/.zsh_prompt ]] && source ~/.zsh_prompt
 
 source <(fzf --zsh)
 

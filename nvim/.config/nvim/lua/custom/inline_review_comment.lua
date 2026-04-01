@@ -417,6 +417,7 @@ local function submit_comment()
     vim.notify(body_err, vim.log.levels.WARN)
     return
   end
+  vim.fn.setreg('+', body)
 
   local pr, err = get_current_pr()
   if not pr then
@@ -520,6 +521,7 @@ local function submit_approve()
     vim.notify(body_err, vim.log.levels.WARN)
     return
   end
+  vim.fn.setreg('+', body)
 
   local pr, err = get_current_pr()
   if not pr then

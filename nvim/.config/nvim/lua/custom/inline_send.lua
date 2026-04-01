@@ -407,13 +407,13 @@ end
 
 --- Send text to the sibling tmux pane.
 local function send_to_pane(pane_id, text)
-  local result = vim.system({ 'tmux', 'load-buffer', '-' }, { stdin = text }):wait()
+  local result = vim.system({ 'tmux', 'set-buffer', '--', text }):wait()
   if result.code ~= 0 then
-    vim.notify('Failed to load tmux buffer', vim.log.levels.ERROR)
+    vim.notify('Failed to set tmux buffer', vim.log.levels.ERROR)
     return false
   end
 
-  result = vim.system({ 'tmux', 'paste-buffer', '-t', pane_id, '-d' }):wait()
+  result = vim.system({ 'tmux', 'paste-buffer', '-t', pane_id }):wait()
   if result.code ~= 0 then
     vim.notify('Failed to paste to pane', vim.log.levels.ERROR)
     return false
@@ -462,6 +462,7 @@ local function send_message()
   end
 
   local payload = table.concat(lines, '\n')
+  vim.fn.setreg('+', payload)
 
   pick_pane(function(pane_id)
     close_float()

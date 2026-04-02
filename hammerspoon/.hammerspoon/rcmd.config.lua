@@ -2,7 +2,7 @@ return {
 	-- Values can be an app name/bundle ID/path, or a table with an action.
 	["1"] = { action = "window_left" },
 	["2"] = { action = "window_right" },
-	a = "Safari",
+	a = "ChatGPT",
 	b = "Brave Browser",
 	c = "Calendar",
 	f = "Finder",

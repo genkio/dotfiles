@@ -255,6 +255,10 @@ sudo softwareupdate --install-rosetta --agree-to-license || true
 # OpenInTerminal-Lite
 ###############################################################################
 
+echo "Menu Bar: Reduce item spacing"
+defaults -currentHost write -globalDomain NSStatusItemSpacing -int 2
+defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 2
+
 echo "OpenInTerminal-Lite: Set default terminal to Ghostty"
 defaults write wang.jianing.app.OpenInTerminal-Lite LiteDefaultTerminal Ghostty
 

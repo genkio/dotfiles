@@ -65,7 +65,7 @@ bindkey -M emacs '^[d' remove-history-space
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-# Create iCloud symlink if missing (macOS only)
+# Create iCloud symlink if missing
 [[ -d "$HOME/Library/Mobile Documents/com~apple~CloudDocs" && ! -e ~/icloud ]] && \
   ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" ~/icloud
 

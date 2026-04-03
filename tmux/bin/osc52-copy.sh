@@ -25,6 +25,6 @@ if [ -n "$client_tty" ] && [ -c "$client_tty" ]; then
 fi
 
 # Mirror to pbcopy only when running locally
-if [ -z "${SSH_CONNECTION:-}" ] && command -v pbcopy >/dev/null 2>&1; then
+if [ -z "${SSH_CONNECTION:-}" ]; then
   printf -- '%s' "$selection" | pbcopy
 fi

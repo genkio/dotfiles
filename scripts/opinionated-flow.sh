@@ -97,22 +97,8 @@ if [[ -x "$TPM_DIR/bin/install_plugins" ]]; then
 fi
 
 if [[ ! -f "$HOME/.gitignore_global" ]]; then
-  case "$(uname -s)" in
-    Darwin)
-      GITIGNORE_URL="https://raw.githubusercontent.com/github/gitignore/master/Global/macOS.gitignore"
-      ;;
-    Linux)
-      GITIGNORE_URL="https://raw.githubusercontent.com/github/gitignore/master/Global/Linux.gitignore"
-      ;;
-    *)
-      GITIGNORE_URL=""
-      ;;
-  esac
-
-  if [[ -n "$GITIGNORE_URL" ]]; then
-    echo "Downloading standard global gitignore to ~/.gitignore_global"
-    curl -fsSL "$GITIGNORE_URL" -o "$HOME/.gitignore_global"
-  fi
+  echo "Downloading standard global gitignore to ~/.gitignore_global"
+  curl -fsSL "https://raw.githubusercontent.com/github/gitignore/master/Global/macOS.gitignore" -o "$HOME/.gitignore_global"
 fi
 
 if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
@@ -137,11 +123,6 @@ if [[ "$INCLUDE_DEV" -eq 1 ]]; then
 fi
 
 if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
-  if [[ "$(uname -s)" != "Darwin" ]]; then
-    echo "Error: --bootstrap-macos is only supported on macOS." >&2
-    exit 1
-  fi
-
   if [[ ! -f scripts/macos-bootstrap.sh ]]; then
     echo "Error: scripts/macos-bootstrap.sh not found." >&2
     exit 1

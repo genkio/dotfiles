@@ -1,6 +1,6 @@
 # Dotfiles
 
-Managed with [GNU Stow](https://www.gnu.org/software/stow/).
+macOS only. Managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 ## Setup
 
@@ -10,8 +10,7 @@ Clone the repo:
 
 Install stow:
 
-- macOS: `brew install stow`
-- Debian/Ubuntu: `sudo apt install stow`
+- `brew install stow`
 
 ## Add a new dotfile
 

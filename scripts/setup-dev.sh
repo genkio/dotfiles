@@ -15,9 +15,7 @@ cd "$REPO_ROOT"
 brew bundle --file brew/Brewfile.dev
 stow -t "$HOME" ghostty
 
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  defaults write wang.jianing.app.OpenInEditor-Lite LiteDefaultEditor Ghostty
-fi
+defaults write wang.jianing.app.OpenInEditor-Lite LiteDefaultEditor Ghostty
 
 # Install Volta (Node version manager)
 export VOLTA_HOME="$HOME/.volta"

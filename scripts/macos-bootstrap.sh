@@ -278,8 +278,8 @@ if [[ -x /System/Library/PrivateFrameworks/SystemAdministration.framework/Resour
 fi
 
 echo "Security: Enable FileVault"
-if sudo fdesetup status | grep -qi "FileVault is On"; then
-  echo "  FileVault already enabled."
+if sudo fdesetup isactive >/dev/null 2>&1; then
+  echo "  FileVault already active; skipping enable."
 else
   sudo fdesetup enable
 fi

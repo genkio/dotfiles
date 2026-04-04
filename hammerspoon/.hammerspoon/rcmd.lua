@@ -4,6 +4,9 @@ local launcherHotkeys = {}
 local launcherHotkeysEnabled = false
 local rightCommandHeld = false
 local launcherTap = nil
+local rawFlagMasks = hs.eventtap.event.rawFlagMasks or {}
+local leftCommandMask = rawFlagMasks.deviceLeftCommand or 0
+local rightCommandMask = rawFlagMasks.deviceRightCommand or 0
 
 local function parentDirectory(path)
   return path:match("^(.*)/[^/]+$")
@@ -124,6 +127,27 @@ end
 
 local function hasOnlyCommandModifier(flags)
   return flags.cmd and not flags.alt and not flags.ctrl and not flags.shift and not flags.fn
+end
+
+local function hasRawFlag(rawFlags, mask)
+  return mask ~= 0 and (rawFlags & mask) ~= 0
+end
+
+local function hasOnlyRightCommandModifier(event)
+  local flags = event:getFlags()
+
+  if not hasOnlyCommandModifier(flags) then
+    return false
+  end
+
+  local rawFlags = event:rawFlags()
+
+  if rightCommandMask == 0 then
+    return event:getKeyCode() == hs.keycodes.map.rightcmd
+  end
+
+  -- Raw flags distinguish left/right command keys; generic flags do not.
+  return hasRawFlag(rawFlags, rightCommandMask) and not hasRawFlag(rawFlags, leftCommandMask)
 end
 
 local function setLauncherHotkeysEnabled(enabled)
@@ -330,11 +354,8 @@ function M.start()
   end
 
   launcherTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, function(event)
-    if event:getKeyCode() == hs.keycodes.map.rightcmd then
-      rightCommandHeld = not rightCommandHeld
-    end
-
-    setLauncherHotkeysEnabled(rightCommandHeld and hasOnlyCommandModifier(event:getFlags()))
+    rightCommandHeld = hasOnlyRightCommandModifier(event)
+    setLauncherHotkeysEnabled(rightCommandHeld)
     return false
   end)
 

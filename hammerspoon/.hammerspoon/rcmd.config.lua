@@ -2,9 +2,9 @@ return {
 	-- Values can be an app name/bundle ID/path, or a table with an action.
 	["1"] = { action = "window_left" },
 	["2"] = { action = "window_right" },
-	a = "ChatGPT",
 	b = "Brave Browser",
 	c = "Calendar",
+	d = "TablePlus", -- database
 	f = "Finder",
 	g = "Ghostty",
 	h = "Hammerspoon",
@@ -13,11 +13,8 @@ return {
 	l = "Logseq",
 	m = "Mail",
 	n = { action = "notification_center" },
-	p = "iPhone Mirroring",
-	s = "Sublime Text",
-	t = "TablePlus",
-	r = "Shottr",
-	u = "UTM",
+	t = "Sublime Text", -- text
+	s = "Shottr",
+	u = "uuremote",
 	w = "WeChat",
-	z = "System Settings",
 }

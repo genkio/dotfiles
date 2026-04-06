@@ -533,8 +533,7 @@ function M.open_editor(from_visual)
   vim.api.nvim_win_set_cursor(float_win, { line_count, 0 })
 
   vim.keymap.set('n', '<leader>is', send_message, { buffer = float_buf, desc = 'Inline: Send message' })
-  vim.keymap.set('n', 'q', close_float, { buffer = float_buf, desc = 'Inline: Cancel' })
-  vim.keymap.set('n', '<Esc>', close_float, { buffer = float_buf, desc = 'Inline: Cancel' })
+  vim.keymap.set('n', '<leader>iq', close_float, { buffer = float_buf, desc = 'Inline: Cancel' })
 
   vim.cmd 'startinsert!'
 end

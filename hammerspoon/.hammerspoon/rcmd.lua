@@ -4,15 +4,23 @@ local launcherHotkeys = {}
 local launcherHotkeysEnabled = false
 local rightCommandHeld = false
 local launcherTap = nil
+local launcherKeyTap = nil
 local activeAppPicker = nil
 local appPickerDrawings = {}
 local appPickerTap = nil
 local appPickerTimeout = nil
+local configOverlayDrawings = {}
+local configOverlayVisible = false
+local rightCommandHoldTimer = nil
+local currentBindings = {}
 local rawFlagMasks = hs.eventtap.event.rawFlagMasks or {}
 local leftCommandMask = rawFlagMasks.deviceLeftCommand or 0
 local rightCommandMask = rawFlagMasks.deviceRightCommand or 0
 local pickerSelectionKeys = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" }
+local rightCommandHoldDelay = 0.5
 local openBoundApp
+local appPickerScreenFrame
+local setPickerDrawingStyle
 
 local function parentDirectory(path)
   return path:match("^(.*)/[^/]+$")
@@ -230,6 +238,26 @@ local function setLauncherHotkeysEnabled(enabled)
   launcherHotkeysEnabled = enabled
 end
 
+local function clearConfigOverlayDrawings()
+  for _, drawing in ipairs(configOverlayDrawings) do
+    drawing:delete()
+  end
+
+  configOverlayDrawings = {}
+end
+
+local function dismissConfigOverlay()
+  clearConfigOverlayDrawings()
+  configOverlayVisible = false
+end
+
+local function cancelRightCommandHoldTimer()
+  if rightCommandHoldTimer then
+    rightCommandHoldTimer:stop()
+    rightCommandHoldTimer = nil
+  end
+end
+
 local function appTargetLabel(appTarget)
   local runningApp = hs.application.get(appTarget)
 
@@ -259,6 +287,115 @@ local function appTargetLabel(appTarget)
   end
 
   return appTarget
+end
+
+local function actionTargetLabel(actionTarget)
+  local labels = {
+    notification_center = "Action: Notification Center",
+    notifications = "Action: Notification Center",
+    control_center = "Action: Control Center",
+    window_left = "Action: Move Window Left",
+    window_right = "Action: Move Window Right",
+  }
+
+  return labels[actionTarget] or ("Action: %s"):format(actionTarget)
+end
+
+local function bindingDisplayLabel(binding)
+  if binding.kind == "app" then
+    return appTargetLabel(binding.target)
+  end
+
+  if binding.kind == "app_picker" then
+    local labels = {}
+
+    for _, appTarget in ipairs(binding.targets) do
+      labels[#labels + 1] = appTargetLabel(appTarget)
+    end
+
+    return table.concat(labels, " / ")
+  end
+
+  if binding.kind == "action" then
+    return actionTargetLabel(binding.target)
+  end
+
+  return "Unknown binding"
+end
+
+local function sortedBindingKeys(bindings)
+  local keys = {}
+
+  for key in pairs(bindings) do
+    keys[#keys + 1] = key
+  end
+
+  table.sort(keys)
+  return keys
+end
+
+local function configOverlayBodyText(bindings)
+  local lines = {}
+
+  for _, key in ipairs(sortedBindingKeys(bindings)) do
+    lines[#lines + 1] = ("%s  %s"):format(string.upper(key), bindingDisplayLabel(bindings[key]))
+  end
+
+  if #lines == 0 then
+    lines[1] = "No bindings configured"
+  end
+
+  lines[#lines + 1] = ""
+  lines[#lines + 1] = "Release RightCmd to dismiss"
+  return table.concat(lines, "\n")
+end
+
+local function showConfigOverlay()
+  dismissConfigOverlay()
+
+  local frame = appPickerScreenFrame()
+  local bodyText = configOverlayBodyText(currentBindings)
+  local lineCount = select(2, bodyText:gsub("\n", "\n")) + 1
+  local width = 560
+  local height = math.min(frame.h - 80, 92 + (lineCount * 24))
+  local x = frame.x + math.floor((frame.w - width) / 2)
+  local y = frame.y + math.floor((frame.h - height) / 2)
+  local title = setPickerDrawingStyle(hs.drawing.text(hs.geometry.rect(x + 20, y + 18, width - 40, 26), "rcmd"))
+  local body = setPickerDrawingStyle(hs.drawing.text(hs.geometry.rect(x + 20, y + 52, width - 40, height - 68), bodyText))
+  local background = setPickerDrawingStyle(hs.drawing.rectangle(hs.geometry.rect(x, y, width, height)))
+
+  background:setRoundedRectRadii(16, 16)
+  background:setFill(true)
+  background:setFillColor({ white = 0.08, alpha = 0.97 })
+  background:setStroke(true)
+  background:setStrokeWidth(2)
+  background:setStrokeColor({ white = 1, alpha = 0.12 })
+
+  title:setTextSize(22)
+  title:setTextColor({ white = 1, alpha = 1 })
+
+  body:setTextFont("Menlo")
+  body:setTextSize(15)
+  body:setTextColor({ white = 1, alpha = 0.92 })
+
+  configOverlayDrawings = { background, title, body }
+  configOverlayVisible = true
+
+  for _, drawing in ipairs(configOverlayDrawings) do
+    drawing:show()
+  end
+end
+
+local function startRightCommandHoldTimer()
+  cancelRightCommandHoldTimer()
+
+  rightCommandHoldTimer = hs.timer.doAfter(rightCommandHoldDelay, function()
+    rightCommandHoldTimer = nil
+
+    if rightCommandHeld and not activeAppPicker then
+      showConfigOverlay()
+    end
+  end)
 end
 
 local function pickWindow(windows)
@@ -358,7 +495,7 @@ local function dismissAppPicker()
   setLauncherHotkeysEnabled(rightCommandHeld)
 end
 
-local function appPickerScreenFrame()
+appPickerScreenFrame = function()
   local focusedWindow = hs.window.focusedWindow()
   local screen = nil
 
@@ -382,7 +519,7 @@ local function appPickerBodyText(appTargets)
   return table.concat(lines, "\n")
 end
 
-local function setPickerDrawingStyle(drawing)
+setPickerDrawingStyle = function(drawing)
   drawing:setBehaviorByLabels({ "canJoinAllSpaces" })
   drawing:setLevel("overlay")
   return drawing
@@ -569,6 +706,9 @@ local function runAction(actionTarget)
 end
 
 local function triggerBinding(triggerKey, binding)
+  cancelRightCommandHoldTimer()
+  dismissConfigOverlay()
+
   if binding.kind == "app" then
     openBoundApp(binding.target)
     return
@@ -607,6 +747,8 @@ function M.start()
     end)
   end
 
+  currentBindings = bindings
+
   launcherTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, function(event)
     local wasRightCommandHeld = rightCommandHeld
     rightCommandHeld = hasOnlyRightCommandModifier(event)
@@ -616,6 +758,13 @@ function M.start()
       return false
     end
 
+    if rightCommandHeld and not wasRightCommandHeld then
+      startRightCommandHoldTimer()
+    elseif not rightCommandHeld then
+      cancelRightCommandHoldTimer()
+      dismissConfigOverlay()
+    end
+
     if not activeAppPicker then
       setLauncherHotkeysEnabled(rightCommandHeld)
     end
@@ -623,7 +772,18 @@ function M.start()
     return false
   end)
 
+  launcherKeyTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function()
+    if not rightCommandHeld or activeAppPicker then
+      return false
+    end
+
+    cancelRightCommandHoldTimer()
+    dismissConfigOverlay()
+    return false
+  end)
+
   launcherTap:start()
+  launcherKeyTap:start()
   setLauncherHotkeysEnabled(false)
   return true
 end

@@ -179,12 +179,11 @@ vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 vim.o.expandtab = true
 
--- Folding settings (Treesitter-based)
-vim.o.foldmethod = 'expr'
-vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+-- Folding settings
+vim.o.foldmethod = 'manual'
 vim.o.foldenable = false -- Start with folds open by default
 vim.o.foldlevel = 99 -- Open all folds by default
-vim.o.foldtext = '' -- Use Treesitter for fold text
+vim.o.foldtext = ''
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -1150,39 +1149,6 @@ require('lazy').setup({
       --  Check out: https://github.com/echasnovski/mini.nvim
     end,
   },
-  { -- Highlight, edit, and navigate code
-    'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
-    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-    config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter').setup {
-        ensure_installed = {
-          'bash',
-          'c',
-          'diff',
-          'html',
-          'lua',
-          'luadoc',
-          'markdown',
-          'markdown_inline',
-          'query',
-          'vim',
-          'vimdoc',
-        },
-      }
-
-      -- Enable treesitter-based highlighting and indentation (built into Neovim)
-      vim.treesitter.language.register('markdown', 'mdx')
-    end,
-    -- There are additional nvim-treesitter modules that you can use to interact
-    -- with nvim-treesitter. You should go explore a few and see what interests you:
-    --
-    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
-  },
-
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -1237,7 +1203,6 @@ require 'custom.markdown_vault'.setup()
 
 -- Load custom scripts
 require 'custom.copy_range'
-require 'custom.html_word_config'
 require('custom.inline_send').setup()
 
 -- The line beneath this is called `modeline`. See `:help modeline`

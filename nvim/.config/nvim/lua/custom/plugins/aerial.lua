@@ -4,13 +4,11 @@
 return {
   'stevearc/aerial.nvim',
   dependencies = {
-    'nvim-treesitter/nvim-treesitter',
     'nvim-tree/nvim-web-devicons',
   },
   opts = {
     -- Priority list of preferred backends for aerial
-    -- Use treesitter first for better performance, fallback to LSP
-    backends = { 'treesitter', 'lsp', 'markdown', 'asciidoc', 'man' },
+    backends = { 'lsp', 'markdown', 'asciidoc', 'man' },
 
     -- Layout and appearance - floating window in center
     layout = {

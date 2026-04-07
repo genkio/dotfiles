@@ -350,7 +350,7 @@ Features that come with the kickstart base config. You might not remember these 
 | `confirm` | Prompts to save instead of erroring on `:q` with unsaved changes |
 | `undofile` | Undo history persists across sessions |
 | `clipboard = 'unnamedplus'` | Yank syncs to OS clipboard (local only, not over SSH) |
-| Treesitter folding | `zc`/`zo`/`za` to fold/unfold code blocks (starts open) |
+| Folding | Manual folds are available with `zc`/`zo`/`za` (starts open) |
 | Whitespace chars | Tabs shown as `>>`, trailing spaces as `*`, nbsp as `_` |
 
 ### Which-Key
@@ -468,12 +468,6 @@ Works with any operator (`d`, `c`, `y`, `v`, etc.):
 ### Todo Comments
 
 Highlights `TODO`, `FIXME`, `HACK`, `WARN`, `NOTE`, `PERF` in comments. Search them with `:TodoTelescope`.
-
-### Treesitter
-
-- Syntax highlighting for all auto-installed languages
-- Better code folding (`zc`/`zo`/`za`)
-- Powers aerial code outline, autotag, and textobjects
 
 ### Other Built-in Keymaps
 

@@ -12,9 +12,9 @@ return {
 	l = "Logseq",
 	m = { "Mail", "Messages" },
 	n = { action = "notification_center" },
-	p = { "Preview" },
+	p = { "Photos", "Preview" },
+	r = "Remote",
 	t = "TablePlus",
 	s = { "Sublime Text", "Screen Sharing" },
-	u = "uuremote",
 	w = "WeChat",
 }

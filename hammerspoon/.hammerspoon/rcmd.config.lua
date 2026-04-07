@@ -14,7 +14,7 @@ return {
 	m = "Mail",
 	n = { action = "notification_center" },
 	t = "Sublime Text", -- text
-	s = "Shottr",
+	s = "Screen Sharing",
 	u = "uuremote",
 	w = "WeChat",
 }

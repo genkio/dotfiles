@@ -1,20 +1,20 @@
 return {
-	-- Values can be an app name/bundle ID/path, or a table with an action.
+	-- Values can be an app name/bundle ID/path, a table with an action, or
+	-- multiple apps via { "Brave Browser", "Google Chrome" } / { apps = { ... } }.
 	["1"] = { action = "window_left" },
 	["2"] = { action = "window_right" },
 	b = "Brave Browser",
 	c = "Calendar",
-	d = "TablePlus", -- database
 	f = "Finder",
 	g = "Ghostty",
 	h = "Hammerspoon",
-	k = "kap",
-	i = "IINA",
+	i = { "iPhone Mirroring", "IINA" },
 	l = "Logseq",
-	m = "Mail",
+	m = { "Mail", "Messages" },
 	n = { action = "notification_center" },
-	t = "Sublime Text", -- text
-	s = "Screen Sharing",
+	p = { "Preview" },
+	t = "TablePlus",
+	s = { "Sublime Text", "Screen Sharing" },
 	u = "uuremote",
 	w = "WeChat",
 }

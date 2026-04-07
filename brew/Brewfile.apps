@@ -3,9 +3,7 @@ cask "brave-browser"
 cask "hammerspoon"
 cask "iina"
 cask "keka"
-cask "monitorcontrol"
 cask "raycast"
-cask "shottr"
 
 # password required
 cask "homerow"

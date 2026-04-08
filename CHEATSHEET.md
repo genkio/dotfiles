@@ -210,8 +210,6 @@ Sessions auto-save on exit and auto-restore per directory when opening `nvim` wi
 | `:Autosession search` | Search and load a session |
 | `:Autosession delete` | Search and delete a session |
 
-**Autotag** - Auto-closes and auto-renames HTML/XML tags in insert mode.
-
 **Flash**
 
 | Key | Action |

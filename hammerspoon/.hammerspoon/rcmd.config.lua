@@ -13,7 +13,7 @@ return {
 	l = "Logseq",
 	m = { "Mail", "Messages" },
 	n = { action = "notification_center" },
-	p = { "Photos", "Preview" },
+	p = { "Preview", "Photos" },
 	r = "Remote",
 	t = "TablePlus",
 	s = { "Sublime Text", "Screen Sharing" },

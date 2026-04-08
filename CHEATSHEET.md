@@ -150,6 +150,8 @@ Ghostty shell integration enables `sudo`, `ssh-terminfo`, and `ssh-env` so SSH p
 | `gd` | Go to definition |
 | `gh` | Hover (preview docs) |
 | `gr` | List references (Telescope) |
+| `gO` | Search symbols in current file (Telescope document symbols) |
+| `gW` | Search symbols across workspace/project (Telescope workspace symbols) |
 | `<leader>rn` | Rename symbol |
 | `<leader>rf` | Rename file (TypeScript, updates imports) |
 | `<leader>ci` | Add missing imports |
@@ -185,18 +187,6 @@ Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `
 | `jk` | Exit insert mode (useful in browser terminals / ttyd) |
 
 ### Neovim - Custom Plugins
-
-**Aerial (code outline)**
-
-| Key | Action |
-|---|---|
-| `<leader>a` | Open floating code outline |
-| `<leader>so` | Search outline symbols (Telescope) |
-| `{` / `}` | Jump to prev/next symbol |
-| Inside Aerial: `<CR>` | Jump to symbol |
-| Inside Aerial: `C-v` / `C-s` | Jump in vsplit / hsplit |
-| Inside Aerial: `o` | Toggle tree node |
-| Inside Aerial: `q` | Close Aerial |
 
 **Auto-session**
 

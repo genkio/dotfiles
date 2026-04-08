@@ -171,6 +171,14 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+local resolved_config_dir = vim.fn.resolve(vim.fn.stdpath 'config')
+local dotfiles_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(resolved_config_dir)))
+
+-- Mark shells spawned by Neovim so zsh can load command helpers without a full
+-- interactive startup. This keeps `:!` compatible with functions like `gpu()`.
+vim.env.NVIM_SHELL_ALIASES = '1'
+vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
+
 -- Automatically pick up external file changes
 vim.o.autoread = true
 

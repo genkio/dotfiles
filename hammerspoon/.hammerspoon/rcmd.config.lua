@@ -1,6 +1,7 @@
 return {
 	-- Values can be an app name/bundle ID/path, a table with an action, or
 	-- multiple apps via { "Brave Browser", "Google Chrome" } / { apps = { ... } }.
+	["0"] = { action = "window_maximize" },
 	["1"] = { action = "window_left" },
 	["2"] = { action = "window_right" },
 	b = "Brave Browser",

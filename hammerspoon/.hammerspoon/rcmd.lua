@@ -296,6 +296,7 @@ local function actionTargetLabel(actionTarget)
     control_center = "Action: Control Center",
     window_left = "Action: Move Window Left",
     window_right = "Action: Move Window Right",
+    window_maximize = "Action: Maximize Window",
   }
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
@@ -692,6 +693,9 @@ local function runAction(actionTarget)
     end,
     window_right = function()
       moveFocusedWindow(hs.layout.right50, "No focused window to move right")
+    end,
+    window_maximize = function()
+      moveFocusedWindow(hs.geometry.rect(0, 0, 1, 1), "No focused window to maximize")
     end,
   }
 

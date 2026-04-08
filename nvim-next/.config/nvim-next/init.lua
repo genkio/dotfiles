@@ -5,3 +5,5 @@
 
 vim.o.number = true
 vim.o.relativenumber = true
+
+require('config.directory_resume').setup()

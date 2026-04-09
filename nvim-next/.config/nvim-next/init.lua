@@ -10,9 +10,11 @@ vim.pack.add({
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
 }, { confirm = false })
 
+vim.o.updatetime = 250
 vim.o.number = true
 vim.o.relativenumber = true
 
+require('config.auto_reload').setup()
 require('config.directory_resume').setup()
 require('config.snacks').setup()
 

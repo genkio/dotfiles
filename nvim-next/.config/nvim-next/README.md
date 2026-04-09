@@ -18,7 +18,9 @@ NVIM_APPNAME=nvim-next nvim
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another open buffer when the current buffer itself has no attached LSP.
 
-## Search Keybindings
+## Snacks.nvim
+
+### Search Keybindings
 
 - `<leader>sf`: fuzzy files in the current working directory
 - `<leader>sg`: grep text in the current working directory, literal mode by default
@@ -28,7 +30,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>sS`: workspace symbols from LSP
 - `<leader>sr`: resume the last Snacks picker
 
-## Useful Picker Keys
+### Useful Picker Keys
 
 - `<A-h>`: toggle hidden files
 - `<A-i>`: toggle ignored files
@@ -37,6 +39,11 @@ NVIM_APPNAME=nvim-next nvim
 - `<C-s>`: open selection in a horizontal split
 - `<C-v>`: open selection in a vertical split
 - `<C-t>`: open selection in a new tab
+
+## Neovim 0.12 Built-ins
+
+- `v_an`: select the parent node, expanding outward
+- `v_in`: select the child node, moving inward
 
 ## Notes
 

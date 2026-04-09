@@ -7,3 +7,5 @@ vim.o.number = true
 vim.o.relativenumber = true
 
 require('config.directory_resume').setup()
+
+vim.lsp.enable('ts_ls')

@@ -10,10 +10,24 @@ return {
     hostInfo = 'neovim',
   },
   root_dir = function(bufnr, on_dir)
-    local project_root = vim.fs.root(bufnr, {
-      { 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock' },
-      { '.git' },
-    })
+    local root_markers = { 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock' }
+    local workspace_markers = { 'pnpm-workspace.yaml' }
+    local git_root = vim.fs.root(bufnr, { '.git' })
+    local project_root = nil
+
+    if git_root then
+      for _, marker in ipairs(vim.list_extend(vim.deepcopy(root_markers), workspace_markers)) do
+        if vim.uv.fs_stat(vim.fs.joinpath(git_root, marker)) then
+          project_root = git_root
+          break
+        end
+      end
+    end
+
+    if not project_root then
+      project_root = vim.fs.root(bufnr, { root_markers, { '.git' } })
+    end
+
     local deno_root = vim.fs.root(bufnr, { 'deno.json', 'deno.jsonc' })
     local deno_lock_root = vim.fs.root(bufnr, { 'deno.lock' })
 

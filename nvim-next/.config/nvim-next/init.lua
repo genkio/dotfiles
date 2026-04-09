@@ -3,9 +3,17 @@
 --
 -- Keep this config intentionally small. Add only what earns its place.
 
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
+
+vim.pack.add({
+  { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
+}, { confirm = false })
+
 vim.o.number = true
 vim.o.relativenumber = true
 
 require('config.directory_resume').setup()
+require('config.snacks').setup()
 
 vim.lsp.enable('ts_ls')

@@ -1,0 +1,9 @@
+{
+  "plugins": {
+    "snacks.nvim": {
+      "rev": "ad9ede6a9cddf16cedbd31b8932d6dcdee9b716e",
+      "src": "https://github.com/folke/snacks.nvim",
+      "version": "'main'"
+    }
+  }
+}

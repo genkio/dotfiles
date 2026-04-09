@@ -16,7 +16,7 @@ NVIM_APPNAME=nvim-next nvim
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
 - Search defaults to the current working directory, not the git root.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
-- `<leader>sS` can reuse a compatible project LSP from another open buffer when the current buffer itself has no attached LSP.
+- `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 
 ## Snacks.nvim
 

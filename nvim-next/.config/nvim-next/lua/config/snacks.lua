@@ -77,6 +77,52 @@ local function current_project_path()
   return normalize(name)
 end
 
+local function project_root()
+  return vim.fs.root(current_project_path(), {
+    'tsconfig.json',
+    'jsconfig.json',
+    'pnpm-workspace.yaml',
+    '.git',
+  }) or current_cwd()
+end
+
+local function lsp_bootstrap_file(root)
+  local queue = { root }
+  local seen = {}
+
+  while #queue > 0 do
+    local dir = table.remove(queue, 1)
+    if not seen[dir] then
+      seen[dir] = true
+
+      local directories = {}
+      local files = {}
+
+      for name, entry_type in vim.fs.dir(dir) do
+        local path = vim.fs.joinpath(dir, name)
+
+        if entry_type == 'directory' then
+          if not vim.tbl_contains({ '.git', 'dist', 'node_modules' }, name) then
+            table.insert(directories, path)
+          end
+        elseif name:match '%.tsx?$' or name:match '%.jsx?$' then
+          table.insert(files, path)
+        end
+      end
+
+      table.sort(files)
+      if files[1] then
+        return files[1]
+      end
+
+      table.sort(directories)
+      vim.list_extend(queue, directories)
+    end
+  end
+
+  return nil
+end
+
 local function first_attached_buffer(client)
   for bufnr in pairs(client.attached_buffers or {}) do
     if vim.api.nvim_buf_is_valid(bufnr) then
@@ -110,6 +156,17 @@ local function workspace_symbol_target()
   return best_buf or fallback
 end
 
+local function bootstrap_workspace_client()
+  local file = lsp_bootstrap_file(project_root())
+  if not file then
+    return nil
+  end
+
+  local buf = vim.fn.bufadd(file)
+  vim.fn.bufload(buf)
+  return buf
+end
+
 local function grep_prompt()
   local search = prompt_optional 'Grep search: '
   if not search then
@@ -138,30 +195,39 @@ end
 local function workspace_symbols()
   local Snacks = require 'snacks'
   if has_lsp_method('workspace/symbol', 0) then
-    Snacks.picker.lsp_workspace_symbols()
+    Snacks.picker.lsp_workspace_symbols {
+      filter = { default = true },
+    }
     return
   end
 
   local target_buf = workspace_symbol_target()
   if not target_buf then
-    vim.notify('No attached LSP client supports workspace symbols', vim.log.levels.WARN)
-    return
+    local bootstrap_buf = bootstrap_workspace_client()
+    target_buf = workspace_symbol_target()
+
+    if not target_buf and bootstrap_buf then
+      vim.api.nvim_create_autocmd('LspAttach', {
+        buffer = bootstrap_buf,
+        once = true,
+        callback = function()
+          vim.schedule(workspace_symbols)
+        end,
+      })
+      return
+    end
+
+    if not target_buf then
+      vim.notify('No attached LSP client supports workspace symbols', vim.log.levels.WARN)
+      return
+    end
   end
 
   local lsp = require 'snacks.picker.source.lsp'
   Snacks.picker.pick {
     source = 'lsp_workspace_symbols',
+    filter = { default = true },
     finder = function(opts, ctx)
-      local filter = opts.filter[vim.bo[ctx.filter.current_buf].filetype]
-      if filter == nil then
-        filter = opts.filter.default
-      end
-
-      local function want(kind)
-        kind = kind or 'Unknown'
-        return type(filter) == 'boolean' or vim.tbl_contains(filter, kind)
-      end
-
       local bufmap = lsp.bufmap()
       return function(cb)
         lsp.request(target_buf, 'workspace/symbol', function()
@@ -169,9 +235,6 @@ local function workspace_symbols()
         end, function(client, result)
           local items = lsp.results_to_items(client, result, {
             text_with_file = true,
-            filter = function(item)
-              return want(lsp.symbol_kind(item.kind))
-            end,
           })
 
           for _, item in ipairs(items) do

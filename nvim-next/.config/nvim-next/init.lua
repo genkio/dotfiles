@@ -46,6 +46,7 @@ vim.pack.add({
 
 require('config.auto_reload').setup()
 require('config.directory_resume').setup()
+require('config.lsp_keymaps').setup()
 require('config.snacks').setup()
 
 vim.lsp.enable 'ts_ls'

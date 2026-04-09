@@ -45,6 +45,12 @@ NVIM_APPNAME=nvim-next nvim
 - `v_an`: select the parent node, expanding outward
 - `v_in`: select the child node, moving inward
 
+## LSP Keybindings
+
+- `gd`: go to definition
+- `gh`: hover preview
+- `gr`: list references with Snacks
+
 ## Notes
 
 - `snacks.nvim` is managed by `vim.pack`.

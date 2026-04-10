@@ -39,6 +39,8 @@ vim.o.splitbelow = true
 vim.o.ignorecase = true -- case insensitive search
 vim.o.smartcase = true -- case sensitive search if uppercase in string
 
+require('config.colors').setup()
+
 -- Plugins
 vim.pack.add({
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },

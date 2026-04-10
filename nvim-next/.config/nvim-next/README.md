@@ -14,6 +14,7 @@ NVIM_APPNAME=nvim-next nvim
 - `updatetime` is set to `250ms` so `CursorHold`-based reloads feel responsive in tmux.
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
+- The built-in `catppuccin` colorscheme is the default theme.
 - Search defaults to the current working directory, not the git root.
 - `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
@@ -39,6 +40,12 @@ NVIM_APPNAME=nvim-next nvim
 
 - `<leader>`: show available leader mappings
 - `<leader>?`: show buffer-local keymaps on demand
+
+## Colors
+
+- The default theme is Neovim's built-in `catppuccin`
+- `background=dark` uses Catppuccin Mocha
+- `background=light` uses Catppuccin Latte
 
 ## Neogit.nvim
 

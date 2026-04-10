@@ -1,3 +1,21 @@
+-- Rcmd: right-Command app launcher, inspired by rcmd.app
+--
+-- Hold right-Command and press a letter key to launch or focus an app.
+-- Bindings are defined in rcmd.config.lua as single-character keys mapped
+-- to app names, multi-app pickers, or system actions.
+--
+-- Features:
+--   - Single app bindings: RCmd+B → "Brave Browser"
+--   - Multi-app picker: RCmd+M → choose between "Mail" / "Messages"
+--   - System actions: window tiling, notification center, control center
+--   - Config overlay: hold right-Command for 0.5s to see all bindings
+--
+-- How it works:
+--   1. An event tap detects right-Command via raw modifier flag masks
+--   2. While held, single-character hotkeys are enabled
+--   3. Releasing right-Command disables the hotkeys
+--   4. Apps are launched/focused and maximized with retry logic
+
 local M = {}
 
 local launcherHotkeys = {}

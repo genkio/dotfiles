@@ -1,3 +1,18 @@
+-- Selection OCR: capture a screen region and copy recognized text
+--
+-- Press Cmd+Shift+S to enter selection mode. Draw a rectangle on screen
+-- to capture that region, then the recognized text is copied to the
+-- clipboard.
+--
+-- How it works:
+--   1. Triggers macOS screencapture in interactive selection mode
+--   2. Pipes the captured image to a companion Swift script
+--      (selection_ocr.swift) that uses Apple's Vision framework
+--   3. The Swift script performs OCR with Japanese + English support,
+--      normalizes text layout (line grouping, horizontal spacing),
+--      and outputs the result to stdout
+--   4. The recognized text is copied to the pasteboard
+
 local M = {}
 
 local hotkey = nil

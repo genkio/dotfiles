@@ -59,6 +59,7 @@ require('config.flash').setup()
 require('config.lsp_keymaps').setup()
 require('config.neogit').setup()
 require('config.snacks').setup()
+require('config.statusline').setup()
 require('config.which_key').setup()
 
 vim.lsp.enable 'ts_ls'

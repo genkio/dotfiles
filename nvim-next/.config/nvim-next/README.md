@@ -21,6 +21,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gw` opens a working tree versus index diff for the current repo.
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
+- The statusline is a built-in custom one that shows file path, Git branch, and cursor position.
 - Visible Neogit status buffers poll for refresh once per second so external file edits show up without manual `<C-r>`.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
@@ -48,6 +49,14 @@ NVIM_APPNAME=nvim-next nvim
 - The default theme is Neovim's built-in `catppuccin`
 - `background=dark` uses Catppuccin Mocha
 - `background=light` uses Catppuccin Latte
+
+## Statusline
+
+- Uses Neovim's built-in `statusline` option, not a plugin
+- Left side shows `[branch]` before the file path when inside a Git worktree
+- Left side also shows the file path and buffer flags
+- Right side shows `line:column`
+- The old `All` text came from Neovim's default `'ruler'` display and is now replaced by the custom statusline
 
 ## Flash.nvim
 

@@ -20,6 +20,10 @@ local function should_refresh()
   return ok and status.is_open()
 end
 
+local function current_is_status()
+  return vim.bo.filetype == 'NeogitStatus'
+end
+
 local function dispatch_refresh()
   local ok, neogit = pcall(require, 'neogit')
   if not ok or not should_refresh() then
@@ -31,7 +35,7 @@ local function dispatch_refresh()
 end
 
 local function request_refresh()
-  if refresh_state.pending or not should_refresh() then
+  if refresh_state.pending or not should_refresh() or not current_is_status() then
     return
   end
 
@@ -84,15 +88,6 @@ function M.setup()
     group = group,
     callback = function()
       request_refresh()
-    end,
-  })
-
-  vim.api.nvim_create_autocmd('BufEnter', {
-    group = group,
-    callback = function(event)
-      if vim.bo[event.buf].filetype == 'NeogitStatus' then
-        request_refresh()
-      end
     end,
   })
 

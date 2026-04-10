@@ -43,11 +43,16 @@ vim.o.smartcase = true -- case sensitive search if uppercase in string
 vim.pack.add({
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
+  { src = 'https://github.com/nvim-lua/plenary.nvim', version = 'master' },
+  { src = 'https://github.com/NeogitOrg/neogit', version = 'master' },
+  { src = 'https://github.com/sindrets/diffview.nvim', version = 'main' },
 }, { confirm = false })
 
 require('config.auto_reload').setup()
 require('config.directory_resume').setup()
+require('config.diffview').setup()
 require('config.lsp_keymaps').setup()
+require('config.neogit').setup()
 require('config.snacks').setup()
 require('config.which_key').setup()
 

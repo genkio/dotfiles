@@ -15,6 +15,10 @@ NVIM_APPNAME=nvim-next nvim
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
 - Search defaults to the current working directory, not the git root.
+- `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
+- `<leader>gd` opens a repo review against the default branch and includes local changes.
+- `<leader>gw` opens a working tree versus index diff for the current repo.
+- Visible Neogit status buffers poll for refresh once per second so external file edits show up without manual `<C-r>`.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.
@@ -35,6 +39,23 @@ NVIM_APPNAME=nvim-next nvim
 
 - `<leader>`: show available leader mappings
 - `<leader>?`: show buffer-local keymaps on demand
+
+## Neogit.nvim
+
+- `<leader>gg`: open Git status
+- `plenary.nvim` is installed because Neogit requires it
+- `snacks.nvim` is enabled as Neogit's picker integration
+- `diffview.nvim` is enabled as Neogit's diff viewer integration
+- The status buffer auto-refreshes every second while visible to catch working-tree edits from other panes/processes
+
+## Diffview.nvim
+
+- `<leader>gd`: review the current branch against the default branch, including local changes
+- `<leader>gw`: review the working tree against the index
+- `<leader>gD`: close Diffview
+- `<leader>gf`: file history for the current file
+- `<leader>gF`: file history for the current repo
+- The default-branch review resolves `origin/HEAD` first, then falls back to `origin/main`, `origin/master`, `main`, or `master`
 
 ### Useful Picker Keys
 
@@ -59,7 +80,7 @@ NVIM_APPNAME=nvim-next nvim
 
 ## Notes
 
-- `snacks.nvim` and `which-key.nvim` are managed by `vim.pack`.
+- `snacks.nvim`, `which-key.nvim`, `plenary.nvim`, `neogit.nvim`, and `diffview.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

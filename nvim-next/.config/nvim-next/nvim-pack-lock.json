@@ -10,6 +10,11 @@
       "src": "https://github.com/folke/flash.nvim",
       "version": "'main'"
     },
+    "gitsigns.nvim": {
+      "rev": "c23bbd3ed2c7a3fdc3399e97e24f9e158f57612f",
+      "src": "https://github.com/lewis6991/gitsigns.nvim",
+      "version": "'v1.0.0'"
+    },
     "neogit": {
       "rev": "e06745228600a585b88726fc9fba44a373c15a47",
       "src": "https://github.com/NeogitOrg/neogit",

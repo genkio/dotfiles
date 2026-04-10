@@ -46,6 +46,7 @@ vim.pack.add({
   { src = 'https://github.com/folke/flash.nvim', version = 'main' },
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
+  { src = 'https://github.com/lewis6991/gitsigns.nvim', version = 'v1.0.0' },
   { src = 'https://github.com/nvim-lua/plenary.nvim', version = 'master' },
   { src = 'https://github.com/NeogitOrg/neogit', version = 'master' },
   { src = 'https://github.com/sindrets/diffview.nvim', version = 'main' },
@@ -56,6 +57,7 @@ require('config.copy_range').setup()
 require('config.directory_resume').setup()
 require('config.diffview').setup()
 require('config.flash').setup()
+require('config.gitsigns').setup()
 require('config.lsp_keymaps').setup()
 require('config.neogit').setup()
 require('config.snacks').setup()

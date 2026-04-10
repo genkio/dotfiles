@@ -39,3 +39,4 @@ end
 
 require("rcmd").start()
 require("selection_ocr").start()
+require("homerow").start()

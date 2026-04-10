@@ -19,6 +19,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
+- `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
 - Visible Neogit status buffers poll for refresh once per second so external file edits show up without manual `<C-r>`.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
@@ -47,6 +48,11 @@ NVIM_APPNAME=nvim-next nvim
 - The default theme is Neovim's built-in `catppuccin`
 - `background=dark` uses Catppuccin Mocha
 - `background=light` uses Catppuccin Latte
+
+## Flash.nvim
+
+- `s`: jump to a visible target with labels
+- `f`, `F`, `t`, `T`, `;`, and `,` use Flash's default enhanced character motions
 
 ## Clipboard
 

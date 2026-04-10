@@ -43,6 +43,7 @@ require('config.colors').setup()
 
 -- Plugins
 vim.pack.add({
+  { src = 'https://github.com/folke/flash.nvim', version = 'main' },
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
   { src = 'https://github.com/nvim-lua/plenary.nvim', version = 'master' },
@@ -54,6 +55,7 @@ require('config.auto_reload').setup()
 require('config.copy_range').setup()
 require('config.directory_resume').setup()
 require('config.diffview').setup()
+require('config.flash').setup()
 require('config.lsp_keymaps').setup()
 require('config.neogit').setup()
 require('config.snacks').setup()

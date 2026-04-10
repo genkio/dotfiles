@@ -5,6 +5,11 @@
       "src": "https://github.com/sindrets/diffview.nvim",
       "version": "'main'"
     },
+    "flash.nvim": {
+      "rev": "fcea7ff883235d9024dc41e638f164a450c14ca2",
+      "src": "https://github.com/folke/flash.nvim",
+      "version": "'main'"
+    },
     "neogit": {
       "rev": "e06745228600a585b88726fc9fba44a373c15a47",
       "src": "https://github.com/NeogitOrg/neogit",

@@ -51,6 +51,7 @@ vim.pack.add({
 }, { confirm = false })
 
 require('config.auto_reload').setup()
+require('config.copy_range').setup()
 require('config.directory_resume').setup()
 require('config.diffview').setup()
 require('config.lsp_keymaps').setup()

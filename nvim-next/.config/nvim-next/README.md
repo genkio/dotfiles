@@ -19,6 +19,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
+- `<leader>yr` copies the current line or visual line range as `path:start-end`.
 - Visible Neogit status buffers poll for refresh once per second so external file edits show up without manual `<C-r>`.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
@@ -46,6 +47,12 @@ NVIM_APPNAME=nvim-next nvim
 - The default theme is Neovim's built-in `catppuccin`
 - `background=dark` uses Catppuccin Mocha
 - `background=light` uses Catppuccin Latte
+
+## Clipboard
+
+- `<leader>yr`: copy the current line or visual line range to the clipboard
+- The copied format is repo-relative when inside a Git worktree
+- Selecting the whole file copies only the relative path
 
 ## Neogit.nvim
 

@@ -1,5 +1,15 @@
 local M = {}
 
+local function can_checktime()
+  return vim.fn.getcmdwintype() == ''
+end
+
+function M.checktime()
+  if can_checktime() then
+    vim.cmd.checktime()
+  end
+end
+
 function M.setup()
   vim.o.autoread = true
 
@@ -10,7 +20,7 @@ function M.setup()
     desc = 'Reload files changed outside of Neovim',
     callback = function(event)
       if vim.bo[event.buf].buftype == '' then
-        vim.cmd.checktime()
+        M.checktime()
       end
     end,
   })

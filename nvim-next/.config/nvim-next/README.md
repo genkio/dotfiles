@@ -23,7 +23,7 @@ NVIM_APPNAME=nvim-next nvim
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
 - The statusline is a built-in custom one that shows file path, Git branch, and cursor position.
-- Visible Neogit status buffers poll for refresh once per second so external file edits show up without manual `<C-r>`.
+- Visible Neogit status buffers refresh automatically on idle and focus changes so external file edits show up without manual `<C-r>`.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.
@@ -84,7 +84,7 @@ NVIM_APPNAME=nvim-next nvim
 - `plenary.nvim` is installed because Neogit requires it
 - `snacks.nvim` is enabled as Neogit's picker integration
 - `diffview.nvim` is enabled as Neogit's diff viewer integration
-- The status buffer auto-refreshes every second while visible to catch working-tree edits from other panes/processes
+- The status buffer auto-refreshes on `CursorHold`, `FocusGained`, and re-entry to avoid cursor jumps while navigating
 
 ## Diffview.nvim
 

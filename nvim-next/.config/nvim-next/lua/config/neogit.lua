@@ -1,6 +1,5 @@
 local M = {}
 local refresh_state = {
-  timer = nil,
   pending = false,
 }
 
@@ -31,22 +30,33 @@ local function dispatch_refresh()
   neogit.dispatch_refresh()
 end
 
-local function ensure_refresh_timer()
-  if refresh_state.timer then
+local function request_refresh()
+  if refresh_state.pending or not should_refresh() then
     return
   end
 
-  local timer = assert(vim.uv.new_timer())
-  timer:start(1000, 1000, vim.schedule_wrap(function()
-    if refresh_state.pending or not should_refresh() then
-      return
-    end
+  refresh_state.pending = true
+  dispatch_refresh()
+end
 
-    refresh_state.pending = true
-    dispatch_refresh()
-  end))
+local function replace_neogit_checktime_autocmd()
+  local group = require('neogit').autocmd_group
 
-  refresh_state.timer = timer
+  for _, autocmd in ipairs(vim.api.nvim_get_autocmds {
+    event = 'User',
+    group = group,
+    pattern = 'NeogitStatusRefreshed',
+  }) do
+    vim.api.nvim_del_autocmd(autocmd.id)
+  end
+
+  vim.api.nvim_create_autocmd('User', {
+    group = group,
+    pattern = 'NeogitStatusRefreshed',
+    callback = function()
+      require('config.auto_reload').checktime()
+    end,
+  })
 end
 
 function M.setup()
@@ -59,7 +69,7 @@ function M.setup()
     },
   }
 
-  ensure_refresh_timer()
+  replace_neogit_checktime_autocmd()
 
   local group = vim.api.nvim_create_augroup('nvim-next-neogit-refresh', { clear = true })
   vim.api.nvim_create_autocmd('User', {
@@ -70,13 +80,18 @@ function M.setup()
     end,
   })
 
-  vim.api.nvim_create_autocmd('VimLeavePre', {
+  vim.api.nvim_create_autocmd({ 'CursorHold', 'FocusGained' }, {
     group = group,
     callback = function()
-      if refresh_state.timer then
-        refresh_state.timer:stop()
-        refresh_state.timer:close()
-        refresh_state.timer = nil
+      request_refresh()
+    end,
+  })
+
+  vim.api.nvim_create_autocmd('BufEnter', {
+    group = group,
+    callback = function(event)
+      if vim.bo[event.buf].filetype == 'NeogitStatus' then
+        request_refresh()
       end
     end,
   })

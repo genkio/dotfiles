@@ -17,6 +17,7 @@ NVIM_APPNAME=nvim-next nvim
 - Search defaults to the current working directory, not the git root.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
+- `<leader>` shows available leader mappings with `which-key.nvim`.
 
 ## Snacks.nvim
 
@@ -29,6 +30,11 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>ss`: document symbols, preferring LSP and falling back to Treesitter
 - `<leader>sS`: workspace symbols from LSP
 - `<leader>sr`: resume the last Snacks picker
+
+## Which-key.nvim
+
+- `<leader>`: show available leader mappings
+- `<leader>?`: show buffer-local keymaps on demand
 
 ### Useful Picker Keys
 
@@ -53,7 +59,7 @@ NVIM_APPNAME=nvim-next nvim
 
 ## Notes
 
-- `snacks.nvim` is managed by `vim.pack`.
+- `snacks.nvim` and `which-key.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

@@ -42,11 +42,13 @@ vim.o.smartcase = true -- case sensitive search if uppercase in string
 -- Plugins
 vim.pack.add({
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
+  { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
 }, { confirm = false })
 
 require('config.auto_reload').setup()
 require('config.directory_resume').setup()
 require('config.lsp_keymaps').setup()
 require('config.snacks').setup()
+require('config.which_key').setup()
 
 vim.lsp.enable 'ts_ls'

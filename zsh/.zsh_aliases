@@ -21,6 +21,14 @@ alias ls="eza --group-directories-first"
 alias ll="eza --group-directories-first --all -lh"
 alias lt="eza --group-directories-first --tree --level=2 --icons"
 alias lti="eza --group-directories-first --all --tree --icons"
+vim() {
+  if [[ $# -gt 0 ]]; then
+    NVIM_APPNAME="nvim-next" nvim "$@"
+  else
+    NVIM_APPNAME="nvim-next" nvim .
+  fi
+}
+
 vi() {
   if [[ $# -gt 0 ]]; then
     nvim "$@"

@@ -14,7 +14,7 @@
 --   1. An event tap detects right-Command via raw modifier flag masks
 --   2. While held, single-character hotkeys are enabled
 --   3. Releasing right-Command disables the hotkeys
---   4. Apps are launched/focused and maximized with retry logic
+--   4. Apps are launched/focused and sent to macOS fullscreen with retry logic
 
 local M = {}
 
@@ -314,7 +314,7 @@ local function actionTargetLabel(actionTarget)
     control_center = "Action: Control Center",
     window_left = "Action: Move Window Left",
     window_right = "Action: Move Window Right",
-    window_maximize = "Action: Maximize Window",
+    window_maximize = "Action: Enter Full Screen",
   }
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
@@ -435,7 +435,7 @@ local function firstWindow(app)
   return app:mainWindow() or pickWindow(app:visibleWindows()) or pickWindow(app:allWindows())
 end
 
-local function maximizeWindow(window)
+local function fullscreenWindow(window)
   if window:isMinimized() then
     window:unminimize()
   end
@@ -443,19 +443,13 @@ local function maximizeWindow(window)
   window:focus()
 
   if window:isFullScreen() then
-    window:setFullScreen(false)
-    hs.timer.doAfter(0.4, function()
-      if window:id() then
-        window:maximize(0)
-      end
-    end)
     return
   end
 
-  window:maximize(0)
+  window:setFullScreen(true)
 end
 
-local function focusAndMaximize(app, retriesRemaining)
+local function focusAndFullscreen(app, retriesRemaining)
   local window = nil
 
   app:unhide()
@@ -463,7 +457,7 @@ local function focusAndMaximize(app, retriesRemaining)
   window = firstWindow(app)
 
   if window then
-    maximizeWindow(window)
+    fullscreenWindow(window)
     return
   end
 
@@ -473,7 +467,7 @@ local function focusAndMaximize(app, retriesRemaining)
   end
 
   hs.timer.doAfter(0.2, function()
-    focusAndMaximize(app, retriesRemaining - 1)
+    focusAndFullscreen(app, retriesRemaining - 1)
   end)
 end
 
@@ -649,7 +643,7 @@ openBoundApp = function(appTarget)
   local app = hs.application.open(appTarget)
 
   if app then
-    focusAndMaximize(app, 15)
+    focusAndFullscreen(app, 15)
     return
   end
 
@@ -661,7 +655,7 @@ openBoundApp = function(appTarget)
 
     if runningApp then
       poller:stop()
-      focusAndMaximize(runningApp, 15)
+      focusAndFullscreen(runningApp, 15)
       return
     end
 
@@ -695,6 +689,17 @@ local function moveFocusedWindow(unitRect, missingWindowMessage)
   window:focus()
 end
 
+local function fullscreenFocusedWindow(missingWindowMessage)
+  local window = hs.window.focusedWindow()
+
+  if not window then
+    hs.alert.show(missingWindowMessage)
+    return
+  end
+
+  fullscreenWindow(window)
+end
+
 local function runAction(actionTarget)
   local actionHandlers = {
     notification_center = function()
@@ -713,7 +718,7 @@ local function runAction(actionTarget)
       moveFocusedWindow(hs.layout.right50, "No focused window to move right")
     end,
     window_maximize = function()
-      moveFocusedWindow(hs.geometry.rect(0, 0, 1, 1), "No focused window to maximize")
+      fullscreenFocusedWindow("No focused window to enter full screen")
     end,
   }
 

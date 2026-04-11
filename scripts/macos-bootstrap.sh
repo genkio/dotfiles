@@ -44,6 +44,13 @@ echo "Keyboard: Disable automatic capitalization"
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 
 ###############################################################################
+# Accessibility
+###############################################################################
+
+echo "Accessibility: Enable Reduce motion"
+defaults write com.apple.universalaccess reduceMotion -bool true
+
+###############################################################################
 # Sound
 ###############################################################################
 

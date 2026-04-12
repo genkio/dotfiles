@@ -81,6 +81,12 @@ NVIM_APPNAME=nvim-next nvim
 - The copied format is repo-relative when inside a Git worktree
 - Selecting the whole file copies only the relative path
 
+## Netrw
+
+- Tree listing is the default netrw view
+- In tree view, `<CR>` on a directory expands or collapses it inline
+- `<leader>er` runs `:Rex` to return to the explorer
+
 ## Neogit.nvim
 
 - `<leader>gg`: open Git status

@@ -99,6 +99,7 @@ NVIM_APPNAME=nvim-next nvim
 - `diffview.nvim` is enabled as Neogit's diff viewer integration
 - Neogit's built-in `auto_refresh` is enabled
 - Neogit's `.git` filewatcher is disabled
+- In `NeogitStatus`, `<CR>` is remapped to Neogit's `TabOpen` action so closing the file returns you to status
 - Use `<C-r>` in the status buffer whenever you want a manual refresh
 
 ## Diffview.nvim

@@ -24,6 +24,11 @@ function M.setup()
       snacks = true,
       diffview = true,
     },
+    mappings = {
+      status = {
+        ['<cr>'] = 'TabOpen',
+      },
+    },
   }
 
   vim.keymap.set('n', '<leader>gg', function()

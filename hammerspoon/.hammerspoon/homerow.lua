@@ -42,6 +42,7 @@ local BADGE_FONT_SIZE = 11
 local BADGE_PADDING_X = 4
 local BADGE_PADDING_Y = 2
 local BADGE_CORNER_RADIUS = 3
+local BADGE_GAP = 4
 local DIM_OVERLAY_COLOR = { white = 0, alpha = 0.12 }
 local MATCHED_BG = { red = 0.2, green = 0.8, blue = 0.3, alpha = 0.95 }
 local MATCHED_BORDER = { red = 0.1, green = 0.6, blue = 0.2, alpha = 0.8 }
@@ -73,15 +74,25 @@ local interactiveRoles = {
   AXSlider = true,
   AXIncrementor = true,
   AXDisclosureTriangle = true,
+  AXTab = true,
+  AXColorWell = true,
+  AXDateField = true,
+  AXTimeField = true,
+  AXSearchField = true,
+  AXSegmentedControl = true,
+}
+
+-- Rows and cells are often clickable, but they are broad containers.
+-- Keep them as low-priority fallbacks so they don't suppress specific controls.
+local weakInteractiveRoles = {
   AXRow = true,
   AXCell = true,
   AXOutlineRow = true,
-  AXTabGroup = true,
-  AXToolbar = true,
 }
 
 -- Maximum number of hints we can generate (numChars^2 for two-char hints)
 local MAX_HINTS = #HINT_CHARS * #HINT_CHARS
+local MAX_CANDIDATES = MAX_HINTS * 4
 
 -- Generate fixed-length hint labels for a given count
 -- Uses single chars when count <= numChars, two chars otherwise
@@ -124,24 +135,95 @@ local skipActionCheckRoles = {
   AXApplication = true,
   AXScrollBar = true,
   AXValueIndicator = true,
+  AXTable = true,
+  AXOutline = true,
+  AXList = true,
+  AXBrowser = true,
+  AXTabGroup = true,
+  AXToolbar = true,
+  AXRuler = true,
+  AXRulerMarker = true,
+  AXGrowArea = true,
+  AXMatte = true,
 }
 
+local function getAttribute(element, name)
+  local ok, value = pcall(function() return element:attributeValue(name) end)
+  if ok then return value end
+  return nil
+end
+
+local function getElementGeometry(element)
+  local pos = getAttribute(element, "AXPosition")
+  local size = getAttribute(element, "AXSize")
+  if not pos or not size then return nil end
+
+  return {
+    position = pos,
+    size = size,
+    center = {
+      x = pos.x + size.w / 2,
+      y = pos.y + size.h / 2,
+    },
+    area = size.w * size.h,
+  }
+end
+
+local function containsPoint(info, point)
+  return point.x >= info.position.x
+    and point.x <= info.position.x + info.size.w
+    and point.y >= info.position.y
+    and point.y <= info.position.y + info.size.h
+end
+
+local function intersectionArea(a, b)
+  local left = math.max(a.x, b.x)
+  local right = math.min(a.x + a.w, b.x + b.w)
+  if right <= left then return 0 end
+
+  local top = math.max(a.y, b.y)
+  local bottom = math.min(a.y + a.h, b.y + b.h)
+  if bottom <= top then return 0 end
+
+  return (right - left) * (bottom - top)
+end
+
+local function overlapRatio(a, b)
+  local overlap = intersectionArea(
+    { x = a.position.x, y = a.position.y, w = a.size.w, h = a.size.h },
+    { x = b.position.x, y = b.position.y, w = b.size.w, h = b.size.h }
+  )
+  if overlap == 0 then return 0 end
+  return overlap / math.min(a.area, b.area)
+end
+
+local function getChildren(element)
+  local visibleChildren = getAttribute(element, "AXVisibleChildren")
+  if visibleChildren and #visibleChildren > 0 then return visibleChildren end
+  return getAttribute(element, "AXChildren")
+end
+
+local function getActionNames(element)
+  local ok, actions = pcall(function() return element:actionNames() end)
+  if ok then return actions end
+  return nil
+end
+
 -- Check if an element is actionable and visible within the window frame
-local function isActionable(element, windowFrame)
-  local role = element:attributeValue("AXRole")
+local function isActionable(element, windowFrame, geometry)
+  local role = getAttribute(element, "AXRole")
   if not role then return nil end
 
-  local enabled = element:attributeValue("AXEnabled")
+  local enabled = getAttribute(element, "AXEnabled")
   if enabled == false then return nil end
 
-  local pos = element:attributeValue("AXPosition")
-  local size = element:attributeValue("AXSize")
-  if not pos or not size then return nil end
-  if size.w < 5 or size.h < 5 then return nil end
+  local info = geometry or getElementGeometry(element)
+  if not info then return nil end
+  if info.size.w < 5 or info.size.h < 5 then return nil end
 
   -- Must be within window bounds
-  local cx = pos.x + size.w / 2
-  local cy = pos.y + size.h / 2
+  local cx = info.center.x
+  local cy = info.center.y
   if cx < windowFrame.x or cx > windowFrame.x + windowFrame.w
     or cy < windowFrame.y or cy > windowFrame.y + windowFrame.h then
     return nil
@@ -149,7 +231,15 @@ local function isActionable(element, windowFrame)
 
   -- Check if interactive by role
   if interactiveRoles[role] then
-    return { role = role, position = pos, size = size, center = { x = cx, y = cy } }
+    info.role = role
+    info.priority = 3
+    return info
+  end
+
+  if weakInteractiveRoles[role] then
+    info.role = role
+    info.priority = 1
+    return info
   end
 
   -- Skip action check for known non-interactive containers
@@ -157,11 +247,13 @@ local function isActionable(element, windowFrame)
 
   -- For other roles (AXStaticText, AXImage, AXGroup, etc.),
   -- check if element exposes a press or open action
-  local actions = element:actionNames()
+  local actions = getActionNames(element)
   if actions then
     for _, action in ipairs(actions) do
-      if action == "AXPress" or action == "AXOpen" then
-        return { role = role, position = pos, size = size, center = { x = cx, y = cy } }
+      if action == "AXPress" or action == "AXOpen" or action == "AXConfirm" or action == "AXShowMenu" then
+        info.role = role
+        info.priority = 2
+        return info
       end
     end
   end
@@ -171,17 +263,76 @@ end
 
 -- Check if an element's bounds overlap the visible window area
 -- Used to prune entire subtrees that are off-screen
-local function isOnScreen(element, windowFrame)
-  local ok, pos, size
-  ok, pos = pcall(function() return element:attributeValue("AXPosition") end)
-  if not ok or not pos then return true end -- assume visible if we can't tell
-  ok, size = pcall(function() return element:attributeValue("AXSize") end)
-  if not ok or not size then return true end
+local function isOnScreen(geometry, windowFrame)
+  if not geometry then return true end -- assume visible if we can't tell
 
   -- Element is off-screen if it's entirely outside the window frame
-  if pos.x + size.w < windowFrame.x or pos.x > windowFrame.x + windowFrame.w then return false end
-  if pos.y + size.h < windowFrame.y or pos.y > windowFrame.y + windowFrame.h then return false end
+  if geometry.position.x + geometry.size.w < windowFrame.x
+    or geometry.position.x > windowFrame.x + windowFrame.w then
+    return false
+  end
+  if geometry.position.y + geometry.size.h < windowFrame.y
+    or geometry.position.y > windowFrame.y + windowFrame.h then
+    return false
+  end
   return true
+end
+
+local function filterCandidates(candidates)
+  table.sort(candidates, function(a, b)
+    if a.priority ~= b.priority then return a.priority > b.priority end
+    if math.abs(a.area - b.area) > 1 then return a.area < b.area end
+    if a.depth ~= b.depth then return a.depth > b.depth end
+    if a.center.y ~= b.center.y then return a.center.y < b.center.y end
+    return a.center.x < b.center.x
+  end)
+
+  local selected = {}
+  for _, candidate in ipairs(candidates) do
+    local redundant = false
+    for _, existing in ipairs(selected) do
+      local sameCenter = math.abs(candidate.center.x - existing.center.x) <= 4
+        and math.abs(candidate.center.y - existing.center.y) <= 4
+      if sameCenter or overlapRatio(candidate, existing) >= 0.85 then
+        redundant = true
+        break
+      end
+    end
+
+    if not redundant then
+      table.insert(selected, candidate)
+    end
+  end
+
+  local final = {}
+  for _, candidate in ipairs(selected) do
+    local shadowed = false
+    if candidate.priority == 1 then
+      for _, other in ipairs(selected) do
+        if other ~= candidate and other.priority > candidate.priority and containsPoint(candidate, other.center) then
+          shadowed = true
+          break
+        end
+      end
+    end
+
+    if not shadowed then
+      table.insert(final, candidate)
+    end
+  end
+
+  table.sort(final, function(a, b)
+    local rowA = math.floor(a.center.y / 20)
+    local rowB = math.floor(b.center.y / 20)
+    if rowA ~= rowB then return rowA < rowB end
+    return a.center.x < b.center.x
+  end)
+
+  while #final > MAX_HINTS do
+    table.remove(final)
+  end
+
+  return final
 end
 
 -- Collect actionable elements using breadth-first search
@@ -189,15 +340,15 @@ end
 -- content) rather than exhausting one deep branch before visiting others
 local function collectElements(axWin, winFrame)
   local deadlineNs = hs.timer.absoluteTime() + (WALK_DEADLINE_SECS * 1e9)
-  local elements = {}
+  local candidates = {}
   local visited = 0
 
-  -- BFS queue entries: { element, depth }
+  -- BFS queue entries: { element, depth, geometry }
   local queue = { { axWin, 0 } }
   local head = 1
 
   while head <= #queue do
-    if #elements >= MAX_HINTS then break end
+    if #candidates >= MAX_CANDIDATES then break end
 
     -- Check wall-clock deadline periodically
     visited = visited + 1
@@ -207,42 +358,27 @@ local function collectElements(axWin, winFrame)
 
     local entry = queue[head]
     head = head + 1
-    local elem, depth = entry[1], entry[2]
+    local elem, depth, geometry = entry[1], entry[2], entry[3]
 
     if depth > MAX_DEPTH then goto continue end
 
     -- Check if this element is actionable
     if depth > 0 then -- skip root window element
-      local ok, info = pcall(isActionable, elem, winFrame)
-      if ok and info then
-        -- Dedup: skip if this element's center falls inside a larger
-        -- already-collected element (parent/child overlap from BFS)
-        local dominated = false
-        local area = info.size.w * info.size.h
-        for _, existing in ipairs(elements) do
-          local ea = existing.size.w * existing.size.h
-          if area < ea * 0.95
-            and info.center.x >= existing.position.x
-            and info.center.x <= existing.position.x + existing.size.w
-            and info.center.y >= existing.position.y
-            and info.center.y <= existing.position.y + existing.size.h then
-            dominated = true
-            break
-          end
-        end
-        if not dominated then
-          info.element = elem
-          table.insert(elements, info)
-        end
+      local info = isActionable(elem, winFrame, geometry)
+      if info then
+        info.element = elem
+        info.depth = depth
+        table.insert(candidates, info)
       end
     end
 
-    -- Enqueue children, pruning off-screen subtrees
-    local ok, children = pcall(function() return elem:attributeValue("AXChildren") end)
-    if ok and children then
+    -- Prefer visible children when available to avoid walking hidden subtrees.
+    local children = getChildren(elem)
+    if children then
       for _, child in ipairs(children) do
-        if isOnScreen(child, winFrame) then
-          table.insert(queue, { child, depth + 1 })
+        local childGeometry = getElementGeometry(child)
+        if isOnScreen(childGeometry, winFrame) then
+          table.insert(queue, { child, depth + 1, childGeometry })
         end
       end
     end
@@ -250,15 +386,60 @@ local function collectElements(axWin, winFrame)
     ::continue::
   end
 
-  -- Sort top-to-bottom, left-to-right for intuitive hint assignment
-  table.sort(elements, function(a, b)
-    local rowA = math.floor(a.center.y / 20)
-    local rowB = math.floor(b.center.y / 20)
-    if rowA ~= rowB then return rowA < rowB end
-    return a.center.x < b.center.x
-  end)
+  return filterCandidates(candidates)
+end
 
-  return elements
+local function clampBadgeFrame(frame, bw, bh, x, y)
+  return {
+    x = math.max(0, math.min(x, frame.w - bw)),
+    y = math.max(0, math.min(y, frame.h - bh)),
+    w = bw,
+    h = bh,
+  }
+end
+
+local function prefersInlineBadge(hint, bw, bh)
+  if weakInteractiveRoles[hint.role or ""] then return true end
+  return hint.size.w >= bw * 4 and hint.size.h <= bh * 2.5
+end
+
+local function chooseBadgeFrame(hint, frame, bw, bh, occupied)
+  local anchors
+  if prefersInlineBadge(hint, bw, bh) then
+    anchors = {
+      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x + BADGE_GAP, hint.center.y - frame.y - (bh / 2)),
+      clampBadgeFrame(frame, bw, bh, hint.position.x + hint.size.w - bw - frame.x - BADGE_GAP, hint.center.y - frame.y - (bh / 2)),
+      clampBadgeFrame(frame, bw, bh, hint.center.x - frame.x - (bw / 2), hint.center.y - frame.y - (bh / 2)),
+      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y - frame.y - bh - BADGE_GAP),
+      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y + hint.size.h - frame.y + BADGE_GAP),
+    }
+  else
+    anchors = {
+      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y - frame.y - bh - BADGE_GAP),
+      clampBadgeFrame(frame, bw, bh, hint.position.x + hint.size.w - bw - frame.x, hint.position.y - frame.y - bh - BADGE_GAP),
+      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x + BADGE_GAP, hint.center.y - frame.y - (bh / 2)),
+      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y + hint.size.h - frame.y + BADGE_GAP),
+      clampBadgeFrame(frame, bw, bh, hint.center.x - frame.x - (bw / 2), hint.center.y - frame.y - (bh / 2)),
+    }
+  end
+
+  local bestFrame = anchors[1]
+  local bestScore = math.huge
+  for _, candidate in ipairs(anchors) do
+    local score = 0
+    for _, other in ipairs(occupied) do
+      score = score + intersectionArea(candidate, other)
+      if score >= bestScore then break end
+    end
+
+    if score < bestScore then
+      bestFrame = candidate
+      bestScore = score
+      if score == 0 then break end
+    end
+  end
+
+  return bestFrame
 end
 
 -- Build and display the hint overlay canvas
@@ -279,6 +460,7 @@ local function showHints(hints, frame)
   })
 
   local charWidth = BADGE_FONT_SIZE * 0.65
+  local occupied = {}
 
   for _, hint in ipairs(hints) do
     local label = hint.label
@@ -289,13 +471,9 @@ local function showHints(hints, frame)
     local bw = textWidth + BADGE_PADDING_X * 2
     local bh = textHeight + BADGE_PADDING_Y * 2
 
-    -- Position at top-left of element
-    local bx = hint.position.x - frame.x
-    local by = hint.position.y - frame.y - bh / 2
-
-    -- Clamp to screen bounds
-    bx = math.max(0, math.min(bx, frame.w - bw))
-    by = math.max(0, math.min(by, frame.h - bh))
+    local badgeFrame = chooseBadgeFrame(hint, frame, bw, bh, occupied)
+    local bx = badgeFrame.x
+    local by = badgeFrame.y
 
     local bgColor = isMatched and MATCHED_BG or BADGE_BG
     local borderColor = isMatched and MATCHED_BORDER or BADGE_BORDER
@@ -321,6 +499,8 @@ local function showHints(hints, frame)
       textAlignment = "center",
       frame = { x = bx, y = by + BADGE_PADDING_Y - 1, w = bw, h = bh - BADGE_PADDING_Y },
     })
+
+    table.insert(occupied, badgeFrame)
   end
 
   hintCanvas:level("overlay")

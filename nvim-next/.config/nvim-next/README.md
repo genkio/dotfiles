@@ -8,6 +8,23 @@ NVIM_APPNAME=nvim-next nvim
 
 `<leader>` is `Space`.
 
+## Session Prompt
+
+- Work in `nvim-next/.config/nvim-next` as a clean Neovim 0.12 config
+- Check latest Neovim 0.12 / official docs first for every task
+- Prefer built-in Neovim features when possible
+- If built-in is enough, explain how to use it; if config is needed, implement it in `nvim-next`
+- Use `nvim/.config/nvim` only as reference when I say "previously"
+- Keep `nvim-next` minimal, stable, and pragmatic
+- Prefer small local Lua modules over plugin-heavy setups
+- Only add a plugin when it is clearly justified; configure only the needed part
+- Avoid complex or brittle custom logic for small gains
+- For high-value workflow improvements with no clean built-in solution, small isolated custom logic is acceptable if it is low-risk, easy to remove, and clearly scoped to one module
+- If a requirement is too complex or intrusive even under that bar, keep the simpler behavior instead
+- If a customization fights Neovim/plugin defaults and becomes unstable, prefer removing it over layering more fixes
+- Update README/docs when behavior changes meaningfully
+- Verify changes when possible
+
 ## Behaviors
 
 - Files changed on disk are reloaded automatically for normal file buffers.
@@ -24,7 +41,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>er` runs `:Rex` to return to netrw explorer.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
 - The statusline is a built-in custom one that shows file path, Git branch, and cursor position.
-- Visible Neogit status buffers refresh automatically on idle and focus changes so external file edits show up without manual `<C-r>`.
+- Neogit's built-in `auto_refresh` is enabled, but its `.git` filewatcher is disabled.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.

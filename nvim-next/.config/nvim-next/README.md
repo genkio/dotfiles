@@ -21,6 +21,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gw` opens a working tree versus index diff for the current repo.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
+- `<leader>er` runs `:Rex` to return to netrw explorer.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
 - The statusline is a built-in custom one that shows file path, Git branch, and cursor position.
 - Visible Neogit status buffers refresh automatically on idle and focus changes so external file edits show up without manual `<C-r>`.

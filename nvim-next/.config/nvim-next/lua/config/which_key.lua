@@ -28,6 +28,7 @@ function M.setup()
       },
     },
     spec = {
+      { '<leader>e', group = 'Explorer' },
       { '<leader>g', group = 'Git' },
       { '<leader>s', group = 'Search', mode = { 'n', 'x' } },
       { '<leader>y', group = 'Yank' },

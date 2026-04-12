@@ -85,6 +85,10 @@ NVIM_APPNAME=nvim-next nvim
 
 - Tree listing is the default netrw view
 - In tree view, `<CR>` on a directory expands or collapses it inline
+- If a preview window is open, `<CR>` on a real file opens it and closes the preview automatically
+- `p` previews the file in a preview window while keeping focus in netrw
+- Once a preview window is open, moving the cursor in netrw auto-updates the preview for files under the cursor
+- `q` closes the preview window
 - `<leader>er` runs `:Rex` to return to the explorer
 
 ## Neogit.nvim

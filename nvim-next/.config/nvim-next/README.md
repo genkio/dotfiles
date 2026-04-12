@@ -97,7 +97,9 @@ NVIM_APPNAME=nvim-next nvim
 - `plenary.nvim` is installed because Neogit requires it
 - `snacks.nvim` is enabled as Neogit's picker integration
 - `diffview.nvim` is enabled as Neogit's diff viewer integration
-- The status buffer auto-refreshes on `CursorHold` and `FocusGained` only while `NeogitStatus` is the current buffer
+- Neogit's built-in `auto_refresh` is enabled
+- Neogit's `.git` filewatcher is disabled
+- Use `<C-r>` in the status buffer whenever you want a manual refresh
 
 ## Diffview.nvim
 

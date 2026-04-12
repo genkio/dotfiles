@@ -113,7 +113,7 @@ end
 
 function M.setup()
   vim.o.laststatus = 3
-  vim.o.statusline = "%{%v:lua.require'config.statusline'.branch()%}%<%f%h%m%r%=%l:%c"
+  vim.o.statusline = "%{%v:lua.require'config.statusline'.branch()%}%<%f%=%l:%c"
 
   local group = vim.api.nvim_create_augroup('nvim-next-statusline', { clear = true })
 

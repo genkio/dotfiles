@@ -76,10 +76,10 @@ NVIM_APPNAME=nvim-next nvim
 - Uses Neovim's built-in `statusline` option, not a plugin
 - Left side shows `[branch +A,-D]` before the file path when inside a Git worktree
 - The Git summary uses the same repo-wide add/delete counting style as the shell prompt
-- When the repo is dirty but there are no add/delete line counts to show, it falls back to `x`
-- Left side also shows the file path and buffer flags
+- Left side shows the branch segment, repo-wide Git summary, and file path
 - Right side shows `line:column`
-- The old `All` text came from Neovim's default `'ruler'` display and is now replaced by the custom statusline
+- The old `All` text came from Neovim's default `'ruler'` display and is gone because the custom statusline replaces it
+- Buffer flag labels like `[RO]` and `[-]` are intentionally omitted
 
 ## Gitsigns.nvim
 

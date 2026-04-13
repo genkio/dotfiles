@@ -23,7 +23,8 @@ Install stow:
 
 - `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
 - `stow vim` or `stow git`
-- Core packages: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow brew git nvim tmux yazi zsh ssh`
+- Core packages: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow brew git nvim nvim-next tmux yazi zsh ssh`
+- `nvim-next` installs `~/.config/nvim-next`; launch it with `NVIM_APPNAME=nvim-next nvim` or the `vim` shell wrapper from this repo
 - Optional app packages: `stow hammerspoon`
 - Optional dev packages: `stow ghostty && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
 - Yazi: `stow yazi`
@@ -56,6 +57,7 @@ Run the automated script:
 
 - `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-all`
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
+- The core stow step includes both `nvim` and `nvim-next`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps and stow `hammerspoon`.

@@ -13,7 +13,7 @@ Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). M
 cd ~/dotfiles && stow zsh
 
 # Apply the core packages
-cd ~/dotfiles && stow brew git nvim tmux yazi zsh ssh
+cd ~/dotfiles && stow brew git nvim nvim-next tmux yazi zsh ssh
 
 # Apply optional app packages
 cd ~/dotfiles && stow hammerspoon
@@ -37,7 +37,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim nvim-next tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
 
 ## Stow Packages
 
@@ -47,6 +47,7 @@ cd ~/dotfiles && stow -D zsh
 | `git` | `~/.gitconfig` | Shared Git config; private identity in machine-local `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
+| `nvim-next` | `~/.config/nvim-next/` | Separate Neovim 0.12 profile launched with `NVIM_APPNAME=nvim-next nvim` |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
 | `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |

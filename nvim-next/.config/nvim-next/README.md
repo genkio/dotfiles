@@ -28,6 +28,7 @@ NVIM_APPNAME=nvim-next nvim
 ## Behaviors
 
 - Files changed on disk are reloaded automatically for normal file buffers.
+- Reopening a normal file restores the last cursor position from the `'"` mark.
 - `updatetime` is set to `250ms` so `CursorHold`-based reloads feel responsive in tmux.
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.

@@ -5,6 +5,87 @@ local preview_state = {
   running = false,
 }
 
+local function normalize(path)
+  return vim.fs.normalize(vim.fn.fnamemodify(path, ':p'))
+end
+
+local function current_cwd()
+  return normalize(vim.uv.cwd() or vim.fn.getcwd())
+end
+
+local function current_file()
+  local buf = vim.api.nvim_get_current_buf()
+  if vim.bo[buf].buftype ~= '' then
+    return nil
+  end
+
+  local path = vim.api.nvim_buf_get_name(buf)
+  if path == '' then
+    return nil
+  end
+
+  path = normalize(path)
+  if vim.fn.filereadable(path) == 0 then
+    return nil
+  end
+
+  return path
+end
+
+local function is_descendant(root, path)
+  return path == root or vim.startswith(path, root .. '/')
+end
+
+local function find_line_with_suffix(suffix, start_line)
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  for lnum = start_line or 1, #lines do
+    if lines[lnum]:sub(-#suffix) == suffix then
+      return lnum
+    end
+  end
+
+  return nil
+end
+
+local function focus_line(lnum)
+  if not lnum then
+    return
+  end
+
+  vim.api.nvim_win_set_cursor(0, { lnum, 0 })
+end
+
+local function reveal_file_in_explorer(root, path)
+  vim.cmd('silent Explore ' .. vim.fn.fnameescape(root))
+
+  if vim.bo.filetype ~= 'netrw' then
+    return
+  end
+
+  local dir = vim.fs.dirname(path)
+  if is_descendant(root, dir) and dir ~= root then
+    local browse = vim.fn['netrw#LocalBrowseCheck']
+    local relative = dir:sub(#root + 2)
+    local cursor_line = 1
+
+    for segment in relative:gmatch '[^/]+' do
+      root = vim.fs.joinpath(root, segment)
+      browse(root)
+
+      local line = find_line_with_suffix(segment .. '/', cursor_line)
+      if not line then
+        break
+      end
+
+      cursor_line = line
+      focus_line(line)
+    end
+  end
+
+  local file_line = find_line_with_suffix(vim.fs.basename(path), vim.api.nvim_win_get_cursor(0)[1])
+  focus_line(file_line)
+end
+
 local function preview_window_exists()
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     if vim.api.nvim_win_is_valid(win) and vim.api.nvim_get_option_value('previewwindow', { win = win }) then
@@ -79,6 +160,7 @@ end
 
 local function open_from_netrw()
   local had_preview = preview_window_exists()
+  vim.w.nvim_next_from_netrw = true
   local keys = vim.api.nvim_replace_termcodes('<Plug>NetrwLocalBrowseCheck', true, false, true)
   vim.api.nvim_feedkeys(keys, 'm', false)
 
@@ -91,6 +173,31 @@ local function open_from_netrw()
       pcall(vim.cmd, 'pclose')
     end
   end)
+end
+
+local function return_to_explorer()
+  if vim.bo.filetype == 'netrw' then
+    vim.cmd.Rexplore()
+    return
+  end
+
+  local file = current_file()
+  if vim.w.nvim_next_from_netrw then
+    vim.cmd.Rexplore()
+    return
+  end
+
+  if not file then
+    vim.cmd.Rexplore()
+    return
+  end
+
+  local root = current_cwd()
+  if not is_descendant(root, file) then
+    root = vim.fs.dirname(file)
+  end
+
+  reveal_file_in_explorer(root, file)
 end
 
 function M.setup()
@@ -138,7 +245,7 @@ function M.setup()
     end,
   })
 
-  vim.keymap.set('n', '<leader>er', '<cmd>Rex<CR>', {
+  vim.keymap.set('n', '<leader>er', return_to_explorer, {
     desc = 'Return to explorer',
   })
 end

@@ -121,7 +121,8 @@ NVIM_APPNAME=nvim-next nvim
 - `p` previews the file in a preview window while keeping focus in netrw
 - Once a preview window is open, moving the cursor in netrw auto-updates the preview for files under the cursor
 - `q` closes the preview window
-- `<leader>er` runs `:Rex` to return to the explorer
+- `<leader>er` returns to the previous explorer when netrw has return state
+- After a restart, `<leader>er` reopens netrw at the current working directory and expands the current file's directory path when possible
 
 ## Neogit.nvim
 

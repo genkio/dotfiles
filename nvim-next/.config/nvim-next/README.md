@@ -98,6 +98,9 @@ NVIM_APPNAME=nvim-next nvim
 - Added, changed, and deleted lines show signs in the gutter
 - Signs use simple text markers: `+`, `~`, `_`, and `‾`
 - Inline blame is disabled for now to keep the gutter clean
+- `]h` and `[h`: jump to the next or previous hunk
+- `<leader>gp`: preview the current hunk
+- `<leader>gb`: show Git blame for the current line
 
 ## Flash.nvim
 

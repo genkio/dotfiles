@@ -61,6 +61,17 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>sS`: workspace symbols from LSP
 - `<leader>sr`: resume the last Snacks picker
 
+### Picker Keys
+
+- These apply inside Snacks pickers such as `<leader>sf`, `<leader>sg`, `<leader>ss`, and `<leader>sr`
+- `<A-h>`: toggle hidden files
+- `<A-i>`: toggle ignored files
+- `<A-r>`: toggle regex mode
+- `<C-q>`: send current results to quickfix
+- `<C-s>`: open selection in a horizontal split
+- `<C-v>`: open selection in a vertical split
+- `<C-t>`: open selection in a new tab
+
 ## Which-key.nvim
 
 - `<leader>`: show available leader mappings
@@ -128,16 +139,6 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gf`: file history for the current file
 - `<leader>gF`: file history for the current repo
 - The default-branch review resolves `origin/HEAD` first, then falls back to `origin/main`, `origin/master`, `main`, or `master`
-
-### Useful Picker Keys
-
-- `<A-h>`: toggle hidden files
-- `<A-i>`: toggle ignored files
-- `<A-r>`: toggle regex mode
-- `<C-q>`: send current results to quickfix
-- `<C-s>`: open selection in a horizontal split
-- `<C-v>`: open selection in a vertical split
-- `<C-t>`: open selection in a new tab
 
 ## Neovim 0.12 Built-ins
 

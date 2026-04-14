@@ -5,7 +5,7 @@ return {
 	["1"] = { action = "window_left" },
 	["2"] = { action = "window_right" },
 	b = "Brave Browser",
-	c = "Calendar",
+	c = { "Calendar", "ChatGPT" },
 	f = "Finder",
 	g = "Ghostty",
 	h = "Hammerspoon",

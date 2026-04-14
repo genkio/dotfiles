@@ -22,6 +22,18 @@ function M.setup()
       end, vim.tbl_extend('force', opts, {
         desc = 'LSP: List references',
       }))
+
+      vim.keymap.set('n', '<leader>xl', function()
+        vim.diagnostic.setloclist { open = true }
+      end, vim.tbl_extend('force', opts, {
+        desc = 'Diagnostics: Buffer list',
+      }))
+
+      vim.keymap.set('n', '<leader>xx', function()
+        vim.diagnostic.setqflist { open = true }
+      end, vim.tbl_extend('force', opts, {
+        desc = 'Diagnostics: Workspace list',
+      }))
     end,
   })
 end

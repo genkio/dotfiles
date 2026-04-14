@@ -31,6 +31,7 @@ function M.setup()
       { '<leader>e', group = 'Explorer' },
       { '<leader>g', group = 'Git' },
       { '<leader>s', group = 'Search', mode = { 'n', 'x' } },
+      { '<leader>x', group = 'Diagnostics' },
       { '<leader>y', group = 'Yank' },
     },
   }

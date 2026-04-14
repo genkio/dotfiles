@@ -153,6 +153,8 @@ NVIM_APPNAME=nvim-next nvim
 - `gd`: go to definition
 - `gh`: hover preview
 - `gr`: list references with Snacks
+- `<leader>xl`: open the current buffer diagnostics in the location list
+- `<leader>xx`: open workspace diagnostics in the quickfix list
 
 ## Notes
 

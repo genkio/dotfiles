@@ -38,38 +38,75 @@ grb() {
 }
 
 # git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
-gwta() {
-  if [[ $# -ne 1 ]]; then
-    echo "usage: gwta <branch>" >&2
-    return 1
-  fi
-
+gtreea() {
   local branch="$1"
+
+  if [[ -z "$branch" ]]; then
+    git fetch --prune origin || return
+    branch=$(git for-each-ref --sort=-committerdate --count=20 \
+      --format='%(refname:short) %(committerdate:relative)' refs/remotes/origin \
+      | sed 's|^origin/||' \
+      | grep -v '^HEAD ' \
+      | fzf --prompt="worktree> " --header="Select a remote branch" --no-multi) || return
+    branch=${branch%% *}
+  fi
   local repo_root project_name parent_dir target_dir
 
   repo_root=$(git rev-parse --show-toplevel) || return
   project_name=$(basename "$repo_root") || return
   parent_dir=$(dirname "$repo_root") || return
-  target_dir="$parent_dir/$project_name-$branch"
+  target_dir="$parent_dir/$project_name-${branch//\//-}"
 
   git fetch origin "$branch" || return
-  git worktree add --track -b "$branch" "$target_dir" "origin/$branch"
+  git worktree add --track -b "$branch" "$target_dir" "origin/$branch" || return
+  cd "$target_dir"
+}
+
+# git worktree add -b <branch> ../<project>-<branch> <default-branch>
+gtreen() {
+  local branch="$1" base
+
+  if [[ -z "$branch" ]]; then
+    read "branch?new branch name: " || return
+    [[ -z "$branch" ]] && return 1
+  fi
+
+  base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || {
+    echo "gtreen: origin/HEAD is not set for this repo" >&2
+    return 1
+  }
+
+  local main_worktree project_name parent_dir target_dir
+
+  main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}') || return
+  project_name=$(basename "$main_worktree") || return
+  parent_dir=$(dirname "$main_worktree") || return
+  target_dir="$parent_dir/$project_name-${branch//\//-}"
+
+  git worktree add -b "$branch" "$target_dir" "$base" || return
+  cd "$target_dir"
 }
 
 # git worktree remove -f ../<project>-<branch> && git branch -d <branch>
-gwtr() {
-  if [[ $# -ne 1 ]]; then
-    echo "usage: gwtr <branch>" >&2
-    return 1
-  fi
-
+gtreer() {
   local branch="$1"
-  local repo_root project_name parent_dir target_dir
 
-  repo_root=$(git rev-parse --show-toplevel) || return
-  project_name=$(basename "$repo_root") || return
-  parent_dir=$(dirname "$repo_root") || return
-  target_dir="$parent_dir/$project_name-$branch"
+  if [[ -z "$branch" ]]; then
+    branch=$(git worktree list --porcelain \
+      | awk '/^branch /{sub(/^.*refs\/heads\//, ""); print}' \
+      | fzf --prompt="remove worktree> " --header="Select a worktree to remove" --no-multi) || return
+  fi
+  local main_worktree project_name parent_dir target_dir
+
+  main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}') || return
+  project_name=$(basename "$main_worktree") || return
+  parent_dir=$(dirname "$main_worktree") || return
+  target_dir="$parent_dir/$project_name-${branch//\//-}"
+
+  # if we're inside the worktree being removed, cd to the main repo first
+  if [[ "$PWD" = "$target_dir"* ]]; then
+    cd "$main_worktree" || return
+  fi
 
   git worktree remove -f "$target_dir" || return
   git branch -d "$branch"

@@ -61,5 +61,6 @@ ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
 ZSH_THEME_GIT_PROMPT_CLEAN=""
 ZSH_THEME_GIT_PROMPT_DIRTY=""
 PROMPT+='$(git_prompt_info)$(prompt_git_change_summary)'
+PROMPT+=" %F{242}at %* %D{%b %d}%f"
 PROMPT+=$'\n'
 PROMPT+="%{$fg_bold[green]%}>%{$reset_color%} "

@@ -16,7 +16,7 @@ function M.setup()
 
   local map = vim.keymap.set
 
-  map('n', ']h', function()
+  map('n', 'gc', function()
     if vim.wo.diff then
       vim.cmd.normal { ']c', bang = true }
       return
@@ -25,7 +25,7 @@ function M.setup()
     gitsigns.next_hunk()
   end, { desc = 'Next hunk' })
 
-  map('n', '[h', function()
+  map('n', 'gC', function()
     if vim.wo.diff then
       vim.cmd.normal { '[c', bang = true }
       return

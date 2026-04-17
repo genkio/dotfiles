@@ -35,18 +35,16 @@ NVIM_APPNAME=nvim-next nvim
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
 - The built-in `catppuccin` colorscheme is the default theme.
 - Search defaults to the current working directory, not the git root.
-- `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
 - `<leader>lg` opens LazyGit in a new tab terminal for the current working directory.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
-- Neogit and Diffview load on first use instead of at startup.
+- Diffview loads on first use instead of at startup.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
 - Trailing spaces are shown as `+`.
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>er` runs `:Rex` to return to netrw explorer.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
 - The statusline is a built-in custom one that shows file path and cursor position.
-- Neogit's built-in `auto_refresh` is enabled, but its `.git` filewatcher is disabled.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.
@@ -133,20 +131,9 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>er` returns to the previous explorer when netrw has return state
 - After a restart, `<leader>er` reopens netrw at the current working directory and expands the current file's directory path when possible
 
-## Neogit.nvim
-
-- `<leader>gg`: open Git status
-- `plenary.nvim` is installed because Neogit requires it
-- `snacks.nvim` is enabled as Neogit's picker integration
-- `diffview.nvim` is enabled as Neogit's diff viewer integration
-- Neogit is loaded on first use
-- Neogit's built-in `auto_refresh` is enabled
-- Neogit's `.git` filewatcher is disabled
-- In `NeogitStatus`, `<CR>` is remapped to Neogit's `TabOpen` action so closing the file returns you to status
-- Use `<C-r>` in the status buffer whenever you want a manual refresh
-
 ## Diffview.nvim
 
+- `plenary.nvim` is installed because Diffview requires it
 - `<leader>gd`: review the current branch against the default branch, including local changes
 - `<leader>gw`: review the working tree against the index
 - `<leader>gD`: close Diffview
@@ -170,7 +157,7 @@ NVIM_APPNAME=nvim-next nvim
 
 ## Notes
 
-- `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, `neogit.nvim`, and `diffview.nvim` are managed by `vim.pack`.
+- `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

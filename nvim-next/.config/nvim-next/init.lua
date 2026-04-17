@@ -55,12 +55,11 @@ vim.pack.add({
 }, { confirm = false })
 
 vim.pack.add({
-  { src = 'https://github.com/NeogitOrg/neogit', version = 'master' },
   { src = 'https://github.com/sindrets/diffview.nvim', version = 'main' },
 }, {
   confirm = false,
   load = function()
-    -- Keep Git UI plugins installed but unloaded until first use.
+    -- Keep Diffview installed but unloaded until first use.
   end,
 })
 
@@ -72,7 +71,6 @@ require('config.flash').setup()
 require('config.gitsigns').setup()
 require('config.lazygit').setup()
 require('config.lsp_keymaps').setup()
-require('config.neogit').setup()
 require('config.netrw').setup()
 require('config.restore_cursor').setup()
 require('config.search_highlight').setup()

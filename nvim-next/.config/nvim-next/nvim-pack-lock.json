@@ -15,11 +15,6 @@
       "src": "https://github.com/lewis6991/gitsigns.nvim",
       "version": "'v1.0.0'"
     },
-    "neogit": {
-      "rev": "e06745228600a585b88726fc9fba44a373c15a47",
-      "src": "https://github.com/NeogitOrg/neogit",
-      "version": "'master'"
-    },
     "plenary.nvim": {
       "rev": "fcb3e9ac127d178b4c189088396165b3facc219e",
       "src": "https://github.com/nvim-lua/plenary.nvim",

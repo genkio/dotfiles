@@ -1,4 +1,23 @@
 local M = {}
+local loaded = false
+
+function M.ensure_loaded()
+  if loaded then
+    return
+  end
+
+  for _, name in ipairs { 'DiffviewOpen', 'DiffviewClose', 'DiffviewToggleFiles', 'DiffviewFocusFiles', 'DiffviewFileHistory' } do
+    pcall(vim.api.nvim_del_user_command, name)
+  end
+  vim.cmd.packadd { 'plenary.nvim', magic = { file = false } }
+  vim.cmd.packadd { 'diffview.nvim', magic = { file = false } }
+
+  require('diffview').setup {
+    use_icons = false,
+  }
+
+  loaded = true
+end
 
 local function git_output(args)
   local cmd = { 'git', '-C', vim.fn.getcwd() }
@@ -83,6 +102,8 @@ local function swap_on_open(group_name)
 end
 
 local function open_review()
+  M.ensure_loaded()
+
   local base = resolve_base()
   if not base then
     vim.notify('Could not find default branch to diff against', vim.log.levels.WARN)
@@ -94,26 +115,87 @@ local function open_review()
 end
 
 local function open_worktree()
+  M.ensure_loaded()
   swap_on_open 'nvim-next-diffview-worktree'
   vim.cmd 'DiffviewOpen'
 end
 
 local function file_history_current()
+  M.ensure_loaded()
   vim.cmd 'DiffviewFileHistory %'
 end
 
 local function file_history_repo()
+  M.ensure_loaded()
   vim.cmd 'DiffviewFileHistory'
 end
 
+local function close_diffview()
+  if loaded then
+    vim.cmd 'DiffviewClose'
+  end
+end
+
+local function forward_command(name)
+  return function(opts)
+    M.ensure_loaded()
+    local diffview = require 'diffview'
+
+    if name == 'DiffviewOpen' then
+      diffview.open(require('diffview.arg_parser').scan(opts.args).args)
+      return
+    end
+
+    if name == 'DiffviewFileHistory' then
+      local range = nil
+      if opts.range > 0 then
+        range = { opts.line1, opts.line2 }
+      end
+      diffview.file_history(range, require('diffview.arg_parser').scan(opts.args).args)
+      return
+    end
+
+    if name == 'DiffviewClose' then
+      diffview.close()
+      return
+    end
+
+    if name == 'DiffviewFocusFiles' then
+      diffview.emit 'focus_files'
+      return
+    end
+
+    if name == 'DiffviewToggleFiles' then
+      diffview.emit 'toggle_files'
+    end
+  end
+end
+
 function M.setup()
-  require('diffview').setup {
-    use_icons = false,
-  }
+  vim.api.nvim_create_user_command('DiffviewOpen', forward_command 'DiffviewOpen', {
+    nargs = '*',
+    bang = true,
+  })
+  vim.api.nvim_create_user_command('DiffviewClose', forward_command 'DiffviewClose', {
+    nargs = '*',
+    bang = true,
+  })
+  vim.api.nvim_create_user_command('DiffviewToggleFiles', forward_command 'DiffviewToggleFiles', {
+    nargs = '*',
+    bang = true,
+  })
+  vim.api.nvim_create_user_command('DiffviewFocusFiles', forward_command 'DiffviewFocusFiles', {
+    nargs = '*',
+    bang = true,
+  })
+  vim.api.nvim_create_user_command('DiffviewFileHistory', forward_command 'DiffviewFileHistory', {
+    nargs = '*',
+    bang = true,
+  })
 
   vim.keymap.set('n', '<leader>gd', open_review, { desc = 'Git diff vs default branch' })
   vim.keymap.set('n', '<leader>gw', open_worktree, { desc = 'Git working tree vs index diff' })
-  vim.keymap.set('n', '<leader>gD', '<cmd>DiffviewClose<CR>', { desc = 'Git diff view close' })
+  vim.keymap.set('n', '<leader>gD', close_diffview, { desc = 'Git diff view close' })
   vim.keymap.set('n', '<leader>gf', file_history_current, { desc = 'Git file history' })
   vim.keymap.set('n', '<leader>gF', file_history_repo, { desc = 'Git repo file history' })
 end

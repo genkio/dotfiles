@@ -16,6 +16,7 @@ NVIM_APPNAME=nvim-next nvim
 - If built-in is enough, explain how to use it; if config is needed, implement it in `nvim-next`
 - Use `nvim/.config/nvim` only as reference when I say "previously"
 - Keep `nvim-next` minimal, stable, and pragmatic
+- Prefer performance and responsiveness over novelty; if a feature adds noticeable lag, avoid adding it unless the payoff is unusually high
 - Prefer small local Lua modules over plugin-heavy setups
 - Only add a plugin when it is clearly justified; configure only the needed part
 - Avoid complex or brittle custom logic for small gains
@@ -37,12 +38,13 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
+- Neogit and Diffview load on first use instead of at startup.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
 - Trailing spaces are shown as `+`.
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>er` runs `:Rex` to return to netrw explorer.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
-- The statusline is a built-in custom one that shows file path, Git branch, and cursor position.
+- The statusline is a built-in custom one that shows file path and cursor position.
 - Neogit's built-in `auto_refresh` is enabled, but its `.git` filewatcher is disabled.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
@@ -87,9 +89,7 @@ NVIM_APPNAME=nvim-next nvim
 ## Statusline
 
 - Uses Neovim's built-in `statusline` option, not a plugin
-- Left side shows `[branch +A,-D]` before the file path when inside a Git worktree
-- The Git summary uses the same repo-wide add/delete counting style as the shell prompt
-- Left side shows the branch segment, repo-wide Git summary, and file path
+- Left side shows the file path
 - Right side shows `line:column`
 - The old `All` text came from Neovim's default `'ruler'` display and is gone because the custom statusline replaces it
 - Buffer flag labels like `[RO]` and `[-]` are intentionally omitted
@@ -131,6 +131,7 @@ NVIM_APPNAME=nvim-next nvim
 - `plenary.nvim` is installed because Neogit requires it
 - `snacks.nvim` is enabled as Neogit's picker integration
 - `diffview.nvim` is enabled as Neogit's diff viewer integration
+- Neogit is loaded on first use
 - Neogit's built-in `auto_refresh` is enabled
 - Neogit's `.git` filewatcher is disabled
 - In `NeogitStatus`, `<CR>` is remapped to Neogit's `TabOpen` action so closing the file returns you to status
@@ -143,6 +144,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gD`: close Diffview
 - `<leader>gf`: file history for the current file
 - `<leader>gF`: file history for the current repo
+- Diffview is loaded on first use
 - The default-branch review resolves `origin/HEAD` first, then falls back to `origin/main`, `origin/master`, `main`, or `master`
 
 ## Neovim 0.12 Built-ins

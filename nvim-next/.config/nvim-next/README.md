@@ -35,7 +35,8 @@ NVIM_APPNAME=nvim-next nvim
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
 - The built-in `catppuccin` colorscheme is the default theme.
 - Search defaults to the current working directory, not the git root.
-- `<leader>lg` opens LazyGit in a new tab terminal for the current working directory.
+- `<leader>lg` opens LazyGit in a new tab terminal with the compact layout.
+- `<leader>lG` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
 - Diffview loads on first use instead of at startup.
@@ -81,9 +82,10 @@ NVIM_APPNAME=nvim-next nvim
 
 ## LazyGit
 
-- `<leader>lg`: open LazyGit in a new tab terminal
-- `:LazyGit`: open LazyGit in a new tab terminal
-- The launcher applies a small-screen layout override for LazyGit, including stacked half-screen mode and a more aggressive focused-side expansion
+- `<leader>lg`: open LazyGit with the compact laptop-oriented layout
+- `<leader>lG`: open LazyGit with the default layout, but without the command log pane
+- `:LazyGit`: open LazyGit with the compact layout
+- The compact launcher applies a small-screen layout override for LazyGit, including stacked half-screen mode and a more aggressive focused-side expansion
 - If `delta` is installed, LazyGit uses it as the diff pager via a small launcher-specific override config
 
 ## Colors

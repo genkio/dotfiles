@@ -1,51 +1,84 @@
 local M = {}
 
-local function override_config_path()
-  return '/tmp/nvim-next-lazygit.yml'
+local function override_config_path(kind)
+  return '/tmp/nvim-next-lazygit-' .. kind .. '.yml'
 end
 
-local function ensure_override_config()
+local function delta_config_path()
+  return '/tmp/nvim-next-delta.gitconfig'
+end
+
+local function ensure_delta_config()
+  local path = delta_config_path()
+  vim.fn.writefile({
+    '[delta]',
+    'dark = true',
+    'paging = never',
+    'line-numbers = true',
+    'hyperlinks = true',
+    'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
+    'syntax-theme = Monokai Extended',
+    'minus-style = "syntax #3b2240"',
+    'plus-style = "syntax #1f3a32"',
+  }, path)
+  return path
+end
+
+local function ensure_override_config(kind)
   local lines = {
     'gui:',
-    '  screenMode: half',
-    '  portraitMode: auto',
-    '  enlargedSideViewLocation: top',
-    '  expandFocusedSidePanel: true',
-    '  expandedSidePanelWeight: 4',
-    '  mainPanelSplitMode: flexible',
     '  showCommandLog: false',
-    'promptToReturnFromSubprocess: false',
   }
+
+  if kind == 'compact' then
+    vim.list_extend(lines, {
+      '  screenMode: half',
+      '  portraitMode: auto',
+      '  enlargedSideViewLocation: top',
+      '  expandFocusedSidePanel: true',
+      '  expandedSidePanelWeight: 4',
+      '  mainPanelSplitMode: flexible',
+      '  showPanelJumps: false',
+    })
+  end
+
+  table.insert(lines, 'promptToReturnFromSubprocess: false')
 
   if vim.fn.executable 'delta' == 1 then
     vim.list_extend(lines, {
       'git:',
       '  pagers:',
-      '    - pager: delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format=lazygit-edit://{path}:{line}',
+      '    - pager: delta --config=' .. delta_config_path(),
     })
+    ensure_delta_config()
   end
 
-  local path = override_config_path()
+  local path = override_config_path(kind)
   vim.fn.writefile(lines, path)
   return path
 end
 
-local function lazygit_command()
-  return {
-    'lazygit',
-    '--screen-mode',
-    'half',
+local function lazygit_command(kind)
+  local command = { 'lazygit' }
+
+  if kind == 'compact' then
+    vim.list_extend(command, { '--screen-mode', 'half' })
+  end
+
+  vim.list_extend(command, {
     '--use-config-file',
-    ensure_override_config(),
-  }
+    ensure_override_config(kind),
+  })
+
+  return command
 end
 
-function M.open()
+local function open(kind)
   vim.cmd.tabnew()
   local buf = vim.api.nvim_get_current_buf()
   vim.bo[buf].bufhidden = 'wipe'
 
-  vim.fn.termopen(lazygit_command(), {
+  vim.fn.termopen(lazygit_command(kind), {
     cwd = vim.fn.getcwd(),
     on_exit = function()
       vim.schedule(function()
@@ -64,12 +97,21 @@ function M.open()
   vim.cmd.startinsert()
 end
 
+function M.open()
+  open 'compact'
+end
+
+function M.open_default()
+  open 'default'
+end
+
 function M.setup()
   vim.api.nvim_create_user_command('LazyGit', M.open, {
-    desc = 'Open LazyGit in a new tab terminal',
+    desc = 'Open LazyGit with the compact layout',
   })
 
-  vim.keymap.set('n', '<leader>lg', M.open, { desc = 'LazyGit' })
+  vim.keymap.set('n', '<leader>lg', M.open, { desc = 'LazyGit compact layout' })
+  vim.keymap.set('n', '<leader>lG', M.open_default, { desc = 'LazyGit default layout' })
 end
 
 return M

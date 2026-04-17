@@ -107,11 +107,11 @@ end
 
 function M.setup()
   vim.api.nvim_create_user_command('LazyGit', M.open, {
-    desc = 'Open LazyGit with the compact layout',
+    desc = 'Open LazyGit with the default layout',
   })
 
-  vim.keymap.set('n', '<leader>lg', M.open, { desc = 'LazyGit compact layout' })
-  vim.keymap.set('n', '<leader>lG', M.open_default, { desc = 'LazyGit default layout' })
+  vim.keymap.set('n', '<leader>lg', M.open_default, { desc = 'LazyGit default layout' })
+  vim.keymap.set('n', '<leader>lG', M.open, { desc = 'LazyGit compact layout' })
 end
 
 return M

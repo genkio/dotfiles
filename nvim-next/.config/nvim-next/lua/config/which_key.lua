@@ -30,6 +30,7 @@ function M.setup()
     spec = {
       { '<leader>e', group = 'Explorer' },
       { '<leader>g', group = 'Git' },
+      { '<leader>l', group = 'LazyGit' },
       { '<leader>s', group = 'Search', mode = { 'n', 'x' } },
       { '<leader>x', group = 'Diagnostics' },
       { '<leader>y', group = 'Yank' },

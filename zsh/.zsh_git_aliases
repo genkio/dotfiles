@@ -103,6 +103,27 @@ gtreer() {
   parent_dir=$(dirname "$main_worktree") || return
   target_dir="$parent_dir/$project_name-${branch//\//-}"
 
+  # migrate claude code sessions from worktree project to main project
+  local wt_slug main_slug wt_sessions main_sessions
+  wt_slug=$(echo "$target_dir" | tr '/' '-')
+  main_slug=$(echo "$main_worktree" | tr '/' '-')
+  wt_sessions="$HOME/.claude/projects/$wt_slug"
+  main_sessions="$HOME/.claude/projects/$main_slug"
+  if [[ -d "$wt_sessions" ]] && [[ -d "$main_sessions" ]]; then
+    # rewrite cwd in session logs before copying
+    for f in "$wt_sessions"/*.jsonl; do
+      [[ -f "$f" ]] && sed -i '' "s|$target_dir|$main_worktree|g" "$f"
+    done
+    # copy session logs and dirs (excluding memory) to main project
+    for f in "$wt_sessions"/*.jsonl; do
+      [[ -f "$f" ]] && cp "$f" "$main_sessions/"
+    done
+    for d in "$wt_sessions"/*/; do
+      [[ -d "$d" ]] && [[ "$(basename "$d")" != "memory" ]] && cp -r "$d" "$main_sessions/"
+    done
+    rm -rf "$wt_sessions"
+  fi
+
   # if we're inside the worktree being removed, cd to the main repo first
   if [[ "$PWD" = "$target_dir"* ]]; then
     cd "$main_worktree" || return

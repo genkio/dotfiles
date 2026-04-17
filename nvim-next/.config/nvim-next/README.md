@@ -36,6 +36,7 @@ NVIM_APPNAME=nvim-next nvim
 - The built-in `catppuccin` colorscheme is the default theme.
 - Search defaults to the current working directory, not the git root.
 - `<leader>gg` opens Neogit for the current file's directory when possible, otherwise the current working directory.
+- `<leader>lg` opens LazyGit in a new tab terminal for the current working directory.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
 - Neogit and Diffview load on first use instead of at startup.
@@ -79,6 +80,11 @@ NVIM_APPNAME=nvim-next nvim
 
 - `<leader>`: show available leader mappings
 - `<leader>?`: show buffer-local keymaps on demand
+
+## LazyGit
+
+- `<leader>lg`: open LazyGit in a new tab terminal
+- `:LazyGit`: open LazyGit in a new tab terminal
 
 ## Colors
 

@@ -29,9 +29,10 @@ local eventtap = require("hs.eventtap")
 local HINT_CHARS = "asdfjklgh"
 local TRIGGER_MODS = { "ctrl" }
 local TRIGGER_KEY = "."
-local DISMISS_TIMEOUT = 10
+local DISMISS_TIMEOUT = 15
 local MAX_DEPTH = 30
-local WALK_DEADLINE_SECS = 1.0
+local WALK_DEADLINE_SECS = 1.5
+local SCAN_MENUBAR = true
 
 -- Visual style
 local BADGE_BG = { red = 0.96, green = 0.76, blue = 0.07, alpha = 0.95 }
@@ -58,6 +59,8 @@ local isActive = false
 local dismissTimer = nil
 local screenFrame = nil
 local scanCanvas = nil
+local debounceTimer = nil
+local lastFilteredCount = 0
 
 -- Roles that are inherently interactive
 local interactiveRoles = {
@@ -80,6 +83,8 @@ local interactiveRoles = {
   AXTimeField = true,
   AXSearchField = true,
   AXSegmentedControl = true,
+  AXMenuBarItem = true,
+  AXDockItem = true,
 }
 
 -- Rows and cells are often clickable, but they are broad containers.
@@ -88,14 +93,17 @@ local weakInteractiveRoles = {
   AXRow = true,
   AXCell = true,
   AXOutlineRow = true,
+  AXImage = true,  -- often clickable in web views and toolbars
 }
 
--- Maximum number of hints we can generate (numChars^2 for two-char hints)
-local MAX_HINTS = #HINT_CHARS * #HINT_CHARS
-local MAX_CANDIDATES = MAX_HINTS * 4
+-- Maximum number of hints (prefix-free labels up to 3 chars)
+local NUM_HINT_CHARS = #HINT_CHARS
+local MAX_HINTS = NUM_HINT_CHARS * NUM_HINT_CHARS * NUM_HINT_CHARS
+local MAX_CANDIDATES = MAX_HINTS
 
--- Generate fixed-length hint labels for a given count
--- Uses single chars when count <= numChars, two chars otherwise
+-- Generate prefix-free hint labels using a level-based strategy (from neru).
+-- No label is a prefix of another, enabling unambiguous incremental matching.
+-- Top-positioned elements get shorter (1-char) labels for faster access.
 local function generateHints(count)
   local chars = {}
   for c in HINT_CHARS:gmatch(".") do
@@ -105,19 +113,62 @@ local function generateHints(count)
 
   if count <= 0 then return {} end
 
-  if count <= numChars then
-    local result = {}
-    for i = 1, count do
-      result[i] = chars[i]
+  -- Determine how many labels to allocate at each length (level).
+  -- Level 1 = single-char, level 2 = two-char, etc.
+  -- Greedy: maximize short labels while ensuring enough capacity for the rest.
+  local counts = {}
+  local remaining = count
+  local available = numChars
+
+  while remaining > 0 do
+    local nextCapacity = available * numChars
+    local keep
+
+    if available >= remaining then
+      keep = remaining
+    elseif nextCapacity < remaining then
+      keep = 0
+    else
+      keep = math.floor((available * numChars - remaining) / (numChars - 1))
     end
-    return result
+
+    table.insert(counts, keep)
+    remaining = remaining - keep
+    available = (available - keep) * numChars
+
+    if available == 0 and remaining > 0 then break end
   end
 
   local result = {}
-  for i = 1, numChars do
-    for j = 1, numChars do
-      table.insert(result, chars[i] .. chars[j])
-      if #result >= count then return result end
+  -- Tracks position in the base-N numbering system (0-based indices)
+  local current = {}
+
+  for level, keep in ipairs(counts) do
+    if level == 1 then
+      for i = 1, keep do
+        table.insert(result, chars[i])
+      end
+      -- Two-char labels start with characters NOT used as single-char labels
+      current = { keep } -- 0-based: first unused index
+    else
+      while #current < level do
+        table.insert(current, 0)
+      end
+
+      for _ = 1, keep do
+        local label = ""
+        for _, idx in ipairs(current) do
+          label = label .. chars[idx + 1] -- convert 0-based to 1-based Lua index
+        end
+        table.insert(result, label)
+
+        -- Increment position (base-N with carry)
+        for pos = #current, 1, -1 do
+          current[pos] = current[pos] + 1
+          if current[pos] < numChars then break end
+          current[pos] = 0
+        end
+      end
     end
   end
 
@@ -198,6 +249,14 @@ local function overlapRatio(a, b)
 end
 
 local function getChildren(element)
+  -- For tables and outlines, prefer AXVisibleRows to skip hidden/scrolled-out
+  -- rows entirely. This avoids walking massive subtrees in long lists.
+  local role = getAttribute(element, "AXRole")
+  if role == "AXTable" or role == "AXOutline" then
+    local visibleRows = getAttribute(element, "AXVisibleRows")
+    if visibleRows and #visibleRows > 0 then return visibleRows end
+  end
+
   local visibleChildren = getAttribute(element, "AXVisibleChildren")
   if visibleChildren and #visibleChildren > 0 then return visibleChildren end
   return getAttribute(element, "AXChildren")
@@ -509,7 +568,11 @@ local function showHints(hints, frame)
   hintCanvas:show()
 end
 
--- Redraw overlay showing only hints that match the current input
+-- Redraw overlay showing only hints that match the current input.
+-- Uses count-based debounce heuristic from neru: when only the matched
+-- prefix changed (same hint count), redraw immediately since only text
+-- colors change (cheap). When the count changes (structural redraw),
+-- debounce to avoid excessive canvas rebuilds during fast typing.
 local function updateHints()
   if not screenFrame then return end
 
@@ -520,23 +583,49 @@ local function updateHints()
     end
   end
 
-  showHints(matching, screenFrame)
+  local newCount = #matching
+
+  if debounceTimer then
+    debounceTimer:stop()
+    debounceTimer = nil
+  end
+
+  if newCount == lastFilteredCount then
+    -- Only prefix colors changed — cheap redraw, do it immediately
+    showHints(matching, screenFrame)
+  else
+    -- Structural change — debounce to batch rapid keystrokes
+    local snapshot = matching
+    debounceTimer = hs.timer.doAfter(0.04, function()
+      debounceTimer = nil
+      showHints(snapshot, screenFrame)
+    end)
+  end
+
+  lastFilteredCount = newCount
 end
 
--- Perform the action on the selected element
+-- Perform the action on the selected element.
+-- Uses synthetic mouse click which is universally reliable across apps.
+-- AXPress looks appealing but silently fails on many controls (terminal
+-- tabs, browser elements, some buttons) — pcall returns true but nothing
+-- happens, with no way to detect the failure.
 local function activateElement(hint)
   local elem = hint.element
   local role = hint.role or ""
 
   -- Focus text inputs before clicking to place cursor
-  if role == "AXTextField" or role == "AXTextArea" or role == "AXComboBox" then
+  if role == "AXTextField" or role == "AXTextArea" or role == "AXComboBox"
+    or role == "AXSearchField" then
     pcall(function() elem:setAttributeValue("AXFocused", true) end)
   end
 
-  -- Synthetic click is universally reliable for all on-screen elements.
-  -- AXPress looks appealing but silently fails on many controls (terminal
-  -- tabs, browser elements, some buttons) — pcall returns true but nothing
-  -- happens, with no way to detect the failure.
+  -- Move mouse to target, brief settle, then click.
+  -- The settle delay lets the target app recognize the cursor position
+  -- (some apps highlight on hover before accepting clicks).
+  local point = hs.geometry.point(hint.center.x, hint.center.y)
+  hs.mouse.absolutePosition(point)
+  hs.timer.usleep(30000) -- 30ms settle (neru uses similar post-move delay)
   eventtap.leftClick(hint.center)
 end
 
@@ -575,8 +664,14 @@ local function exitHintMode()
   inputBuffer = ""
   activeHints = {}
   screenFrame = nil
+  lastFilteredCount = 0
 
   hideScanIndicator()
+
+  if debounceTimer then
+    debounceTimer:stop()
+    debounceTimer = nil
+  end
 
   if hintCanvas then
     hintCanvas:delete()
@@ -657,13 +752,48 @@ local function startKeyTap()
   keyTap:start()
 end
 
+-- Collect menubar items as supplementary hint targets (inspired by neru).
+-- These live outside the window frame, so we check against screenFrame.
+local function collectMenubarElements(app, sFrame)
+  local axApp = axuielement.applicationElement(app)
+  if not axApp then return {} end
+
+  local menuBar = getAttribute(axApp, "AXMenuBar")
+  if not menuBar then return {} end
+
+  local children = getAttribute(menuBar, "AXChildren")
+  if not children then return {} end
+
+  local candidates = {}
+  for _, child in ipairs(children) do
+    local info = isActionable(child, {
+      x = sFrame.x, y = sFrame.y, w = sFrame.w, h = sFrame.h
+    })
+    if info then
+      info.element = child
+      info.depth = 1
+      table.insert(candidates, info)
+    end
+  end
+
+  return candidates
+end
+
 -- Core logic: walk the tree, build hints, show overlay
-local function performScan(axWin, winFrame)
+local function performScan(axWin, winFrame, app)
   if not isActive then return end
 
   hideScanIndicator()
 
   local elements = collectElements(axWin, winFrame)
+
+  -- Merge menubar elements when enabled
+  if SCAN_MENUBAR and app then
+    local menubarElems = collectMenubarElements(app, screenFrame)
+    for _, elem in ipairs(menubarElems) do
+      table.insert(elements, elem)
+    end
+  end
 
   if #elements == 0 then
     hs.alert.show("No actionable elements found", 1)
@@ -715,7 +845,7 @@ local function enterHintMode()
 
   -- Defer by one run-loop cycle so the indicator dot actually appears
   hs.timer.doAfter(0.01, function()
-    performScan(axWin, winFrame)
+    performScan(axWin, winFrame, app)
   end)
 end
 

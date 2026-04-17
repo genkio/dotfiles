@@ -40,6 +40,7 @@ NVIM_APPNAME=nvim-next nvim
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
 - Diffview loads on first use instead of at startup.
+- `:!` shell commands can use zsh helper functions from your dotfiles.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
 - Trailing spaces are shown as `+`.
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.

@@ -45,6 +45,14 @@ vim.o.smartcase = true -- case sensitive search if uppercase in string
 
 require('config.colors').setup()
 
+local resolved_config_dir = vim.fn.resolve(vim.fn.stdpath 'config')
+local dotfiles_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(resolved_config_dir)))
+
+-- Mark shells spawned by Neovim so zsh can load command helpers like `gpu()`
+-- from `.zshenv` without requiring a full interactive shell startup.
+vim.env.NVIM_SHELL_ALIASES = '1'
+vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
+
 -- Plugins
 vim.pack.add({
   { src = 'https://github.com/folke/flash.nvim', version = 'main' },

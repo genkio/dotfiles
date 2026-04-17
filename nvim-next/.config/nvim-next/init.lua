@@ -20,7 +20,11 @@ vim.o.updatetime = 250 -- decrease update time
 vim.o.signcolumn = 'yes' -- prevent gutter once diagnostics and lsp signs show up
 vim.o.inccommand = 'split' -- preview substitutions live as you type
 vim.o.termguicolors = true -- enable 24-bit rgb color in the terminal
+vim.o.list = true -- show trailing spaces
 -- use .opt instead of .o to get option object instead or lua string
+vim.opt.listchars = {
+  trail = '+',
+}
 vim.opt.iskeyword:append '-' -- include - in-words
 vim.opt.clipboard:append 'unnamedplus' -- use system clipboard
 

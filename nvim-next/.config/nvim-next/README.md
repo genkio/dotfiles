@@ -85,6 +85,8 @@ NVIM_APPNAME=nvim-next nvim
 
 - `<leader>lg`: open LazyGit in a new tab terminal
 - `:LazyGit`: open LazyGit in a new tab terminal
+- The launcher applies a small-screen layout override for LazyGit, including stacked half-screen mode and a more aggressive focused-side expansion
+- If `delta` is installed, LazyGit uses it as the diff pager via a small launcher-specific override config
 
 ## Colors
 

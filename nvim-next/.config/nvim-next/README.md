@@ -111,6 +111,7 @@ NVIM_APPNAME=nvim-next nvim
 - `gc` and `gC`: jump to the next or previous hunk
 - `<leader>gp`: preview the current hunk
 - `<leader>gb`: show Git blame for the current line
+- `<leader>gB`: open the GitHub PR associated with the blamed line's commit (requires `gh`)
 
 ## Flash.nvim
 

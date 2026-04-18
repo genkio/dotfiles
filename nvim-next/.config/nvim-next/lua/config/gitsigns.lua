@@ -36,6 +36,7 @@ function M.setup()
 
   map('n', '<leader>gp', gitsigns.preview_hunk, { desc = 'Git preview hunk' })
   map('n', '<leader>gb', gitsigns.blame_line, { desc = 'Git blame line' })
+  map('n', '<leader>gB', require('config.github_pr').open_current_line_pr, { desc = 'GitHub PR for blamed line' })
 end
 
 return M

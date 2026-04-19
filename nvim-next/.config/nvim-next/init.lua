@@ -23,6 +23,7 @@ vim.o.termguicolors = true -- enable 24-bit rgb color in the terminal
 vim.o.list = true -- show trailing spaces
 -- use .opt instead of .o to get option object instead or lua string
 vim.opt.listchars = {
+  tab = '  ',
   trail = '+',
 }
 vim.opt.iskeyword:append '-' -- include - in-words

@@ -12,6 +12,24 @@ need_cmd pmset
 need_cmd nvram
 need_cmd softwareupdate
 
+# Some preference domains drift across macOS releases; warn instead of aborting.
+optional() {
+  if "$@" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  printf '  Skipping: %s\n' "$*"
+  return 0
+}
+
+defaults_write() {
+  optional defaults write "$@"
+}
+
+defaults_current_host_write() {
+  optional defaults -currentHost write "$@"
+}
+
 # Ask for admin once up front (used by Firewall, FileVault, Rosetta, and Spotlight mds refresh).
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   sudo -v
@@ -22,33 +40,33 @@ fi
 ###############################################################################
 
 echo "Trackpad: Enable tap to click"
-defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
-defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
-defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults_write com.apple.AppleMultitouchTrackpad Clicking -bool true
+defaults_write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults_current_host_write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults_write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
 echo "Trackpad: Enable three-finger drag"
-defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true
+defaults_write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerDrag -bool true
+defaults_write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true
 # Disable other dragging modes (mutually exclusive)
-defaults write com.apple.AppleMultitouchTrackpad Dragging -bool false
-defaults write com.apple.AppleMultitouchTrackpad DragLock -bool false
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Dragging -bool false
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad DragLock -bool false
+defaults_write com.apple.AppleMultitouchTrackpad Dragging -bool false
+defaults_write com.apple.AppleMultitouchTrackpad DragLock -bool false
+defaults_write com.apple.driver.AppleBluetoothMultitouch.trackpad Dragging -bool false
+defaults_write com.apple.driver.AppleBluetoothMultitouch.trackpad DragLock -bool false
 
 ###############################################################################
 # Keyboard
 ###############################################################################
 
 echo "Keyboard: Disable automatic capitalization"
-defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+defaults_write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 
 ###############################################################################
 # Accessibility
 ###############################################################################
 
 echo "Accessibility: Enable Reduce motion"
-defaults write com.apple.universalaccess reduceMotion -bool true
+defaults_write com.apple.universalaccess reduceMotion -bool true
 
 ###############################################################################
 # Sound
@@ -58,8 +76,8 @@ echo "Sound: Mute output by default"
 osascript -e "set volume with output muted"
 
 echo "Sound: Always show volume icon in menu bar"
-defaults write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
-defaults -currentHost write com.apple.controlcenter Sound -int 18
+defaults_write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
+defaults_current_host_write com.apple.controlcenter Sound -int 18
 
 echo "Sound: Disable startup sound"
 if sudo nvram StartupMute=%01 >/dev/null 2>&1; then
@@ -73,43 +91,43 @@ fi
 ###############################################################################
 
 echo "Finder: Show all filename extensions"
-defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+defaults_write NSGlobalDomain AppleShowAllExtensions -bool true
 
 echo "Finder: Show path bar"
-defaults write com.apple.finder ShowPathbar -bool true
+defaults_write com.apple.finder ShowPathbar -bool true
 
 echo "Finder: Show status bar"
-defaults write com.apple.finder ShowStatusBar -bool true
+defaults_write com.apple.finder ShowStatusBar -bool true
 
 echo "Finder: Use list view by default"
-defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+defaults_write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
 echo "Finder: Show Hard disks in sidebar Locations"
-defaults write com.apple.finder disksEnabled -bool true
-defaults write com.apple.finder SidebarDevicesSectionDisclosedState -bool true
+defaults_write com.apple.finder disksEnabled -bool true
+defaults_write com.apple.finder SidebarDevicesSectionDisclosedState -bool true
 
 echo "Finder: Hide Recent from sidebar Favorites"
-defaults write com.apple.finder recentsEnabled -bool false
+defaults_write com.apple.finder recentsEnabled -bool false
 
 echo "Finder: New windows show Downloads"
-defaults write com.apple.finder NewWindowTarget -string "PfLo"
-defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"
+defaults_write com.apple.finder NewWindowTarget -string "PfLo"
+defaults_write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Downloads/"
 
 echo "Finder: Disable recent tags in sidebar"
-defaults write com.apple.finder ShowRecentTags -bool false
+defaults_write com.apple.finder ShowRecentTags -bool false
 
 echo "Finder: Disable extension change warning"
-defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+defaults_write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
 echo "Finder: Search current folder by default"
-defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+defaults_write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
 ###############################################################################
 # Dock
 ###############################################################################
 
 echo "Dock: Hide recent applications"
-defaults write com.apple.dock show-recents -bool false
+defaults_write com.apple.dock show-recents -bool false
 
 echo "Dock: Remove all apps, keep app launcher and Terminal"
 python3 - <<'PY'
@@ -159,19 +177,19 @@ PY
 ###############################################################################
 
 echo "Screen Saver: Start after 5 minutes"
-defaults write com.apple.screensaver idleTime -int 300
+defaults_write com.apple.screensaver idleTime -int 300
 
 echo "Screen Saver: Require password immediately"
-defaults write com.apple.screensaver askForPassword -int 1
-defaults write com.apple.screensaver askForPasswordDelay -int 0
+defaults_write com.apple.screensaver askForPassword -int 1
+defaults_write com.apple.screensaver askForPasswordDelay -int 0
 
 echo "Hot Corners: Bottom-left to Lock Screen"
-defaults write com.apple.dock wvous-bl-corner -int 13
-defaults write com.apple.dock wvous-bl-modifier -int 0
+defaults_write com.apple.dock wvous-bl-corner -int 13
+defaults_write com.apple.dock wvous-bl-modifier -int 0
 
 echo "Hot Corners: Upper-right to Notification Center"
-defaults write com.apple.dock wvous-tr-corner -int 12
-defaults write com.apple.dock wvous-tr-modifier -int 0
+defaults_write com.apple.dock wvous-tr-corner -int 12
+defaults_write com.apple.dock wvous-tr-modifier -int 0
 
 ###############################################################################
 # Power
@@ -263,11 +281,11 @@ sudo softwareupdate --install-rosetta --agree-to-license || true
 ###############################################################################
 
 echo "Menu Bar: Reduce item spacing"
-defaults -currentHost write -globalDomain NSStatusItemSpacing -int 2
-defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 2
+defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
+defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
 
 echo "OpenInTerminal-Lite: Set default terminal to Ghostty"
-defaults write wang.jianing.app.OpenInTerminal-Lite LiteDefaultTerminal Ghostty
+defaults_write wang.jianing.app.OpenInTerminal-Lite LiteDefaultTerminal Ghostty
 
 ###############################################################################
 # Apply Changes

@@ -59,6 +59,7 @@ Run the automated script:
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - The core stow step includes both `nvim` and `nvim-next`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
+- On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue.
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps and stow `hammerspoon`.
 - `--include-dev` to install dev tools (sdkman-cli, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.

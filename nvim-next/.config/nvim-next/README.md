@@ -46,6 +46,7 @@ NVIM_APPNAME=nvim-next nvim
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>er` runs `:Rex` to return to netrw explorer.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`.
+- Inside Markdown files in Obsidian/Logseq-style vaults, `gd` and `gr` switch to note/tag navigation and search, and typing `[[` or `#` triggers built-in omni completion for vault notes or tags.
 - The statusline is a built-in custom one that shows file path and cursor position.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
@@ -124,6 +125,17 @@ NVIM_APPNAME=nvim-next nvim
 - The copied format is repo-relative when inside a Git worktree
 - Selecting the whole file copies only the relative path
 
+## Markdown Vault Navigation
+
+- Vault roots are detected by `.obsidian/` or `logseq/config.edn`
+- `gd` on `[[note]]`: open the linked note, or create it in the vault's configured new-note folder if it does not exist
+- `gd` on `#tag`: open a matching tag page if one exists; otherwise search that tag in the current vault
+- `gr` on `#tag`: search references to that tag in the current vault
+- `gr` elsewhere on a vault note: search backlinks to the current note in the current vault
+- Typing `[[` triggers built-in omni completion for linkable notes in the current vault without pre-filling the first match
+- Typing `#` at a tag boundary triggers built-in omni completion for known vault tags without pre-filling the first match
+- `<Tab>` inserts two spaces in vault markdown buffers
+
 ## Netrw
 
 - Tree listing is the default netrw view
@@ -153,9 +165,9 @@ NVIM_APPNAME=nvim-next nvim
 
 ## LSP Keybindings
 
-- `gd`: go to definition
+- `gd`: go to definition outside vault markdown buffers
 - `gh`: hover preview
-- `gr`: list references with Snacks
+- `gr`: list references with Snacks outside vault markdown buffers
 - `<leader>xl`: open the current buffer diagnostics in the location list
 - `<leader>xx`: open workspace diagnostics in the quickfix list
 

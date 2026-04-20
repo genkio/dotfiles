@@ -14,6 +14,12 @@ if [[ -n "$GHOSTTY_RESOURCES_DIR" && -r "$GHOSTTY_RESOURCES_DIR/shell-integratio
   source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration"
 fi
 
+# Auto-attach interactive SSH logins to the default tmux session.
+# Set NO_AUTO_TMUX=1 before starting the shell to bypass this.
+if [[ -o interactive && -n "$SSH_CONNECTION" && -z "$TMUX" && -z "$NO_AUTO_TMUX" ]] && command -v tmux >/dev/null 2>&1; then
+  exec tmux new -A -s "${TMUX_DEFAULT_SESSION:-tmp}"
+fi
+
 # Auto-install Oh My Zsh if missing (keep existing .zshrc)
 if [ ! -d "$ZSH" ]; then
   if command -v curl >/dev/null 2>&1; then

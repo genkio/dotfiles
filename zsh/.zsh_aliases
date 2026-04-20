@@ -47,7 +47,7 @@ alias vrc="vi ~/.zshrc"
 alias vrch="vi ~/.zsh_history"
 alias vrca="vi ~/.zsh_aliases"
 
-TMUX_DEFAULT_SESSION="tmp"
+TMUX_DEFAULT_SESSION="${TMUX_DEFAULT_SESSION:-tmp}"
 
 tx() {
   if [[ -n "$1" ]]; then
@@ -59,10 +59,6 @@ tx() {
 
 txk() {
   tmux kill-session -t "${1:-$TMUX_DEFAULT_SESSION}"
-}
-
-ssht() {
-  ssh -t "$1" "tmux new -A -s $TMUX_DEFAULT_SESSION"
 }
 
 [[ -f "${${(%):-%N}:A:h}/.zsh_git_aliases" ]] && source "${${(%):-%N}:A:h}/.zsh_git_aliases"

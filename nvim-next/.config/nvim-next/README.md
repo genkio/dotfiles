@@ -165,3 +165,4 @@ NVIM_APPNAME=nvim-next nvim
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.
+- If a removed plugin still shows up in `nvim-pack-lock.json`, do not edit the lockfile by hand. It usually means the plugin still exists on disk; clean it up with `:lua vim.pack.del({ 'plugin-name' })`.

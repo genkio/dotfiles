@@ -2,10 +2,10 @@
 --
 -- Hold right-Command and press a letter key to launch or focus an app.
 -- Bindings are defined in rcmd.config.lua as single-character keys mapped
--- to app names, multi-app pickers, or system actions.
+-- to app definitions, multi-app pickers, or system actions.
 --
 -- Features:
---   - Single app bindings: RCmd+B → "Brave Browser"
+--   - Single app bindings: RCmd+B → "Brave Browser" / { app = "Brave Browser", fullscreen = true }
 --   - Multi-app picker: RCmd+M → choose between "Mail" / "Messages"
 --   - System actions: window tiling, notification center, control center
 --   - Config overlay: hold right-Command for 0.5s to see all bindings
@@ -14,7 +14,7 @@
 --   1. An event tap detects right-Command via raw modifier flag masks
 --   2. While held, single-character hotkeys are enabled
 --   3. Releasing right-Command disables the hotkeys
---   4. Apps are launched/focused and sent to macOS fullscreen with retry logic
+--   4. Apps are launched/focused and only sent to macOS fullscreen when configured
 
 local M = {}
 
@@ -120,21 +120,42 @@ local function parseAppTarget(value)
   return nil
 end
 
+local function normalizeAppDefinition(value)
+  local appTarget = parseAppTarget(value)
+
+  if not appTarget then
+    return nil
+  end
+
+  return {
+    target = appTarget,
+    fullscreen = type(value) == "table" and value.fullscreen == true or false,
+  }
+end
+
+local function appTargetValue(appTarget)
+  if type(appTarget) == "table" then
+    return appTarget.target
+  end
+
+  return appTarget
+end
+
 local function normalizeAppTargets(targets)
   if type(targets) ~= "table" then
-    return nil, "rcmd.config.lua multi-app values must be arrays of app names"
+    return nil, "rcmd.config.lua multi-app values must be arrays of app names or app tables"
   end
 
   local appTargets = {}
 
   for _, value in ipairs(targets) do
-    local appTarget = parseAppTarget(value)
+    local appDefinition = normalizeAppDefinition(value)
 
-    if not appTarget then
+    if not appDefinition then
       return nil, "rcmd.config.lua multi-app values must contain non-empty app names"
     end
 
-    table.insert(appTargets, appTarget)
+    table.insert(appTargets, appDefinition)
   end
 
   if #appTargets == 0 then
@@ -173,15 +194,15 @@ local function normalizeBindings(config)
 
       bindings[normalizedKey] = {
         kind = "app",
-        target = target,
+        target = normalizeAppDefinition(target),
       }
     elseif type(target) == "table" then
-      local appTarget = parseAppTarget(target)
+      local appDefinition = normalizeAppDefinition(target)
 
-      if appTarget then
+      if appDefinition then
         bindings[normalizedKey] = {
           kind = "app",
-          target = appTarget,
+          target = appDefinition,
         }
       elseif type(target.action) == "string" and target.action ~= "" then
         bindings[normalizedKey] = {
@@ -277,6 +298,12 @@ local function cancelRightCommandHoldTimer()
 end
 
 local function appTargetLabel(appTarget)
+  appTarget = appTargetValue(appTarget)
+
+  if type(appTarget) ~= "string" or appTarget == "" then
+    return "Unknown app"
+  end
+
   local runningApp = hs.application.get(appTarget)
 
   if runningApp and type(runningApp.name) == "function" then
@@ -435,12 +462,16 @@ local function firstWindow(app)
   return app:mainWindow() or pickWindow(app:visibleWindows()) or pickWindow(app:allWindows())
 end
 
-local function fullscreenWindow(window)
+local function focusWindow(window)
   if window:isMinimized() then
     window:unminimize()
   end
 
   window:focus()
+end
+
+local function fullscreenWindow(window)
+  focusWindow(window)
 
   if window:isFullScreen() then
     return
@@ -449,7 +480,7 @@ local function fullscreenWindow(window)
   window:setFullScreen(true)
 end
 
-local function focusAndFullscreen(app, retriesRemaining)
+local function focusApp(app, shouldFullscreen, retriesRemaining)
   local window = nil
 
   app:unhide()
@@ -457,7 +488,12 @@ local function focusAndFullscreen(app, retriesRemaining)
   window = firstWindow(app)
 
   if window then
-    fullscreenWindow(window)
+    if shouldFullscreen then
+      fullscreenWindow(window)
+    else
+      focusWindow(window)
+    end
+
     return
   end
 
@@ -467,7 +503,7 @@ local function focusAndFullscreen(app, retriesRemaining)
   end
 
   hs.timer.doAfter(0.2, function()
-    focusAndFullscreen(app, retriesRemaining - 1)
+    focusApp(app, shouldFullscreen, retriesRemaining - 1)
   end)
 end
 
@@ -638,12 +674,14 @@ local function activateAppPickerTarget(index)
   return true
 end
 
-openBoundApp = function(appTarget)
+openBoundApp = function(appBinding)
+  local appTarget = appTargetValue(appBinding)
+  local shouldFullscreen = type(appBinding) == "table" and appBinding.fullscreen == true
   local lookupTarget = lookupTargetFor(appTarget)
   local app = hs.application.open(appTarget)
 
   if app then
-    focusAndFullscreen(app, 15)
+    focusApp(app, shouldFullscreen, 15)
     return
   end
 
@@ -655,7 +693,7 @@ openBoundApp = function(appTarget)
 
     if runningApp then
       poller:stop()
-      focusAndFullscreen(runningApp, 15)
+      focusApp(runningApp, shouldFullscreen, 15)
       return
     end
 

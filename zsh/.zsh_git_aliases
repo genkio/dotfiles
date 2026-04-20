@@ -103,6 +103,13 @@ gtreer() {
   parent_dir=$(dirname "$main_worktree") || return
   target_dir="$parent_dir/$project_name-${branch//\//-}"
 
+  if ! read -q "REPLY?Remove worktree $target_dir and delete branch $branch? [y/N] "; then
+    echo
+    echo "Cancelled."
+    return 1
+  fi
+  echo
+
   # migrate claude code sessions from worktree project to main project
   local wt_slug main_slug wt_sessions main_sessions
   wt_slug=$(echo "$target_dir" | tr '/' '-')

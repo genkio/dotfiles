@@ -116,6 +116,14 @@ fi
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew bundle --file brew/Brewfile.apps
   stow -t "$HOME" hammerspoon
+
+  mkdir -p "$HOME/.config/karabiner"
+  if [[ -e "$HOME/.config/karabiner/karabiner.json" && ! -L "$HOME/.config/karabiner/karabiner.json" ]]; then
+    echo "Skipping karabiner stow: ~/.config/karabiner/karabiner.json already exists and is not a symlink."
+    echo "Move it aside and run 'cd $DOTFILES_DIR && stow karabiner' when you're ready."
+  else
+    stow -t "$HOME" karabiner
+  fi
 fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then

@@ -16,7 +16,7 @@ cd ~/dotfiles && stow zsh
 cd ~/dotfiles && stow brew git nvim nvim-next tmux yazi zsh ssh
 
 # Apply optional app packages
-cd ~/dotfiles && stow hammerspoon
+cd ~/dotfiles && stow hammerspoon karabiner
 
 # Apply optional dev packages
 cd ~/dotfiles && stow ghostty
@@ -37,7 +37,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim nvim-next tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim nvim-next tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon` and `karabiner`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
 
 ## Stow Packages
 
@@ -51,6 +51,7 @@ cd ~/dotfiles && stow -D zsh
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
 | `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
+| `karabiner` | `~/.config/karabiner/karabiner.json` | Karabiner-Elements config |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; only `settings.json` and `statusline-command.sh` are linked |
 | `vim` | `~/.vimrc` | Legacy vim config |

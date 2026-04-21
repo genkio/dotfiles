@@ -5,6 +5,11 @@ confirm-close-surface = false
 # Next/previous pane
 keybind = cmd+k=goto_split:next
 keybind = cmd+j=goto_split:previous
+
+# Previous/next tmux window (sends Ctrl+P / Ctrl+N to tmux)
+keybind = cmd+shift+[=text:\x10
+keybind = cmd+shift+]=text:\x0e
+
 # Inserts a new line for multi-line prompts without immediately running the command
 keybind = shift+enter=text:\x1b\r
 

@@ -470,6 +470,36 @@ local function focusWindow(window)
   window:focus()
 end
 
+local function frameWithinTolerance(frame, expectedFrame, tolerance)
+  return math.abs(frame.x - expectedFrame.x) <= tolerance
+    and math.abs(frame.y - expectedFrame.y) <= tolerance
+    and math.abs(frame.w - expectedFrame.w) <= tolerance
+    and math.abs(frame.h - expectedFrame.h) <= tolerance
+end
+
+local function absoluteFrameForUnit(screenFrame, unitRect)
+  return hs.geometry.rect(
+    screenFrame.x + (screenFrame.w * unitRect.x),
+    screenFrame.y + (screenFrame.h * unitRect.y),
+    screenFrame.w * unitRect.w,
+    screenFrame.h * unitRect.h
+  )
+end
+
+local function windowMatchesUnitRect(window, unitRect)
+  local screen = window:screen()
+
+  if not screen then
+    return false
+  end
+
+  return frameWithinTolerance(window:frame(), absoluteFrameForUnit(screen:frame(), unitRect), 12)
+end
+
+local function windowIsHalfScreen(window)
+  return windowMatchesUnitRect(window, hs.layout.left50) or windowMatchesUnitRect(window, hs.layout.right50)
+end
+
 local function fullscreenWindow(window)
   focusWindow(window)
 
@@ -488,7 +518,7 @@ local function focusApp(app, shouldFullscreen, retriesRemaining)
   window = firstWindow(app)
 
   if window then
-    if shouldFullscreen then
+    if shouldFullscreen and not windowIsHalfScreen(window) then
       fullscreenWindow(window)
     else
       focusWindow(window)

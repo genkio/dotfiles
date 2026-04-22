@@ -689,11 +689,26 @@ local function exitHintMode()
   end
 end
 
+local function isScreenshotShortcut(event)
+  local flags = event:getFlags()
+  if not flags.cmd or not flags.shift then return false end
+
+  local keyCode = event:getKeyCode()
+  return keyCode == hs.keycodes.map["3"]
+    or keyCode == hs.keycodes.map["4"]
+    or keyCode == hs.keycodes.map["5"]
+end
+
 -- Start the key capture event tap for hint selection
 local function startKeyTap()
   keyTap = eventtap.new({ eventtap.event.types.keyDown }, function(event)
     local keyCode = event:getKeyCode()
-    local char = event:getCharacters():lower()
+    local char = (event:getCharacters() or ""):lower()
+
+    -- Let macOS screenshot shortcuts pass through so the overlay stays visible
+    if isScreenshotShortcut(event) then
+      return false
+    end
 
     -- Escape: dismiss
     if keyCode == 53 then

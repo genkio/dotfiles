@@ -9,8 +9,6 @@ brew "lazydocker"
 brew "lazygit"
 brew "sdkman/tap/sdkman-cli"
 
-cask "claude-code"
-cask "codex"
 cask "docker-desktop"
 cask "ghostty"
 cask "openinterminal-lite"

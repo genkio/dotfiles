@@ -35,16 +35,18 @@ local WALK_DEADLINE_SECS = 1.5
 local SCAN_MENUBAR = true
 
 -- Visual style
-local BADGE_BG = { red = 0.96, green = 0.76, blue = 0.07, alpha = 0.95 }
-local BADGE_BORDER = { red = 0.72, green = 0.56, blue = 0.0, alpha = 0.8 }
+local BADGE_BG = { red = 1.0, green = 0.80, blue = 0.0, alpha = 0.95 }
+local BADGE_BORDER = { red = 0.85, green = 0.65, blue = 0.0, alpha = 0.85 }
 local BADGE_TEXT_COLOR = { red = 0.08, green = 0.08, blue = 0.08, alpha = 1 }
 local BADGE_FONT_NAME = "Menlo-Bold"
-local BADGE_FONT_SIZE = 11
-local BADGE_PADDING_X = 4
-local BADGE_PADDING_Y = 2
-local BADGE_CORNER_RADIUS = 3
+local BADGE_FONT_SIZE = 12
+local BADGE_PADDING_X = 5
+local BADGE_PADDING_Y = 3
+local BADGE_CORNER_RADIUS = 4
 local BADGE_GAP = 4
-local DIM_OVERLAY_COLOR = { white = 0, alpha = 0.12 }
+local ARROW_SIZE = 4
+local BADGE_OUTSIDE_GAP = BADGE_GAP + ARROW_SIZE + 2
+local DIM_OVERLAY_COLOR = { white = 0, alpha = 0.10 }
 local MATCHED_BG = { red = 0.2, green = 0.8, blue = 0.3, alpha = 0.95 }
 local MATCHED_BORDER = { red = 0.1, green = 0.6, blue = 0.2, alpha = 0.8 }
 local MATCHED_TEXT_COLOR = { white = 1, alpha = 1 }
@@ -94,6 +96,12 @@ local weakInteractiveRoles = {
   AXCell = true,
   AXOutlineRow = true,
   AXImage = true,  -- often clickable in web views and toolbars
+}
+
+local rowLikeRoles = {
+  AXRow = true,
+  AXCell = true,
+  AXOutlineRow = true,
 }
 
 -- Maximum number of hints (prefix-free labels up to 3 chars)
@@ -387,11 +395,34 @@ local function filterCandidates(candidates)
     return a.center.x < b.center.x
   end)
 
-  while #final > MAX_HINTS do
-    table.remove(final)
+  -- Collapse weak interactive elements that share a visual row.
+  -- In table/list views, AXRow/AXCell/AXOutlineRow siblings sit side-by-side
+  -- so they survive overlap-based dedup. Keep only one label per visual row
+  -- for these low-priority elements (matches Homerow app behavior).
+  local deduped = {}
+  for _, candidate in ipairs(final) do
+    if candidate.priority <= 1 then
+      local hasSameRowPeer = false
+      for _, existing in ipairs(deduped) do
+        if existing.priority <= 1
+          and math.abs(candidate.center.y - existing.center.y) <= 6 then
+          hasSameRowPeer = true
+          break
+        end
+      end
+      if not hasSameRowPeer then
+        table.insert(deduped, candidate)
+      end
+    else
+      table.insert(deduped, candidate)
+    end
   end
 
-  return final
+  while #deduped > MAX_HINTS do
+    table.remove(deduped)
+  end
+
+  return deduped
 end
 
 -- Collect actionable elements using breadth-first search
@@ -457,48 +488,193 @@ local function clampBadgeFrame(frame, bw, bh, x, y)
   }
 end
 
-local function prefersInlineBadge(hint, bw, bh)
+local function prefersLeadingEdgeBadge(hint, bw, bh)
+  if rowLikeRoles[hint.role or ""] then return false end
   if weakInteractiveRoles[hint.role or ""] then return true end
   return hint.size.w >= bw * 4 and hint.size.h <= bh * 2.5
 end
 
-local function chooseBadgeFrame(hint, frame, bw, bh, occupied)
-  local anchors
-  if prefersInlineBadge(hint, bw, bh) then
-    anchors = {
-      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x + BADGE_GAP, hint.center.y - frame.y - (bh / 2)),
-      clampBadgeFrame(frame, bw, bh, hint.position.x + hint.size.w - bw - frame.x - BADGE_GAP, hint.center.y - frame.y - (bh / 2)),
-      clampBadgeFrame(frame, bw, bh, hint.center.x - frame.x - (bw / 2), hint.center.y - frame.y - (bh / 2)),
-      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y - frame.y - bh - BADGE_GAP),
-      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y + hint.size.h - frame.y + BADGE_GAP),
-    }
-  else
-    anchors = {
-      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y - frame.y - bh - BADGE_GAP),
-      clampBadgeFrame(frame, bw, bh, hint.position.x + hint.size.w - bw - frame.x, hint.position.y - frame.y - bh - BADGE_GAP),
-      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x + BADGE_GAP, hint.center.y - frame.y - (bh / 2)),
-      clampBadgeFrame(frame, bw, bh, hint.position.x - frame.x, hint.position.y + hint.size.h - frame.y + BADGE_GAP),
-      clampBadgeFrame(frame, bw, bh, hint.center.x - frame.x - (bw / 2), hint.center.y - frame.y - (bh / 2)),
-    }
+local function getBadgeTargetFrame(hint, frame)
+  local targetFrame = {
+    x = hint.position.x - frame.x,
+    y = hint.position.y - frame.y,
+    w = hint.size.w,
+    h = hint.size.h,
+  }
+
+  if not rowLikeRoles[hint.role or ""] then
+    return targetFrame
   end
 
-  local bestFrame = anchors[1]
+  -- AX rows/cells span the entire list width, but the visually meaningful
+  -- click target is usually around the row's content line. Use a narrower,
+  -- centered band for badge placement so hints sit near Homerow.app's
+  -- placement instead of piling onto the filename edge.
+  local placementWidth = math.min(targetFrame.w, math.max(160, math.min(targetFrame.w * 0.35, 260)))
+  local placementHeight = math.min(targetFrame.h, math.max(12, math.min(targetFrame.h * 0.45, 18)))
+
+  return {
+    x = targetFrame.x + ((targetFrame.w - placementWidth) / 2),
+    y = targetFrame.y + ((targetFrame.h - placementHeight) / 2),
+    w = placementWidth,
+    h = placementHeight,
+  }
+end
+
+local function makeBadgeCandidate(frame, bw, bh, x, y, rank)
+  local badgeFrame = clampBadgeFrame(frame, bw, bh, x, y)
+  badgeFrame.rank = rank
+  badgeFrame.clampDistance = math.abs(badgeFrame.x - x) + math.abs(badgeFrame.y - y)
+  return badgeFrame
+end
+
+local function chooseBadgeFrame(hint, frame, bw, bh, occupied, hints)
+  local targetFrame = hint.badgeTargetFrame or getBadgeTargetFrame(hint, frame)
+  local targetCenterX = targetFrame.x + (targetFrame.w / 2)
+  local targetCenterY = targetFrame.y + (targetFrame.h / 2)
+  local targetRight = targetFrame.x + targetFrame.w
+  local targetBottom = targetFrame.y + targetFrame.h
+  local otherTargetPenalty = rowLikeRoles[hint.role or ""] and 150 or 5000
+
+  local primaryX
+  local secondaryX
+  local tertiaryX
+  if prefersLeadingEdgeBadge(hint, bw, bh) then
+    primaryX = targetFrame.x + BADGE_GAP
+    secondaryX = targetCenterX - (bw / 2)
+    tertiaryX = targetRight - bw - BADGE_GAP
+  else
+    primaryX = targetCenterX - (bw / 2)
+    secondaryX = targetFrame.x + BADGE_GAP
+    tertiaryX = targetRight - bw - BADGE_GAP
+  end
+
+  local candidates = {
+    makeBadgeCandidate(frame, bw, bh, primaryX, targetBottom + BADGE_OUTSIDE_GAP, 1),
+    makeBadgeCandidate(frame, bw, bh, secondaryX, targetBottom + BADGE_OUTSIDE_GAP, 2),
+    makeBadgeCandidate(frame, bw, bh, tertiaryX, targetBottom + BADGE_OUTSIDE_GAP, 3),
+    makeBadgeCandidate(frame, bw, bh, primaryX, targetFrame.y - bh - BADGE_OUTSIDE_GAP, 4),
+    makeBadgeCandidate(frame, bw, bh, secondaryX, targetFrame.y - bh - BADGE_OUTSIDE_GAP, 5),
+    makeBadgeCandidate(frame, bw, bh, tertiaryX, targetFrame.y - bh - BADGE_OUTSIDE_GAP, 6),
+    makeBadgeCandidate(frame, bw, bh, targetRight + BADGE_OUTSIDE_GAP, targetCenterY - (bh / 2), 7),
+    makeBadgeCandidate(frame, bw, bh, targetFrame.x - bw - BADGE_OUTSIDE_GAP, targetCenterY - (bh / 2), 8),
+  }
+
+  local bestFrame = candidates[1]
   local bestScore = math.huge
-  for _, candidate in ipairs(anchors) do
-    local score = 0
+  for _, candidate in ipairs(candidates) do
+    local occupiedOverlap = 0
     for _, other in ipairs(occupied) do
-      score = score + intersectionArea(candidate, other)
-      if score >= bestScore then break end
+      occupiedOverlap = occupiedOverlap + intersectionArea(candidate, other)
+      if occupiedOverlap >= bestScore then break end
     end
+
+    local targetOverlap = intersectionArea(candidate, targetFrame)
+    local otherTargetOverlap = 0
+    for _, other in ipairs(hints) do
+      if other ~= hint then
+        local otherFrame = other.badgeTargetFrame or getBadgeTargetFrame(other, frame)
+        otherTargetOverlap = otherTargetOverlap + intersectionArea(candidate, otherFrame)
+        if otherTargetOverlap > 0 and (targetOverlap * 1000000) + (otherTargetOverlap * otherTargetPenalty) >= bestScore then
+          break
+        end
+      end
+    end
+
+    local badgeCenterX = candidate.x + (candidate.w / 2)
+    local badgeCenterY = candidate.y + (candidate.h / 2)
+    local targetDistance = math.abs(badgeCenterX - targetCenterX) + math.abs(badgeCenterY - targetCenterY)
+    local score = (targetOverlap * 1000000)
+      + (otherTargetOverlap * otherTargetPenalty)
+      + (occupiedOverlap * 1000)
+      + (candidate.rank * 100)
+      + (candidate.clampDistance * 10)
+      + targetDistance
 
     if score < bestScore then
       bestFrame = candidate
       bestScore = score
-      if score == 0 then break end
+      if targetOverlap == 0 and otherTargetOverlap == 0 and occupiedOverlap == 0 and candidate.clampDistance == 0 then
+        break
+      end
     end
   end
 
   return bestFrame
+end
+
+local function clamp(value, minimum, maximum)
+  return math.max(minimum, math.min(maximum, value))
+end
+
+local function buildArrowGeometry(hint, frame, badgeFrame)
+  local targetFrame = hint.badgeTargetFrame or getBadgeTargetFrame(hint, frame)
+  local targetCenterX = targetFrame.x + (targetFrame.w / 2)
+  local targetCenterY = targetFrame.y + (targetFrame.h / 2)
+  local targetRight = targetFrame.x + targetFrame.w
+  local targetBottom = targetFrame.y + targetFrame.h
+
+  local bx = badgeFrame.x
+  local by = badgeFrame.y
+  local bw = badgeFrame.w
+  local bh = badgeFrame.h
+  local badgeRight = bx + bw
+  local badgeBottom = by + bh
+  local edgeInset = BADGE_CORNER_RADIUS + ARROW_SIZE + 1
+
+  if by >= targetBottom then
+    local arrowX = clamp(targetCenterX, bx + edgeInset, badgeRight - edgeInset)
+    return {
+      { x = arrowX - ARROW_SIZE, y = by + 0.5 },
+      { x = arrowX + ARROW_SIZE, y = by + 0.5 },
+      { x = arrowX, y = by - ARROW_SIZE },
+    }, {
+      { x = arrowX - ARROW_SIZE, y = by },
+      { x = arrowX, y = by - ARROW_SIZE },
+      { x = arrowX + ARROW_SIZE, y = by },
+    }
+  end
+
+  if badgeBottom <= targetFrame.y then
+    local arrowX = clamp(targetCenterX, bx + edgeInset, badgeRight - edgeInset)
+    return {
+      { x = arrowX - ARROW_SIZE, y = badgeBottom - 0.5 },
+      { x = arrowX + ARROW_SIZE, y = badgeBottom - 0.5 },
+      { x = arrowX, y = badgeBottom + ARROW_SIZE },
+    }, {
+      { x = arrowX - ARROW_SIZE, y = badgeBottom },
+      { x = arrowX, y = badgeBottom + ARROW_SIZE },
+      { x = arrowX + ARROW_SIZE, y = badgeBottom },
+    }
+  end
+
+  if bx >= targetRight then
+    local arrowY = clamp(targetCenterY, by + edgeInset, badgeBottom - edgeInset)
+    return {
+      { x = bx + 0.5, y = arrowY - ARROW_SIZE },
+      { x = bx + 0.5, y = arrowY + ARROW_SIZE },
+      { x = bx - ARROW_SIZE, y = arrowY },
+    }, {
+      { x = bx, y = arrowY - ARROW_SIZE },
+      { x = bx - ARROW_SIZE, y = arrowY },
+      { x = bx, y = arrowY + ARROW_SIZE },
+    }
+  end
+
+  if badgeRight <= targetFrame.x then
+    local arrowY = clamp(targetCenterY, by + edgeInset, badgeBottom - edgeInset)
+    return {
+      { x = badgeRight - 0.5, y = arrowY - ARROW_SIZE },
+      { x = badgeRight - 0.5, y = arrowY + ARROW_SIZE },
+      { x = badgeRight + ARROW_SIZE, y = arrowY },
+    }, {
+      { x = badgeRight, y = arrowY - ARROW_SIZE },
+      { x = badgeRight + ARROW_SIZE, y = arrowY },
+      { x = badgeRight, y = arrowY + ARROW_SIZE },
+    }
+  end
+
+  return nil, nil
 end
 
 -- Build and display the hint overlay canvas
@@ -522,6 +698,10 @@ local function showHints(hints, frame)
   local occupied = {}
 
   for _, hint in ipairs(hints) do
+    hint.badgeTargetFrame = getBadgeTargetFrame(hint, frame)
+  end
+
+  for _, hint in ipairs(hints) do
     local label = hint.label
     local isMatched = #inputBuffer > 0 and label:sub(1, #inputBuffer) == inputBuffer
 
@@ -530,13 +710,15 @@ local function showHints(hints, frame)
     local bw = textWidth + BADGE_PADDING_X * 2
     local bh = textHeight + BADGE_PADDING_Y * 2
 
-    local badgeFrame = chooseBadgeFrame(hint, frame, bw, bh, occupied)
+    local badgeFrame = chooseBadgeFrame(hint, frame, bw, bh, occupied, hints)
     local bx = badgeFrame.x
     local by = badgeFrame.y
 
     local bgColor = isMatched and MATCHED_BG or BADGE_BG
     local borderColor = isMatched and MATCHED_BORDER or BADGE_BORDER
     local textColor = isMatched and MATCHED_TEXT_COLOR or BADGE_TEXT_COLOR
+
+    local arrowFill, arrowBorder = buildArrowGeometry(hint, frame, badgeFrame)
 
     -- Badge background
     hintCanvas:insertElement({
@@ -558,6 +740,26 @@ local function showHints(hints, frame)
       textAlignment = "center",
       frame = { x = bx, y = by + BADGE_PADDING_Y - 1, w = bw, h = bh - BADGE_PADDING_Y },
     })
+
+    if arrowFill then
+      -- Filled triangle (seamlessly connects to badge body)
+      hintCanvas:insertElement({
+        type = "segments",
+        closed = true,
+        action = "fill",
+        fillColor = bgColor,
+        coordinates = arrowFill,
+      })
+      -- Border on the two exposed edges only (open path, no base line)
+      hintCanvas:insertElement({
+        type = "segments",
+        closed = false,
+        action = "stroke",
+        strokeColor = borderColor,
+        strokeWidth = 1,
+        coordinates = arrowBorder,
+      })
+    end
 
     table.insert(occupied, badgeFrame)
   end

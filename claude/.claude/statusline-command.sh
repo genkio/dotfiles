@@ -143,6 +143,6 @@ if [[ -n "$git_branch" ]]; then
 fi
 
 # Second line: usage info from built-in rate_limits
-if [[ -n "$usage_info" ]]; then
-    printf "\n%s" "$usage_info"
-fi
+# if [[ -n "$usage_info" ]]; then
+#     printf "\n%s" "$usage_info"
+# fi

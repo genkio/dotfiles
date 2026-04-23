@@ -34,6 +34,7 @@ NVIM_APPNAME=nvim-next nvim
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
 - The built-in `catppuccin` colorscheme is the default theme.
+- In JSON and JSONC buffers, `zc` and `zo` on a `{` or `[` manage a manual fold for that exact block under the cursor instead of relying on line-based indent folding.
 - Search defaults to the current working directory, not the git root.
 - `<leader>lg` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.
 - `<leader>lG` opens LazyGit in a new tab terminal with the compact layout.

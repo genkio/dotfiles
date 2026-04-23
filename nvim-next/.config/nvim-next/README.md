@@ -45,7 +45,7 @@ NVIM_APPNAME=nvim-next nvim
 - Trailing spaces are shown as `+`.
 - `s` uses `flash.nvim` jump mode in normal, visual, and operator-pending modes.
 - `<leader>er` runs `:Rex` to return to netrw explorer.
-- `<leader>yr` copies the current line or visual line range as `path:start-end`.
+- `<leader>yr` copies the current line or visual line range as `path:start-end`, with the path shown relative to `$HOME` (e.g. `~/dotfiles/...`). Single-line selections drop the `:start-end` suffix.
 - Inside Markdown files in Obsidian/Logseq-style vaults, `gd` and `gr` switch to note/tag navigation and search, and typing `[[` or `#` triggers built-in omni completion for vault notes or tags.
 - The statusline is a built-in custom one that shows file path and cursor position.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
@@ -122,8 +122,9 @@ NVIM_APPNAME=nvim-next nvim
 ## Clipboard
 
 - `<leader>yr`: copy the current line or visual line range to the clipboard
-- The copied format is repo-relative when inside a Git worktree
-- Selecting the whole file copies only the relative path
+- The copied path is `$HOME`-relative, so files under your home directory show up as `~/…`
+- A multi-line visual selection is appended as `:start-end`
+- A single-line selection, or selecting the whole file, copies just the path
 
 ## Markdown Vault Navigation
 

@@ -25,27 +25,28 @@ local function resolve_range()
   return current_range()
 end
 
-local function relative_path(bufnr)
+local function tilde_path(bufnr)
   local path = vim.api.nvim_buf_get_name(bufnr)
   if path == '' then
     return '[No Name]'
   end
 
   local absolute = vim.fs.normalize(path)
-  local root = vim.fs.root(absolute, { '.git' }) or vim.uv.cwd() or vim.fn.getcwd()
-  local relative = vim.fs.relpath(root, absolute)
-
-  return relative or vim.fn.fnamemodify(absolute, ':t')
+  return vim.fn.fnamemodify(absolute, ':~')
 end
 
 function M.build(bufnr)
   bufnr = bufnr or 0
 
-  local path = relative_path(bufnr)
+  local path = tilde_path(bufnr)
   local start_line, end_line = resolve_range()
   local total = vim.api.nvim_buf_line_count(bufnr)
 
   if start_line == 1 and end_line == total then
+    return path
+  end
+
+  if start_line == end_line then
     return path
   end
 

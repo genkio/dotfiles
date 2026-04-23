@@ -7,6 +7,7 @@ return {
   ["0"] = { action = "window_maximize" },
   ["1"] = { action = "window_left" },
   ["2"] = { action = "window_right" },
+  ["`"] = { action = "window_next_screen" },
   b = { app = "Brave Browser", fullscreen = true },
   c = "Calendar",
   f = "Finder",

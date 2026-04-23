@@ -342,6 +342,7 @@ local function actionTargetLabel(actionTarget)
     window_left = "Action: Move Window Left",
     window_right = "Action: Move Window Right",
     window_maximize = "Action: Enter Full Screen",
+    window_next_screen = "Action: Move Window to Next Screen",
   }
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
@@ -768,6 +769,51 @@ local function fullscreenFocusedWindow(missingWindowMessage)
   fullscreenWindow(window)
 end
 
+local function moveFocusedWindowToNextScreen(missingWindowMessage)
+  local window = hs.window.focusedWindow()
+
+  if not window then
+    hs.alert.show(missingWindowMessage)
+    return
+  end
+
+  local screens = hs.screen.allScreens()
+
+  if #screens <= 1 then
+    return
+  end
+
+  local currentScreen = window:screen()
+  local currentIndex = nil
+
+  for index, screen in ipairs(screens) do
+    if currentScreen and screen:id() == currentScreen:id() then
+      currentIndex = index
+      break
+    end
+  end
+
+  if not currentIndex then
+    return
+  end
+
+  local nextScreen = screens[(currentIndex % #screens) + 1]
+
+  if window:isFullScreen() then
+    window:setFullScreen(false)
+    hs.timer.doAfter(0.4, function()
+      if window:id() then
+        window:moveToScreen(nextScreen, false, true)
+        window:focus()
+      end
+    end)
+    return
+  end
+
+  window:moveToScreen(nextScreen, false, true)
+  window:focus()
+end
+
 local function runAction(actionTarget)
   local actionHandlers = {
     notification_center = function()
@@ -787,6 +833,9 @@ local function runAction(actionTarget)
     end,
     window_maximize = function()
       fullscreenFocusedWindow("No focused window to enter full screen")
+    end,
+    window_next_screen = function()
+      moveFocusedWindowToNextScreen("No focused window to move")
     end,
   }
 

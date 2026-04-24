@@ -1,21 +1,20 @@
-# nvim-next
+# nvim
 
-Clean Neovim 0.12 sandbox launched with:
+Clean Neovim 0.12 config launched with:
 
 ```sh
-NVIM_APPNAME=nvim-next nvim
+nvim
 ```
 
 `<leader>` is `Space`.
 
 ## Session Prompt
 
-- Work in `nvim-next/.config/nvim-next` as a clean Neovim 0.12 config
+- Work in `nvim/.config/nvim` as the main Neovim 0.12 config
 - Check latest Neovim 0.12 / official docs first for every task
 - Prefer built-in Neovim features when possible
-- If built-in is enough, explain how to use it; if config is needed, implement it in `nvim-next`
-- Use `nvim/.config/nvim` only as reference when I say "previously"
-- Keep `nvim-next` minimal, stable, and pragmatic
+- If built-in is enough, explain how to use it; if config is needed, implement it in `nvim`
+- Keep `nvim` minimal, stable, and pragmatic
 - Prefer performance and responsiveness over novelty; if a feature adds noticeable lag, avoid adding it unless the payoff is unusually high
 - Prefer small local Lua modules over plugin-heavy setups
 - Only add a plugin when it is clearly justified; configure only the needed part

@@ -23,14 +23,6 @@ alias lt="eza --group-directories-first --tree --level=2 --icons"
 alias lti="eza --group-directories-first --all --tree --icons"
 vim() {
   if [[ $# -gt 0 ]]; then
-    NVIM_APPNAME="nvim-next" nvim "$@"
-  else
-    NVIM_APPNAME="nvim-next" nvim .
-  fi
-}
-
-vi() {
-  if [[ $# -gt 0 ]]; then
     nvim "$@"
   else
     nvim .
@@ -43,9 +35,9 @@ alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
 alias src="source ~/.zshrc"
-alias vrc="vi ~/.zshrc"
-alias vrch="vi ~/.zsh_history"
-alias vrca="vi ~/.zsh_aliases"
+alias vrc="vim ~/.zshrc"
+alias vrch="vim ~/.zsh_history"
+alias vrca="vim ~/.zsh_aliases"
 
 TMUX_DEFAULT_SESSION="${TMUX_DEFAULT_SESSION:-tmp}"
 

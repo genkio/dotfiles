@@ -13,7 +13,7 @@ Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). M
 cd ~/dotfiles && stow zsh
 
 # Apply the core packages
-cd ~/dotfiles && stow brew git nvim nvim-next tmux yazi zsh ssh
+cd ~/dotfiles && stow brew git nvim tmux yazi zsh ssh
 
 # Apply optional app packages
 cd ~/dotfiles && stow hammerspoon karabiner
@@ -37,7 +37,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim nvim-next tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon` and `karabiner`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git nvim tmux yazi zsh`). It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon` and `karabiner`. Pass `--include-dev` to install dev tools (ghostty, docker, claude-code, codex, version managers, etc.), stow `ghostty` and `claude`, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
 
 ## Stow Packages
 
@@ -46,10 +46,9 @@ cd ~/dotfiles && stow -D zsh
 | `brew` | `~/brew/` | Brewfiles |
 | `git` | `~/.gitconfig` | Shared Git config; private identity in machine-local `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
-| `nvim` | `~/.config/nvim/` | Kickstart.nvim-based config |
-| `nvim-next` | `~/.config/nvim-next/` | Separate Neovim 0.12 profile launched with `NVIM_APPNAME=nvim-next nvim` |
+| `nvim` | `~/.config/nvim/` | Daily-driver Neovim 0.12 profile launched with `nvim` |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect + tmux-continuum |
-| `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shared config for shell `yazi` and `yazi.nvim`; mobile profile for narrow Neovim UIs |
+| `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shell `yazi` config with a secondary compact profile |
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
 | `karabiner` | `~/.config/karabiner/karabiner.json` | Karabiner-Elements config |
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
@@ -59,14 +58,9 @@ cd ~/dotfiles && stow -D zsh
 
 ## Neovim Config
 
-Based on kickstart.nvim. Single-file core at `nvim/.config/nvim/init.lua` (~48k). Custom extensions live in `nvim/.config/nvim/lua/custom/`:
-- `keymaps.lua` — custom key mappings
-- `copy_range.lua` — range copy utility
-- `plugins/` — additional lazy.nvim plugin specs (aerial, auto-session, gitsigns extensions, snacks-gh, etc.)
+Active config lives in `nvim/.config/nvim/`, with the main setup in `nvim/.config/nvim/init.lua` and the tracked pack lockfile in `nvim/.config/nvim/nvim-pack-lock.json`.
 
-Plugin specs in `lua/kickstart/plugins/` are the upstream kickstart extras (gitsigns, debug, lint, neo-tree, etc.).
-
-Yazi config is stowed separately under `yazi/.config/`. The Neovim integration in `lua/custom/plugins/yazi.lua` points at the shared `~/.config/yazi` and `~/.config/yazi-mobile` homes so plain shell `yazi` and `yazi.nvim` share behavior.
+Yazi config is stowed separately under `yazi/.config/` for shell `yazi`, with `yazi-mobile/` kept as a secondary compact profile.
 
 ## Clipboard / OSC52
 

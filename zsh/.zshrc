@@ -2,6 +2,7 @@ export LANG=en_US.UTF-8
 export LC_MESSAGES=en_US.UTF-8
 export HOMEBREW_NO_PROGRESS_BARS=1
 export EDITOR="nvim"
+export VISUAL="$EDITOR"
 
 export PATH="$HOME/.local/bin:$PATH"
 export GPG_TTY=$(tty)

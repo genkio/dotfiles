@@ -47,7 +47,7 @@ function M.build(bufnr)
   end
 
   if start_line == end_line then
-    return path
+    return string.format('%s:%d', path, start_line)
   end
 
   return string.format('%s:%d-%d', path, start_line, end_line)

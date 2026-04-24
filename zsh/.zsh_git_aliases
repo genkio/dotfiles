@@ -116,7 +116,8 @@ gtreer() {
   main_slug=$(echo "$main_worktree" | tr '/' '-')
   wt_sessions="$HOME/.claude/projects/$wt_slug"
   main_sessions="$HOME/.claude/projects/$main_slug"
-  if [[ -d "$wt_sessions" ]] && [[ -d "$main_sessions" ]]; then
+  if [[ -d "$wt_sessions" ]]; then
+    mkdir -p "$main_sessions"
     # rewrite cwd in session logs before copying
     for f in "$wt_sessions"/*.jsonl; do
       [[ -f "$f" ]] && sed -i '' "s|$target_dir|$main_worktree|g" "$f"

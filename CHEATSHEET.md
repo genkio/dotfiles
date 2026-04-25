@@ -309,7 +309,7 @@ Inline blame is ON by default (current line).
 **Other custom behaviors**
 
 - Hyphenated words treated as one word (`ciw` on `<some-component>`) in HTML/JSX/TSX/Vue/Svelte
-- OSC52 clipboard: yanking auto-copies over SSH and tmux via nvim-osc52
+- OSC52 clipboard: over SSH inside tmux, yanking uses the `osc52-copy.sh` helper; outside tmux it uses Neovim's built-in OSC52 provider
 - Telescope searches from git root; includes hidden files in `~/dotfiles`
 - Live grep defaults to fixed-string (`-F`); use `<leader>sG` for regex, `<leader>sa` for raw rg args
 
@@ -337,7 +337,7 @@ Features that come with the kickstart base config. You might not remember these 
 | `scrolloff = 10` | Cursor stays 10 lines from edge when scrolling |
 | `confirm` | Prompts to save instead of erroring on `:q` with unsaved changes |
 | `undofile` | Undo history persists across sessions |
-| `clipboard = 'unnamedplus'` | Yank syncs to OS clipboard (local only, not over SSH) |
+| `clipboard = 'unnamedplus'` | Yank syncs to the OS clipboard locally; over SSH inside tmux it uses the OSC52 helper, otherwise it forces `g:clipboard = 'osc52'` |
 | Folding | Manual folds are available with `zc`/`zo`/`za` (starts open) |
 | Whitespace chars | Tabs shown as `>>`, trailing spaces as `*`, nbsp as `_` |
 

@@ -27,7 +27,7 @@ vim.opt.listchars = {
   trail = '+',
 }
 vim.opt.iskeyword:append '-' -- include - in-words
-vim.opt.clipboard:append 'unnamedplus' -- use system clipboard
+vim.opt.clipboard:append 'unnamedplus' -- use system clipboard locally, OSC52 over SSH
 
 -- Tabs and indentation
 vim.o.tabstop = 2
@@ -48,6 +48,64 @@ require('config.colors').setup()
 
 local resolved_config_dir = vim.fn.resolve(vim.fn.stdpath 'config')
 local dotfiles_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(resolved_config_dir)))
+
+local is_ssh = vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY
+local osc52_helper = vim.fs.joinpath(dotfiles_root, 'tmux', 'bin', 'osc52-copy.sh')
+
+if is_ssh and vim.env.TMUX and vim.fn.executable(osc52_helper) == 1 then
+  local clipboard_cache = {
+    ['+'] = { lines = {}, regtype = 'v' },
+    ['*'] = { lines = {}, regtype = 'v' },
+  }
+
+  local function make_copy(reg)
+    return function(lines, regtype)
+      clipboard_cache[reg] = {
+        lines = vim.deepcopy(lines),
+        regtype = regtype,
+      }
+
+      vim.system({ osc52_helper }, {
+        stdin = table.concat(lines, '\n'),
+        text = true,
+      }, function(result)
+        if result.code == 0 then
+          return
+        end
+
+        vim.schedule(function()
+          vim.notify(
+            string.format('Clipboard copy failed via %s (exit %d)', osc52_helper, result.code),
+            vim.log.levels.WARN
+          )
+        end)
+      end)
+    end
+  end
+
+  local function make_paste(reg)
+    return function()
+      local cached = clipboard_cache[reg]
+      return { cached.lines or {}, cached.regtype or 'v' }
+    end
+  end
+
+  vim.g.clipboard = {
+    name = 'osc52-tmux-helper',
+    copy = {
+      ['+'] = make_copy '+',
+      ['*'] = make_copy '*',
+    },
+    paste = {
+      ['+'] = make_paste '+',
+      ['*'] = make_paste '*',
+    },
+    cache_enabled = 0,
+  }
+elseif is_ssh then
+  -- Over SSH on macOS, Neovim prefers pbcopy unless we force OSC52.
+  vim.g.clipboard = 'osc52'
+end
 
 -- Mark shells spawned by Neovim so zsh can load command helpers like `gpu()`
 -- from `.zshenv` without requiring a full interactive shell startup.

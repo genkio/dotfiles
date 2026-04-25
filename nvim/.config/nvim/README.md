@@ -122,6 +122,9 @@ nvim
 ## Clipboard
 
 - `<leader>yr`: copy the current line or visual line range to the clipboard
+- Regular yanks use `unnamedplus`
+- Over SSH inside tmux, Neovim uses `tmux/bin/osc52-copy.sh` so yanks write OSC52 directly to the tmux client TTY
+- Over SSH outside tmux, Neovim forces the built-in OSC52 clipboard provider so yanks reach the local terminal clipboard instead of the remote machine
 - The copied path is `$HOME`-relative, so files under your home directory show up as `~/…`
 - A multi-line visual selection is appended as `:start-end`
 - A single-line selection, or selecting the whole file, copies just the path

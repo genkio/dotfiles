@@ -39,12 +39,12 @@ local BADGE_BG = { red = 1.0, green = 0.80, blue = 0.0, alpha = 0.95 }
 local BADGE_BORDER = { red = 0.85, green = 0.65, blue = 0.0, alpha = 0.85 }
 local BADGE_TEXT_COLOR = { red = 0.08, green = 0.08, blue = 0.08, alpha = 1 }
 local BADGE_FONT_NAME = "Menlo-Bold"
-local BADGE_FONT_SIZE = 12
-local BADGE_PADDING_X = 5
-local BADGE_PADDING_Y = 3
-local BADGE_CORNER_RADIUS = 4
-local BADGE_GAP = 4
-local ARROW_SIZE = 4
+local BADGE_FONT_SIZE = 10
+local BADGE_PADDING_X = 4
+local BADGE_PADDING_Y = 2
+local BADGE_CORNER_RADIUS = 3
+local BADGE_GAP = 3
+local ARROW_SIZE = 3
 local BADGE_OUTSIDE_GAP = BADGE_GAP + ARROW_SIZE + 2
 local DIM_OVERLAY_COLOR = { white = 0, alpha = 0.10 }
 local MATCHED_BG = { red = 0.2, green = 0.8, blue = 0.3, alpha = 0.95 }
@@ -257,16 +257,26 @@ local function overlapRatio(a, b)
 end
 
 local function getChildren(element)
+  local role = getAttribute(element, "AXRole")
+
   -- For tables and outlines, prefer AXVisibleRows to skip hidden/scrolled-out
   -- rows entirely. This avoids walking massive subtrees in long lists.
-  local role = getAttribute(element, "AXRole")
   if role == "AXTable" or role == "AXOutline" then
     local visibleRows = getAttribute(element, "AXVisibleRows")
     if visibleRows and #visibleRows > 0 then return visibleRows end
   end
 
-  local visibleChildren = getAttribute(element, "AXVisibleChildren")
-  if visibleChildren and #visibleChildren > 0 then return visibleChildren end
+  -- AXVisibleChildren is reliable for scrollable views, but unreliable for
+  -- generic containers: Chromium-based browsers in fullscreen mode return
+  -- only the focused content area on the window's AXVisibleChildren,
+  -- silently dropping the toolbar and bookmark bar subtrees. For everything
+  -- except scroll areas, walk AXChildren and let isOnScreen() prune what's
+  -- actually off-screen.
+  if role == "AXScrollArea" then
+    local visibleChildren = getAttribute(element, "AXVisibleChildren")
+    if visibleChildren and #visibleChildren > 0 then return visibleChildren end
+  end
+
   return getAttribute(element, "AXChildren")
 end
 
@@ -462,7 +472,9 @@ local function collectElements(axWin, winFrame)
       end
     end
 
-    -- Prefer visible children when available to avoid walking hidden subtrees.
+    -- Walk into each child whose geometry overlaps the window frame.
+    -- isOnScreen() prunes off-screen subtrees so we don't waste time on
+    -- elements the user can't see.
     local children = getChildren(elem)
     if children then
       for _, child in ipairs(children) do

@@ -6,6 +6,3 @@ cask "karabiner-elements"
 cask "keka"
 cask "raycast"
 cask "stats"
-
-# password required
-cask "homerow"

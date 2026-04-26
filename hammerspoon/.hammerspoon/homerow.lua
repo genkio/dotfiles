@@ -1,10 +1,22 @@
 -- Homerow: keyboard-driven navigation for macOS, inspired by homerow.app
 --
--- Press Ctrl+. to enter hint mode. Yellow labels appear on all actionable
--- UI elements (buttons, links, text fields, list rows, tabs, etc.) in the
--- focused window. Type the hint characters to activate the target element.
+-- HINT MODE (Ctrl+.) — Yellow labels appear on actionable UI elements
+-- (buttons, links, text fields, list rows, tabs, etc.) in the focused
+-- window. Type the hint characters to activate the target element.
 --
--- How it works:
+-- SCROLL MODE (Ctrl+,) — Scroll the focused window with the keyboard.
+-- If the focused window has multiple scrollable panes (e.g. a sidebar +
+-- content list in a database app or IDE), a numbered picker appears
+-- first — press 1/2/... to choose which pane to scroll. With a single
+-- pane (or none), the cursor's current pane is used.
+--   j / Down        scroll down            d            half page down
+--   k / Up          scroll up              u            half page up
+--   h / Left        scroll left            Space        full page down
+--   l / Right       scroll right           Shift+Space  full page up
+--   Shift+hjkl      faster scroll          g / G        top / bottom
+--   Esc             exit (cancels picker, dismisses scroll mode)
+--
+-- How hint mode works:
 --   1. Walks the Accessibility tree (AXChildren) of the frontmost window
 --      using breadth-first search, collecting interactive elements
 --   2. Assigns short labels from home-row characters (asdfjklgh)
@@ -17,7 +29,7 @@
 --   Backspace     - undo last character
 --   Escape        - dismiss (or any non-hint key)
 --
--- The overlay auto-dismisses after DISMISS_TIMEOUT seconds.
+-- The hint overlay auto-dismisses after DISMISS_TIMEOUT seconds.
 
 local M = {}
 
@@ -29,10 +41,17 @@ local eventtap = require("hs.eventtap")
 local HINT_CHARS = "asdfjklgh"
 local TRIGGER_MODS = { "ctrl" }
 local TRIGGER_KEY = "."
+local SCROLL_TRIGGER_KEY = ","
 local DISMISS_TIMEOUT = 15
 local MAX_DEPTH = 30
 local WALK_DEADLINE_SECS = 1.5
 local SCAN_MENUBAR = true
+
+-- Scroll mode tuning
+local SCROLL_STEP_PX = 60        -- per j/k or arrow press
+local SCROLL_DASH_MULTIPLIER = 4 -- Shift+hjkl scrolls this much further
+local SCROLL_HALF_PAGE_RATIO = 0.5 -- d/u: window-height fraction
+local SCROLL_EDGE_PX = 100000    -- g/G: large enough that apps clamp at edge
 
 -- Visual style
 local BADGE_BG = { red = 1.0, green = 0.80, blue = 0.0, alpha = 0.95 }
@@ -63,6 +82,18 @@ local screenFrame = nil
 local scanCanvas = nil
 local debounceTimer = nil
 local lastFilteredCount = 0
+
+-- Scroll mode state
+local scrollHotkey = nil
+local scrollKeyTap = nil
+local scrollIndicator = nil
+local scrollActive = false
+
+-- Scroll-area picker state (shown when window has 2+ scroll areas)
+local scrollPickCanvas = nil
+local scrollPickKeyTap = nil
+local scrollPickAreas = nil
+local scrollPicking = false
 
 -- Roles that are inherently interactive
 local interactiveRoles = {
@@ -1078,16 +1109,398 @@ local function enterHintMode()
   end)
 end
 
+-- Scroll mode --------------------------------------------------------------
+-- Continuous keyboard scrolling for the focused window.
+--
+-- On entry we walk the AX tree to find scrollable regions (AXScrollArea):
+--   0 areas — fall through to "scroll under cursor" (the cursor is the
+--             hit-test target for synthetic CGEvent scroll wheels).
+--   1 area  — nudge the cursor into that area if it isn't there already,
+--             then enter scroll mode. Single area is unambiguous.
+--   2+      — show a numbered picker over each pane. After the user picks,
+--             move the cursor into that pane and start scroll mode.
+--
+-- Scrolling itself is implemented via synthetic scroll-wheel events posted
+-- at the current cursor position, so apps receive them through their normal
+-- event-handling path — works for web views, native lists, terminals, etc.
+
+local function findScrollAreas(axWin, winFrame)
+  -- Bounded BFS — we usually find scroll areas within the first couple of
+  -- AX-tree levels (toolbar, sidebar, content). Cap on time so an
+  -- unexpectedly deep tree never stalls Ctrl+,.
+  local deadlineNs = hs.timer.absoluteTime() + (0.5 * 1e9)
+  local areas = {}
+  local queue = { axWin }
+  local head = 1
+  local visited = 0
+
+  while head <= #queue and #areas < 9 do
+    visited = visited + 1
+    if visited % 40 == 0 and hs.timer.absoluteTime() >= deadlineNs then
+      break
+    end
+
+    local elem = queue[head]
+    head = head + 1
+
+    local role = getAttribute(elem, "AXRole")
+
+    if role == "AXScrollArea" then
+      local geometry = getElementGeometry(elem)
+      -- Filter out tiny scroll areas (e.g. menu/toolbar overflow scrollers).
+      -- 100×100 keeps real content panes while excluding chrome.
+      if geometry and geometry.size.w >= 100 and geometry.size.h >= 100
+         and isOnScreen(geometry, winFrame) then
+        table.insert(areas, { element = elem, geometry = geometry })
+      end
+      -- Don't descend: nested scroll areas are rare and the inner one
+      -- almost always represents the same target.
+    else
+      local children = getAttribute(elem, "AXChildren")
+      if children then
+        for _, child in ipairs(children) do
+          local childGeom = getElementGeometry(child)
+          if isOnScreen(childGeom, winFrame) then
+            table.insert(queue, child)
+          end
+        end
+      end
+    end
+  end
+
+  -- Reading order: top-to-bottom, then left-to-right. So in a sidebar +
+  -- content layout the sidebar is "1" and the content pane is "2".
+  table.sort(areas, function(a, b)
+    local rowA = math.floor(a.geometry.center.y / 50)
+    local rowB = math.floor(b.geometry.center.y / 50)
+    if rowA ~= rowB then return rowA < rowB end
+    return a.geometry.center.x < b.geometry.center.x
+  end)
+
+  return areas
+end
+
+local function getScrollHalfPage()
+  local app = hs.application.frontmostApplication()
+  local win = app and app:focusedWindow()
+  if win then return math.max(80, win:frame().h * SCROLL_HALF_PAGE_RATIO) end
+  return 400
+end
+
+local function postScroll(dx, dy)
+  -- macOS natural scrolling inverts wheel direction at the input layer.
+  -- Invert here so j always moves *down through content* regardless of
+  -- the user's preference. Flip this branch if it feels backwards.
+  if hs.mouse.scrollDirection() == "natural" then
+    dx, dy = -dx, -dy
+  end
+  eventtap.event.newScrollEvent({ dx, dy }, {}, "pixel"):post()
+end
+
+local function moveCursorIntoArea(area)
+  -- Only relocate the cursor if it isn't already inside the chosen area —
+  -- a needless jump is jarring for users who already had the cursor parked
+  -- in the right pane.
+  local pos = hs.mouse.absolutePosition()
+  local geom = area.geometry
+  if pos.x >= geom.position.x and pos.x <= geom.position.x + geom.size.w
+    and pos.y >= geom.position.y and pos.y <= geom.position.y + geom.size.h then
+    return
+  end
+  hs.mouse.absolutePosition(hs.geometry.point(geom.center.x, geom.center.y))
+end
+
+local function showScrollIndicator()
+  if scrollIndicator then scrollIndicator:delete() end
+
+  local app = hs.application.frontmostApplication()
+  local win = app and app:focusedWindow()
+  local screen = (win and win:screen()) or hs.screen.mainScreen()
+  local sFrame = screen:frame()
+
+  local label = "SCROLL"
+  local charW = BADGE_FONT_SIZE * 0.65
+  local w = math.floor(#label * charW + BADGE_PADDING_X * 2 + 2)
+  local h = BADGE_FONT_SIZE + 2 + BADGE_PADDING_Y * 2
+  local x = sFrame.x + sFrame.w - w - 12
+  local y = sFrame.y + 8
+
+  scrollIndicator = canvas.new({ x = x, y = y, w = w, h = h })
+  scrollIndicator:insertElement({
+    type = "rectangle",
+    fillColor = BADGE_BG,
+    strokeColor = BADGE_BORDER,
+    strokeWidth = 1,
+    roundedRectRadii = { xRadius = BADGE_CORNER_RADIUS, yRadius = BADGE_CORNER_RADIUS },
+    frame = { x = 0, y = 0, w = w, h = h },
+  })
+  scrollIndicator:insertElement({
+    type = "text",
+    text = label,
+    textColor = BADGE_TEXT_COLOR,
+    textFont = BADGE_FONT_NAME,
+    textSize = BADGE_FONT_SIZE,
+    textAlignment = "center",
+    frame = { x = 0, y = BADGE_PADDING_Y - 1, w = w, h = h - BADGE_PADDING_Y },
+  })
+  scrollIndicator:level("overlay")
+  scrollIndicator:behavior("canJoinAllSpaces")
+  scrollIndicator:clickActivating(false)
+  scrollIndicator:show()
+end
+
+local function hideScrollIndicator()
+  if scrollIndicator then
+    scrollIndicator:delete()
+    scrollIndicator = nil
+  end
+end
+
+local function exitScrollMode()
+  scrollActive = false
+  hideScrollIndicator()
+  if scrollKeyTap then
+    scrollKeyTap:stop()
+    scrollKeyTap = nil
+  end
+end
+
+local function exitScrollAreaPicker()
+  scrollPicking = false
+  scrollPickAreas = nil
+  if scrollPickCanvas then
+    scrollPickCanvas:delete()
+    scrollPickCanvas = nil
+  end
+  if scrollPickKeyTap then
+    scrollPickKeyTap:stop()
+    scrollPickKeyTap = nil
+  end
+end
+
+local function handleScrollKey(event)
+  local keyCode = event:getKeyCode()
+  local char = (event:getCharacters() or ""):lower()
+  local flags = event:getFlags()
+
+  -- Esc: clean exit
+  if keyCode == 53 then
+    exitScrollMode()
+    return true
+  end
+
+  -- Cmd/Ctrl/Alt combos: pass through and exit so app shortcuts still work
+  -- (e.g. Cmd+Tab to switch apps, Cmd+W to close a tab).
+  if flags.cmd or flags.ctrl or flags.alt then
+    exitScrollMode()
+    return false
+  end
+
+  local stepMul = flags.shift and SCROLL_DASH_MULTIPLIER or 1
+  local step = SCROLL_STEP_PX * stepMul
+
+  -- Vertical
+  if char == "j" or keyCode == hs.keycodes.map["down"] then
+    postScroll(0, -step)
+    return true
+  end
+  if char == "k" or keyCode == hs.keycodes.map["up"] then
+    postScroll(0, step)
+    return true
+  end
+
+  -- Horizontal
+  if char == "h" or keyCode == hs.keycodes.map["left"] then
+    postScroll(-step, 0)
+    return true
+  end
+  if char == "l" or keyCode == hs.keycodes.map["right"] then
+    postScroll(step, 0)
+    return true
+  end
+
+  -- Half-page (d/u) and full-page (Space / Shift+Space)
+  if char == "d" then
+    postScroll(0, -getScrollHalfPage())
+    return true
+  end
+  if char == "u" then
+    postScroll(0, getScrollHalfPage())
+    return true
+  end
+  if keyCode == hs.keycodes.map["space"] then
+    local page = getScrollHalfPage() * 2
+    postScroll(0, flags.shift and page or -page)
+    return true
+  end
+
+  -- g / G: top / bottom. Send a delta large enough that any reasonable
+  -- scroll view clamps at its content edge.
+  if char == "g" then
+    postScroll(0, flags.shift and -SCROLL_EDGE_PX or SCROLL_EDGE_PX)
+    return true
+  end
+
+  -- Anything else: exit and consume (matches hint mode's behavior).
+  exitScrollMode()
+  return true
+end
+
+local function startScrollKeyTap()
+  scrollActive = true
+  showScrollIndicator()
+  scrollKeyTap = eventtap.new({ eventtap.event.types.keyDown }, handleScrollKey)
+  scrollKeyTap:start()
+end
+
+local function handleScrollPickKey(event)
+  local keyCode = event:getKeyCode()
+  local char = event:getCharacters() or ""
+  local flags = event:getFlags()
+
+  -- Esc: cancel without entering scroll mode
+  if keyCode == 53 then
+    exitScrollAreaPicker()
+    return true
+  end
+
+  -- Cmd/Ctrl/Alt combos: cancel and pass through so app shortcuts (Cmd+Tab,
+  -- Cmd+W, etc.) keep working if the user reflexively reaches for one.
+  if flags.cmd or flags.ctrl or flags.alt then
+    exitScrollAreaPicker()
+    return false
+  end
+
+  -- Digit keys 1-9 select the matching area
+  local idx = tonumber(char)
+  if idx and scrollPickAreas and idx >= 1 and idx <= #scrollPickAreas then
+    local area = scrollPickAreas[idx]
+    exitScrollAreaPicker()
+    moveCursorIntoArea(area)
+    -- Defer one run-loop tick so the picker overlay is fully gone before
+    -- the SCROLL indicator appears (avoids a brief flash of both visible).
+    hs.timer.doAfter(0.02, startScrollKeyTap)
+    return true
+  end
+
+  -- Anything else: cancel and consume (matches hint-mode dismissal)
+  exitScrollAreaPicker()
+  return true
+end
+
+local function showScrollAreaPicker(areas, screen)
+  if scrollPickCanvas then scrollPickCanvas:delete() end
+
+  local sFrame = screen:fullFrame()
+  scrollPickAreas = areas
+  scrollPicking = true
+
+  scrollPickCanvas = canvas.new(sFrame)
+
+  -- Dim background to focus attention on the numbered badges, mirroring
+  -- the hint-mode overlay treatment.
+  scrollPickCanvas:insertElement({
+    type = "rectangle",
+    fillColor = DIM_OVERLAY_COLOR,
+    strokeColor = { alpha = 0 },
+    frame = { x = 0, y = 0, w = sFrame.w, h = sFrame.h },
+  })
+
+  -- Bigger labels than hint badges — picker is a coarse, decisive choice
+  -- (one of a few panes) and these get centered in spacious panes.
+  local fontSize = 18
+  local charW = fontSize * 0.65
+
+  for i, area in ipairs(areas) do
+    local label = tostring(i)
+    local cx = area.geometry.center.x - sFrame.x
+    local cy = area.geometry.center.y - sFrame.y
+    local w = math.floor(#label * charW + 14)
+    local h = fontSize + 8
+
+    scrollPickCanvas:insertElement({
+      type = "rectangle",
+      fillColor = BADGE_BG,
+      strokeColor = BADGE_BORDER,
+      strokeWidth = 1.5,
+      roundedRectRadii = { xRadius = 6, yRadius = 6 },
+      frame = { x = cx - w / 2, y = cy - h / 2, w = w, h = h },
+    })
+    scrollPickCanvas:insertElement({
+      type = "text",
+      text = label,
+      textColor = BADGE_TEXT_COLOR,
+      textFont = BADGE_FONT_NAME,
+      textSize = fontSize,
+      textAlignment = "center",
+      frame = { x = cx - w / 2, y = cy - h / 2 + 2, w = w, h = h - 2 },
+    })
+  end
+
+  scrollPickCanvas:level("overlay")
+  scrollPickCanvas:behavior("canJoinAllSpaces")
+  scrollPickCanvas:clickActivating(false)
+  scrollPickCanvas:show()
+
+  scrollPickKeyTap = eventtap.new({ eventtap.event.types.keyDown }, handleScrollPickKey)
+  scrollPickKeyTap:start()
+end
+
+local function enterScrollMode()
+  if scrollActive then
+    exitScrollMode()
+    return
+  end
+  if scrollPicking then
+    exitScrollAreaPicker()
+    return
+  end
+
+  -- If hint mode happens to be live, dismiss it first so the two modes
+  -- never fight over keystrokes.
+  if isActive then exitHintMode() end
+
+  -- Walk AX tree of the focused window for scroll areas. If we find more
+  -- than one, the user is in a multi-pane app (database GUI, IDE, mail
+  -- client) and we present a numbered picker. Otherwise behavior matches
+  -- a single-pane app — scroll wherever the cursor sits.
+  local app = hs.application.frontmostApplication()
+  local win = app and app:focusedWindow()
+
+  if win then
+    local axWin = axuielement.windowElement(win)
+    if axWin then
+      local areas = findScrollAreas(axWin, win:frame())
+      if #areas >= 2 then
+        local screen = win:screen() or hs.screen.mainScreen()
+        showScrollAreaPicker(areas, screen)
+        return
+      elseif #areas == 1 then
+        moveCursorIntoArea(areas[1])
+      end
+    end
+  end
+
+  startScrollKeyTap()
+end
+
 function M.start()
   hotkey = hs.hotkey.bind(TRIGGER_MODS, TRIGGER_KEY, enterHintMode)
+  scrollHotkey = hs.hotkey.bind(TRIGGER_MODS, SCROLL_TRIGGER_KEY, enterScrollMode)
   return true
 end
 
 function M.stop()
   exitHintMode()
+  exitScrollMode()
+  exitScrollAreaPicker()
   if hotkey then
     hotkey:delete()
     hotkey = nil
+  end
+  if scrollHotkey then
+    scrollHotkey:delete()
+    scrollHotkey = nil
   end
 end
 

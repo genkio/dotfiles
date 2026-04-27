@@ -955,10 +955,23 @@ local function startKeyTap()
       return false
     end
 
-    -- Escape: dismiss
+    -- Escape always dismisses, regardless of modifiers.
     if keyCode == 53 then
       exitHintMode()
       return true
+    end
+
+    -- Modifier combos: dismiss hint mode and let the system handle the
+    -- shortcut (Cmd+W, Cmd+Q, Cmd+Tab, etc.). The exception is our own
+    -- trigger (Ctrl+.) — pressing it again should be a clean dismissal,
+    -- not dismiss-and-immediately-re-enter via the hotkey.
+    local flags = event:getFlags()
+    if flags.cmd or flags.ctrl or flags.alt then
+      exitHintMode()
+      if flags.ctrl and not flags.cmd and not flags.alt and char == "." then
+        return true
+      end
+      return false
     end
 
     -- Backspace: remove last character
@@ -970,8 +983,11 @@ local function startKeyTap()
       return true
     end
 
-    -- Ignore non-hint characters
-    if not HINT_CHARS:find(char, 1, true) then
+    -- Ignore empty or non-hint characters. The empty-string check matters:
+    -- string.find("", "", 1, true) returns (1, 0) which is truthy, so without
+    -- this guard a keystroke that produces no character would be silently
+    -- consumed as if it were a hint match.
+    if char == "" or not HINT_CHARS:find(char, 1, true) then
       exitHintMode()
       return true
     end
@@ -1057,9 +1073,15 @@ local function performScan(axWin, winFrame, app)
 
   if #elements == 0 then
     hs.alert.show("No actionable elements found", 1)
-    isActive = false
+    exitHintMode()
     return
   end
+
+  -- The AX walk above can take hundreds of milliseconds; the user may have
+  -- pressed Esc or re-triggered hint mode while we were busy. Bail before
+  -- mutating UI state so we don't paint a "ghost" overlay into a dismissed
+  -- mode (canvas + keytap with isActive == false).
+  if not isActive then return end
 
   local labels = generateHints(#elements)
   activeHints = {}
@@ -1290,9 +1312,14 @@ local function handleScrollKey(event)
   end
 
   -- Cmd/Ctrl/Alt combos: pass through and exit so app shortcuts still work
-  -- (e.g. Cmd+Tab to switch apps, Cmd+W to close a tab).
+  -- (e.g. Cmd+Tab to switch apps, Cmd+W to close a tab). Special-case our
+  -- own trigger (Ctrl+,) — consume it so the hotkey doesn't immediately
+  -- re-enter scroll mode, which would feel like a broken toggle.
   if flags.cmd or flags.ctrl or flags.alt then
     exitScrollMode()
+    if flags.ctrl and not flags.cmd and not flags.alt and char == "," then
+      return true
+    end
     return false
   end
 
@@ -1347,6 +1374,14 @@ local function handleScrollKey(event)
 end
 
 local function startScrollKeyTap()
+  -- Defensive: if a previous keytap is still around (e.g. a deferred call
+  -- from the picker fired after the user re-entered scroll mode another
+  -- way), stop it before we replace it. Otherwise both taps would intercept
+  -- keystrokes and the old one leaks.
+  if scrollKeyTap then
+    scrollKeyTap:stop()
+    scrollKeyTap = nil
+  end
   scrollActive = true
   showScrollIndicator()
   scrollKeyTap = eventtap.new({ eventtap.event.types.keyDown }, handleScrollKey)
@@ -1366,8 +1401,13 @@ local function handleScrollPickKey(event)
 
   -- Cmd/Ctrl/Alt combos: cancel and pass through so app shortcuts (Cmd+Tab,
   -- Cmd+W, etc.) keep working if the user reflexively reaches for one.
+  -- Special-case our own trigger (Ctrl+,) so it cleanly dismisses the picker
+  -- instead of bouncing back to a fresh picker through the hotkey.
   if flags.cmd or flags.ctrl or flags.alt then
     exitScrollAreaPicker()
+    if flags.ctrl and not flags.cmd and not flags.alt and char == "," then
+      return true
+    end
     return false
   end
 

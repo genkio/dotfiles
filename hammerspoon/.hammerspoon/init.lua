@@ -38,5 +38,6 @@ for _, directory in ipairs(initDirectories()) do
 end
 
 require("rcmd").start()
+require("raycast").start()
 require("selection_ocr").start()
 require("homerow").start()

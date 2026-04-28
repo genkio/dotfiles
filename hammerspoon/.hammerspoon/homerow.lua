@@ -95,6 +95,12 @@ local scrollPickKeyTap = nil
 local scrollPickAreas = nil
 local scrollPicking = false
 
+-- Module-level resources, managed by M.start / M.stop. The app watcher
+-- pre-warms renderer-side accessibility on every focus change, so by
+-- the time the user invokes hint mode against a Chromium-based browser
+-- the AX tree for the page content has already been built.
+local appWatcher = nil
+
 -- Roles that are inherently interactive
 local interactiveRoles = {
   AXButton = true,
@@ -235,6 +241,12 @@ local skipActionCheckRoles = {
   AXRulerMarker = true,
   AXGrowArea = true,
   AXMatte = true,
+  -- Web/document containers (Chromium browsers, Safari, Electron apps) —
+  -- never actionable themselves, but they own the subtree that *is*
+  -- actionable. Skipping the action probe avoids an XPC round-trip into
+  -- the renderer for every page-level container we walk past.
+  AXWebArea = true,
+  AXDocument = true,
 }
 
 local function getAttribute(element, name)
@@ -297,17 +309,14 @@ local function getChildren(element)
     if visibleRows and #visibleRows > 0 then return visibleRows end
   end
 
-  -- AXVisibleChildren is reliable for scrollable views, but unreliable for
-  -- generic containers: Chromium-based browsers in fullscreen mode return
-  -- only the focused content area on the window's AXVisibleChildren,
-  -- silently dropping the toolbar and bookmark bar subtrees. For everything
-  -- except scroll areas, walk AXChildren and let isOnScreen() prune what's
-  -- actually off-screen.
-  if role == "AXScrollArea" then
-    local visibleChildren = getAttribute(element, "AXVisibleChildren")
-    if visibleChildren and #visibleChildren > 0 then return visibleChildren end
-  end
-
+  -- Default to AXChildren for everything else. AXVisibleChildren has been
+  -- observed returning incomplete subsets in Chromium-based browsers — at
+  -- the AXWindow level it can drop toolbars and bookmark bars, and on the
+  -- AXScrollArea wrapping a web view it can return only the AXScrollBar
+  -- (silently hiding the AXWebArea, leaving every link/button on the page
+  -- un-walkable). Walking AXChildren and letting isOnScreen() prune
+  -- off-screen subtrees is safer. Long native lists already get the
+  -- AXVisibleRows shortcut above via AXTable/AXOutline.
   return getAttribute(element, "AXChildren")
 end
 
@@ -1099,6 +1108,31 @@ local function performScan(axWin, winFrame, app)
   end)
 end
 
+-- Chromium-based browsers (Chrome, Edge, Brave, Arc, Vivaldi) and Electron
+-- apps gate their renderer-side accessibility tree behind a VoiceOver-style
+-- opt-in. Until something signals "I am reading the AX tree", AXWebArea
+-- descendants — every link, button, and form field on the visible page —
+-- are silently absent.
+--
+-- AXManualAccessibility was added by Chromium for tooling that doesn't
+-- want the broader AppKit side effects of AXEnhancedUserInterface (AT-mode
+-- toolbar adjustments, animation tweaks, etc.). AXEnhancedUserInterface
+-- is the older, more universal hook other AT software has historically
+-- used and which some Chromium builds still gate accessibility on. Set
+-- both — pcall absorbs failures, so apps that don't recognize an
+-- attribute simply fall through.
+--
+-- Tree-build is async inside the renderer, so the appWatcher below calls
+-- this on every activation. By the time the user actually invokes Ctrl+.
+-- against the browser, Chromium has had time to materialize the tree.
+local function enableAppAccessibility(app)
+  if not app then return end
+  local axApp = axuielement.applicationElement(app)
+  if not axApp then return end
+  pcall(function() axApp:setAttributeValue("AXManualAccessibility", true) end)
+  pcall(function() axApp:setAttributeValue("AXEnhancedUserInterface", true) end)
+end
+
 -- Enter hint mode: show indicator, then defer the tree walk so the
 -- indicator canvas renders before the synchronous work blocks Lua
 local function enterHintMode()
@@ -1120,13 +1154,23 @@ local function enterHintMode()
   local axWin = axuielement.windowElement(win)
   if not axWin then return end
 
+  -- Defensive opt-in. The app watcher in M.start should already have
+  -- enabled this on activation, but redo it here in case the watcher
+  -- missed the app (e.g. the module loaded after the app was already
+  -- focused). Idempotent on the Chromium side.
+  enableAppAccessibility(app)
+
   isActive = true
   inputBuffer = ""
 
   showScanIndicator(screenFrame)
 
-  -- Defer by one run-loop cycle so the indicator dot actually appears
-  hs.timer.doAfter(0.01, function()
+  -- Defer briefly: lets the indicator dot render before the synchronous
+  -- AX walk blocks the run-loop, and gives Chromium a small grace period
+  -- to finish building the renderer tree if accessibility was just newly
+  -- enabled (e.g. user just switched into the browser and immediately
+  -- triggered hint mode before the watcher's pre-warm could complete).
+  hs.timer.doAfter(0.05, function()
     performScan(axWin, winFrame, app)
   end)
 end
@@ -1527,6 +1571,22 @@ end
 function M.start()
   hotkey = hs.hotkey.bind(TRIGGER_MODS, TRIGGER_KEY, enterHintMode)
   scrollHotkey = hs.hotkey.bind(TRIGGER_MODS, SCROLL_TRIGGER_KEY, enterScrollMode)
+
+  -- Pre-warm renderer accessibility on every app activation. The
+  -- tree-build inside Chromium is async, so doing this at activation
+  -- (rather than only on hint-mode entry) gives the browser hundreds of
+  -- ms to materialize its AX tree before the user actually presses
+  -- Ctrl+. — long enough that the walk lands on a populated tree.
+  -- The watcher only fires on transitions, so we also pre-warm whatever
+  -- app happens to be focused at module load.
+  appWatcher = hs.application.watcher.new(function(_, eventType, app)
+    if eventType == hs.application.watcher.activated then
+      enableAppAccessibility(app)
+    end
+  end)
+  appWatcher:start()
+  enableAppAccessibility(hs.application.frontmostApplication())
+
   return true
 end
 
@@ -1541,6 +1601,10 @@ function M.stop()
   if scrollHotkey then
     scrollHotkey:delete()
     scrollHotkey = nil
+  end
+  if appWatcher then
+    appWatcher:stop()
+    appWatcher = nil
   end
 end
 

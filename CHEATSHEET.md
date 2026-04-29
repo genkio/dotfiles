@@ -82,7 +82,8 @@ Everything below comes from personal configuration (commits to this repo).
 | Key | Action |
 |---|---|
 | `prefix r` | Reload tmux config |
-| `prefix w` | Prompt for name, create new window in current path |
+| `prefix c` | Prompt for name, create new window in current path |
+| `prefix w` | Show list of windows of the current session |
 | `prefix v` | Vertical split (side-by-side) in current path |
 | `prefix h` | Horizontal split (top-bottom) in current path |
 | `prefix x` | Kill pane (auto-rebalance) |

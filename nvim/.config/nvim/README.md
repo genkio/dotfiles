@@ -39,6 +39,9 @@ nvim
 - `<leader>lG` opens LazyGit in a new tab terminal with the compact layout.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
+- `<leader>gt` maps the symbol under the cursor — high-level neighborhood (callers, effects, consumers, role) shelled out to a coding-agent CLI, single package only. Cached per git HEAD so repeat invocations are instant.
+- `<leader>gT` is the same map but cross-package and slower; use when blind spots span the whole codebase.
+- `<leader>gs` re-shows the last map you opened, regardless of where the cursor is now — useful after drilling into a target and wanting to come back.
 - Diffview loads on first use instead of at startup.
 - `:!` shell commands can use zsh helper functions from your dotfiles.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
@@ -174,6 +177,51 @@ nvim
 - `gr`: list references with Snacks outside vault markdown buffers
 - `<leader>xl`: open the current buffer diagnostics in the location list
 - `<leader>xx`: open workspace diagnostics in the quickfix list
+
+## Codetrace
+
+- Comprehension layer on top of LSP. LSP answers "where is X defined" and "what calls X"; codetrace answers "what role does this play, who depends on its output, what side effects does it have." Useful for healing blind spots in large codebases.
+
+### Triggers
+
+- `<leader>gt`: map the symbol under the cursor, **local scope** (single package). Targets ~60 seconds on a cold run; instant on cached runs.
+- `<leader>gT`: map the symbol under the cursor, **wide scope** (cross-package). Slower and heavier; use sparingly.
+- `<leader>gs`: re-show the last map you opened (state is kept in module memory). Use this after you've drilled into a target and want to come back without re-tracing.
+- `:CodeTrace`, `:CodeTraceWide`, `:CodeTraceShow`, `:CodeTraceForce`, `:CodeTraceClearCache` are the user-command equivalents.
+
+### Inside the floating map
+
+- The cursor lands on the first interactive row. Two glyphs mark interactive rows: `▸` starts a new item (caller, consumer, or the anchor itself), and `│` marks continuation rows that belong to the same item. Both are clickable — `<CR>` works on any row that begins with either glyph.
+- `<CR>` jumps to the file:line under the cursor and closes the map.
+- `<Tab>` / `<S-Tab>` cycle to the next/previous interactive row, like a picker.
+- `r` re-runs the local trace bypassing the cache (force-fresh). `R` is the same for the wide trace.
+- `q` or `<Esc>` closes the window.
+- To trace something you jumped into, position the cursor on the symbol you care about and run `<leader>gt` again. Cache hits make this fast on revisits. (An automated chained drill-down would need either an `enclosing_symbol` field on each caller in the schema or an LSP `documentSymbol` query after the jump; not implemented yet.)
+- Section headers (`Role`, `Signature`, `Called by`, `Effects`, `Consumers`, `Warnings`), `[kind]` tokens, file paths, line numbers, and the `→` arrow are syntax-highlighted via extmarks; no separate `syntax/` file is needed.
+- `<leader>gs` reopens the last map *with the cursor restored* to the row you were on when you last jumped, drilled, or closed. Useful for fan-out exploration: `<CR>` to inspect a caller, then `<leader>gs` to return to the same row in the map and `<Tab>` to the next caller.
+
+### Caching
+
+- Each successful trace is cached under `~/.cache/nvim/codetrace/cache/<sha256>.json` (i.e. `stdpath('cache')/codetrace/cache/<sha256>.json` — `~/.cache/nvim` is the resolved path on Linux/macOS without a custom `XDG_CACHE_HOME`).
+- The cache key is `(git HEAD sha, repo-relative file, line, symbol, mode)`, so the cache **auto-invalidates whenever HEAD changes** — new commit, branch switch, rebase, etc.
+- Stale on uncommitted edits: the cache will return an old map until you either commit, press `r`/`R` inside the map, run `:CodeTraceForce`, or `:CodeTraceClearCache`.
+
+### Agent backend
+
+- Shells out to `codex exec` by default with `--sandbox read-only` (the agent can never modify the repo) and `--output-schema` (output is schema-validated JSON, not free-form text). Authenticated through your `~/.codex/auth.json` ChatGPT session — no API key required and no API billing.
+- `claude -p` is **not** a safe default because Anthropic's headless mode bills to `ANTHROPIC_API_KEY` instead of the Claude Code subscription; this plugin keeps everything on the ChatGPT-subscription side. Override the agent CLI with `vim.g.codetrace_agent_cmd` if you have a different headless-friendly setup.
+- Spawned with `jobstart({ pty = true })` so codex 0.124.0+ does not silently exit with empty output (openai/codex#19945).
+
+### Config knobs
+
+- `vim.g.codetrace_agent_cmd` (default `codex`)
+- `vim.g.codetrace_reasoning_local` (default `medium`) — codex `model_reasoning_effort` for `<leader>gt`
+- `vim.g.codetrace_reasoning_wide` (default `high`) — codex `model_reasoning_effort` for `<leader>gT`
+- `vim.g.codetrace_timeout_local_ms` (default 180000) and `vim.g.codetrace_timeout_wide_ms` (default 600000) — hard ceilings on agent runs
+
+### Removal
+
+Delete `lua/config/code_trace.lua`, drop the `require('config.code_trace').setup()` line from `init.lua`, and remove this section. The cache directory at `~/.cache/nvim/codetrace/` is the only state on disk; nuke with `:CodeTraceClearCache` first if you want a clean uninstall. One commit, no leftover state.
 
 ## Notes
 

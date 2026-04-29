@@ -1,10 +1,10 @@
 -- Homerow: keyboard-driven navigation for macOS, inspired by homerow.app
 --
--- HINT MODE (Ctrl+.) — Yellow labels appear on actionable UI elements
+-- HINT MODE (Ctrl+,) — Yellow labels appear on actionable UI elements
 -- (buttons, links, text fields, list rows, tabs, etc.) in the focused
 -- window. Type the hint characters to activate the target element.
 --
--- SCROLL MODE (Ctrl+,) — Scroll the focused window with the keyboard.
+-- SCROLL MODE (Ctrl+.) — Scroll the focused window with the keyboard.
 -- If the focused window has multiple scrollable panes (e.g. a sidebar +
 -- content list in a database app or IDE), a numbered picker appears
 -- first — press 1/2/... to choose which pane to scroll. With a single
@@ -40,8 +40,8 @@ local eventtap = require("hs.eventtap")
 -- Configuration
 local HINT_CHARS = "asdfjklgh"
 local TRIGGER_MODS = { "ctrl" }
-local TRIGGER_KEY = "."
-local SCROLL_TRIGGER_KEY = ","
+local TRIGGER_KEY = ","
+local SCROLL_TRIGGER_KEY = "."
 local DISMISS_TIMEOUT = 15
 local MAX_DEPTH = 30
 local WALK_DEADLINE_SECS = 1.5
@@ -972,12 +972,12 @@ local function startKeyTap()
 
     -- Modifier combos: dismiss hint mode and let the system handle the
     -- shortcut (Cmd+W, Cmd+Q, Cmd+Tab, etc.). The exception is our own
-    -- trigger (Ctrl+.) — pressing it again should be a clean dismissal,
+    -- trigger (Ctrl+,) — pressing it again should be a clean dismissal,
     -- not dismiss-and-immediately-re-enter via the hotkey.
     local flags = event:getFlags()
     if flags.cmd or flags.ctrl or flags.alt then
       exitHintMode()
-      if flags.ctrl and not flags.cmd and not flags.alt and char == "." then
+      if flags.ctrl and not flags.cmd and not flags.alt and char == TRIGGER_KEY then
         return true
       end
       return false
@@ -1123,7 +1123,7 @@ end
 -- attribute simply fall through.
 --
 -- Tree-build is async inside the renderer, so the appWatcher below calls
--- this on every activation. By the time the user actually invokes Ctrl+.
+-- this on every activation. By the time the user actually invokes Ctrl+,
 -- against the browser, Chromium has had time to materialize the tree.
 local function enableAppAccessibility(app)
   if not app then return end
@@ -1193,7 +1193,7 @@ end
 local function findScrollAreas(axWin, winFrame)
   -- Bounded BFS — we usually find scroll areas within the first couple of
   -- AX-tree levels (toolbar, sidebar, content). Cap on time so an
-  -- unexpectedly deep tree never stalls Ctrl+,.
+  -- unexpectedly deep tree never stalls Ctrl+.
   local deadlineNs = hs.timer.absoluteTime() + (0.5 * 1e9)
   local areas = {}
   local queue = { axWin }
@@ -1357,11 +1357,11 @@ local function handleScrollKey(event)
 
   -- Cmd/Ctrl/Alt combos: pass through and exit so app shortcuts still work
   -- (e.g. Cmd+Tab to switch apps, Cmd+W to close a tab). Special-case our
-  -- own trigger (Ctrl+,) — consume it so the hotkey doesn't immediately
+  -- own trigger (Ctrl+.) — consume it so the hotkey doesn't immediately
   -- re-enter scroll mode, which would feel like a broken toggle.
   if flags.cmd or flags.ctrl or flags.alt then
     exitScrollMode()
-    if flags.ctrl and not flags.cmd and not flags.alt and char == "," then
+    if flags.ctrl and not flags.cmd and not flags.alt and char == SCROLL_TRIGGER_KEY then
       return true
     end
     return false
@@ -1445,11 +1445,11 @@ local function handleScrollPickKey(event)
 
   -- Cmd/Ctrl/Alt combos: cancel and pass through so app shortcuts (Cmd+Tab,
   -- Cmd+W, etc.) keep working if the user reflexively reaches for one.
-  -- Special-case our own trigger (Ctrl+,) so it cleanly dismisses the picker
+  -- Special-case our own trigger (Ctrl+.) so it cleanly dismisses the picker
   -- instead of bouncing back to a fresh picker through the hotkey.
   if flags.cmd or flags.ctrl or flags.alt then
     exitScrollAreaPicker()
-    if flags.ctrl and not flags.cmd and not flags.alt and char == "," then
+    if flags.ctrl and not flags.cmd and not flags.alt and char == SCROLL_TRIGGER_KEY then
       return true
     end
     return false
@@ -1576,7 +1576,7 @@ function M.start()
   -- tree-build inside Chromium is async, so doing this at activation
   -- (rather than only on hint-mode entry) gives the browser hundreds of
   -- ms to materialize its AX tree before the user actually presses
-  -- Ctrl+. — long enough that the walk lands on a populated tree.
+  -- Ctrl+, — long enough that the walk lands on a populated tree.
   -- The watcher only fires on transitions, so we also pre-warm whatever
   -- app happens to be focused at module load.
   appWatcher = hs.application.watcher.new(function(_, eventType, app)

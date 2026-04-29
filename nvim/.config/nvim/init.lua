@@ -44,8 +44,6 @@ vim.o.splitbelow = true
 vim.o.ignorecase = true -- case insensitive search
 vim.o.smartcase = true -- case sensitive search if uppercase in string
 
-require('config.colors').setup()
-
 local resolved_config_dir = vim.fn.resolve(vim.fn.stdpath 'config')
 local dotfiles_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(resolved_config_dir)))
 
@@ -114,6 +112,7 @@ vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
 
 -- Plugins
 vim.pack.add({
+  { src = 'https://github.com/folke/tokyonight.nvim', version = 'main' },
   { src = 'https://github.com/folke/flash.nvim', version = 'main' },
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
@@ -130,6 +129,7 @@ vim.pack.add({
   end,
 })
 
+require('config.colors').setup()
 require('config.auto_reload').setup()
 require('config.code_trace').setup()
 require('config.copy_range').setup()

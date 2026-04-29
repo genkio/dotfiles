@@ -57,8 +57,8 @@ Everything below comes from personal configuration (commits to this repo).
 | Alias / Fn | What it does |
 |---|---|
 | `gs` | `git status` |
-| `gsh` | `git stash` |
-| `gshp` | `git stash pop` |
+| `gst` | `git stash` |
+| `gstp` | `git stash pop` |
 | `glo` | `git log --pretty --oneline -5` |
 | `ga` | `git add` |
 | `gaa` | `git add .` |

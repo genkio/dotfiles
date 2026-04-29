@@ -5,8 +5,8 @@ alias glo="git log --pretty --oneline -5"
 # list 10 most recent branches with commit dates
 alias gbr="git for-each-ref --sort=-committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' --count=10"
 
-alias gsh="git stash"
-alias gshp="git stash pop"
+alias gst="git stash"
+alias gstp="git stash pop"
 
 alias ga="git add"
 alias gaa="git add ."

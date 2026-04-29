@@ -73,7 +73,7 @@ defaults_write com.apple.universalaccess reduceMotion -bool true
 ###############################################################################
 
 echo "Sound: Mute output by default"
-osascript -e "set volume with output muted"
+osascript -e "set volume with output muted" >/dev/null 2>&1 || echo "  Skipping: osascript volume mute failed"
 
 echo "Sound: Always show volume icon in menu bar"
 defaults_write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
@@ -176,12 +176,14 @@ PY
 # Screen Saver & Lock
 ###############################################################################
 
+# Screen saver preferences moved to the per-host (ByHost) domain in macOS 14;
+# user-domain writes are silently ignored on Sonoma+ and Tahoe.
 echo "Screen Saver: Start after 5 minutes"
-defaults_write com.apple.screensaver idleTime -int 300
+defaults_current_host_write com.apple.screensaver idleTime -int 300
 
 echo "Screen Saver: Require password immediately"
-defaults_write com.apple.screensaver askForPassword -int 1
-defaults_write com.apple.screensaver askForPasswordDelay -int 0
+defaults_current_host_write com.apple.screensaver askForPassword -int 1
+defaults_current_host_write com.apple.screensaver askForPasswordDelay -int 0
 
 echo "Hot Corners: Bottom-left to Lock Screen"
 defaults_write com.apple.dock wvous-bl-corner -int 13
@@ -257,7 +259,10 @@ PY
 echo "Desktop: Set solid black background"
 BLACK_PNG="/System/Library/Desktop Pictures/Solid Colors/Black.png"
 if [[ -f "$BLACK_PNG" ]]; then
-  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$BLACK_PNG\""
+  # The wallpaper subsystem has been unreliable on Tahoe (26.x); tolerate failure
+  # so the rest of bootstrap still completes — set it manually if it skips.
+  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$BLACK_PNG\"" \
+    >/dev/null 2>&1 || echo "  Skipping: could not set desktop picture via AppleScript"
 else
   echo "  Skipping: $BLACK_PNG not found"
 fi

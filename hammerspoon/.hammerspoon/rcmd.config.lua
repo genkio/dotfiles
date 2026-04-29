@@ -15,6 +15,7 @@ return {
   i = "iPhone Mirroring",
   m = "Mail",
   n = { action = "notification_center" },
+  o = { action = "finder_in_ghostty" },
   t = "TablePlus",
   s = "Sublime Text"
 }

@@ -11,6 +11,5 @@ brew "sdkman/tap/sdkman-cli"
 
 cask "docker-desktop"
 cask "ghostty"
-cask "openinterminal-lite"
 cask "sublime-text"
 cask "tableplus"

@@ -276,16 +276,9 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/n
 echo "System: Install Rosetta 2"
 sudo softwareupdate --install-rosetta --agree-to-license || true
 
-###############################################################################
-# OpenInTerminal-Lite
-###############################################################################
-
 echo "Menu Bar: Reduce item spacing"
 defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
 defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
-
-echo "OpenInTerminal-Lite: Set default terminal to Ghostty"
-defaults_write wang.jianing.app.OpenInTerminal-Lite LiteDefaultTerminal Ghostty
 
 ###############################################################################
 # Apply Changes

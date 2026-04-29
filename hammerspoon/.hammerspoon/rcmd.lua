@@ -343,6 +343,7 @@ local function actionTargetLabel(actionTarget)
     window_right = "Action: Move Window Right",
     window_maximize = "Action: Enter Full Screen",
     window_next_screen = "Action: Move Window to Next Screen",
+    finder_in_ghostty = "Action: Open Finder Path in Ghostty",
   }
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
@@ -814,6 +815,50 @@ local function moveFocusedWindowToNextScreen(missingWindowMessage)
   window:focus()
 end
 
+local function openFinderPathInGhostty()
+  local frontmostApp = hs.application.frontmostApplication()
+
+  if not frontmostApp or frontmostApp:bundleID() ~= "com.apple.finder" then
+    hs.alert.show("Finder is not focused")
+    return
+  end
+
+  local script = [[
+tell application "Finder"
+  if not (exists Finder window 1) then
+    return {false, "No Finder window is open"}
+  end if
+
+  try
+    set finderPath to POSIX path of (target of front Finder window as alias)
+  on error errMsg
+    return {false, errMsg}
+  end try
+end tell
+
+tell application "Ghostty"
+  activate
+  set cfg to new surface configuration
+  set initial working directory of cfg to finderPath
+  new window with configuration cfg
+end tell
+
+return {true, finderPath}
+]]
+
+  local ok, result, rawOutput = hs.osascript.applescript(script)
+
+  if not ok then
+    hs.alert.show("Could not open Finder path in Ghostty")
+    print("-- rcmd: failed to open Finder path in Ghostty: " .. tostring(rawOutput or result))
+    return
+  end
+
+  if type(result) == "table" and result[1] == false then
+    hs.alert.show(result[2] or "Could not read Finder path")
+  end
+end
+
 local function runAction(actionTarget)
   local actionHandlers = {
     notification_center = function()
@@ -837,6 +882,7 @@ local function runAction(actionTarget)
     window_next_screen = function()
       moveFocusedWindowToNextScreen("No focused window to move")
     end,
+    finder_in_ghostty = openFinderPathInGhostty,
   }
 
   local handler = actionHandlers[actionTarget]

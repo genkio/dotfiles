@@ -1,3 +1,11 @@
+-- JSON/JSONC block folding that follows the bracket under the cursor.
+--
+-- Neovim's normal manual folds are line-oriented, which makes zc/zo awkward
+-- when multiple JSON objects or arrays share nearby lines. This module tracks
+-- exact bracket ranges with extmarks, rebuilds manual folds from that state,
+-- and falls back to the default zc/zo behavior when the cursor is not on a
+-- foldable { or [ block.
+
 local M = {}
 
 local namespace = vim.api.nvim_create_namespace('config.json_folds')

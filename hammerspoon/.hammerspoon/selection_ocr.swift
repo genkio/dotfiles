@@ -1,5 +1,12 @@
 #!/usr/bin/env swift
 
+// OCR helper for hammerspoon/selection_ocr.lua.
+//
+// Hammerspoon captures a selected screen region to an image file, then invokes
+// this script with that path. The script runs Apple's Vision OCR locally,
+// normalizes recognized chunks into readable lines with Japanese and English
+// support, and prints the final text to stdout for Hammerspoon to copy.
+
 import CoreGraphics
 import Foundation
 import Vision

@@ -1,3 +1,10 @@
+-- Project-aware fzf picker for Yazi.
+--
+-- With no selection, fzf starts at the current git root so the result can be
+-- revealed or cd'd to from anywhere in the project. With selected entries, only
+-- those paths are fed to fzf and the chosen results are toggled, which makes
+-- narrowing a multi-select list fast without leaving Yazi.
+
 local M = {}
 
 local state = ya.sync(function()

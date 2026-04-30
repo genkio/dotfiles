@@ -1,3 +1,11 @@
+-- Markdown vault navigation for Obsidian/Logseq-style notes.
+--
+-- This module detects vault roots, resolves wiki links and tags, creates
+-- missing notes in the right vault folder, powers gd/gr inside vault markdown,
+-- and provides simple omni completion for [[notes]] and #tags. It is kept
+-- self-contained so normal markdown buffers can continue using standard LSP
+-- and search behavior.
+
 local M = {}
 
 local root_markers = {

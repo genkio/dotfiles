@@ -1,3 +1,10 @@
+-- Snacks.nvim picker and search integration.
+--
+-- This module centralizes the custom picker behavior from README.md: cwd-based
+-- file and grep pickers, dotfiles-specific hidden-file defaults, richer grep
+-- prompts, document/workspace symbols, and a small TypeScript/JavaScript LSP
+-- bootstrap path for buffers that do not have a client attached yet.
+
 local M = {}
 
 local function normalize(path)

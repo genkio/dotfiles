@@ -1,3 +1,10 @@
+-- Custom netrw ergonomics for this config's built-in file explorer.
+--
+-- The module keeps netrw as the explorer while adding a few workflow helpers:
+-- reveal the current file when returning to the explorer, make preview windows
+-- close predictably when opening files, and auto-update an existing preview as
+-- the cursor moves through the tree.
+
 local M = {}
 local preview_state = {
   timer = nil,

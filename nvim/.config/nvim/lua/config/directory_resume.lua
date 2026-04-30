@@ -1,3 +1,10 @@
+-- Resume the last real file when starting Neovim on a directory.
+--
+-- When launched as `nvim .`, this stores the focused file for that directory
+-- under stdpath('state') and restores it on the next directory launch. The
+-- state is scoped by directory hash and ignores unlisted, special, missing, or
+-- out-of-tree buffers.
+
 local M = {}
 
 local group = vim.api.nvim_create_augroup('directory-resume', { clear = true })

@@ -1,4 +1,11 @@
-# Git shortcuts (custom)
+# Git shortcuts and worktree helpers for the interactive shell.
+#
+# The short aliases cover frequent status/diff/stash/add commands. The custom
+# functions below add default-branch checkout/rebase helpers, fzf-driven
+# worktree creation/removal, and current-branch pull/push wrappers. Destructive
+# worktree removal asks for confirmation and migrates Claude session logs back
+# to the main worktree before deleting the side worktree.
+
 alias gs="git status"
 alias gd="git diff"
 alias glo="git log --pretty --oneline -5"

@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Opinionated first-run bootstrap for this dotfiles repo.
+#
+# The script is intentionally a full machine setup path, not just a stow helper:
+# clone or reuse the repo, install base Homebrew packages, stow the core package
+# set, seed tmux/git/ssh defaults, and optionally install GUI apps, dev tooling,
+# and macOS preference tweaks. Keep this aligned with AGENTS.md/CLAUDE.md before
+# changing package names or setup order.
+
 REPO_URL="${REPO_URL:-https://github.com/genkio/dotfiles.git}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 INCLUDE_APPS=0

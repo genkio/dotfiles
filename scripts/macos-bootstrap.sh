@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# macos-bootstrap.sh
-# Configures macOS system preferences. Some changes may require log out/in to fully apply.
+# macOS defaults bootstrap for a new machine.
+#
+# This writes system and app preferences directly with `defaults`, `pmset`,
+# `nvram`, and a few Apple utilities. It should be safe to rerun, but some
+# settings require admin rights and some only become visible after logout,
+# reboot, or the affected app restarting. Optional writes warn instead of
+# aborting because macOS preference domains drift between releases.
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "Missing command: $1" >&2; exit 1; }; }
 need_cmd defaults

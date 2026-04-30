@@ -1,7 +1,11 @@
--- Fresh Neovim 0.12 sandbox launched with:
---   NVIM_APPNAME=nvim-next nvim
+-- Main Neovim 0.12 entrypoint for the stowed nvim config.
 --
--- Keep this config intentionally small. Add only what earns its place.
+-- This file owns global editor defaults, early startup behavior, plugin
+-- registration, and module wiring. Feature-specific behavior should usually
+-- live in lua/config/*.lua so the startup path stays easy to scan.
+--
+-- Keep this config intentionally small: prefer built-ins, small local modules,
+-- and behavior that is documented in README.md.
 
 -- Use <space> as the leader key
 vim.g.mapleader = ' '

@@ -1,3 +1,10 @@
+-- LazyGit terminal launcher with per-invocation override configs.
+--
+-- The keymaps open LazyGit in a disposable tab terminal, hiding the command log
+-- by default and optionally applying a compact layout for smaller screens. When
+-- delta is available, a temporary config also wires LazyGit's pager to delta so
+-- file links can jump back into Neovim.
+
 local M = {}
 
 local function override_config_path(kind)

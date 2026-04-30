@@ -1,3 +1,10 @@
+# Main interactive zsh startup file for the stowed shell profile.
+#
+# This sets the shared environment, loads Oh My Zsh, installs a few interactive
+# conveniences, and then hands off to the smaller sourced files for prompt,
+# aliases, and machine-local overrides. Keep machine-specific values in
+# ~/.zshrc.local or ~/.local/bin/env rather than in this tracked file.
+
 export LANG=en_US.UTF-8
 export LC_MESSAGES=en_US.UTF-8
 export HOMEBREW_NO_PROGRESS_BARS=1

@@ -1,3 +1,10 @@
+-- Lazy-loaded Diffview integration and review commands.
+--
+-- Diffview is kept out of startup until one of the git review commands is used.
+-- This module installs forwarding commands, resolves a sensible default branch,
+-- opens branch and worktree reviews, and nudges two-way diffs so the local side
+-- appears on the left for the layouts used in this setup.
+
 local M = {}
 local loaded = false
 

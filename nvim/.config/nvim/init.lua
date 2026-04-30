@@ -118,6 +118,7 @@ vim.pack.add({
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
   { src = 'https://github.com/lewis6991/gitsigns.nvim', version = 'v1.0.0' },
   { src = 'https://github.com/nvim-lua/plenary.nvim', version = 'master' },
+  { src = 'https://github.com/genkio/code-trace.nvim', version = 'main' },
 }, { confirm = false })
 
 vim.pack.add({

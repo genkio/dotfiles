@@ -14,6 +14,129 @@ alias co="copilot"
 alias lg="lazygit"
 alias ld="lazydocker"
 
+zip() {
+  if [[ $# -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: zip <file-or-folder>"
+    return 1
+  fi
+
+  local src="${1:A}"
+  if [[ ! -e "$src" ]]; then
+    echo "zip: path not found: $1"
+    return 1
+  fi
+
+  local sevenzip="${commands[7zz]:-${commands[7z]}}"
+  if [[ -z "$sevenzip" ]]; then
+    echo "zip: 7-Zip executable not found"
+    return 127
+  fi
+
+  local parent="${src:h}"
+  local entry="${src:t}"
+  local archive="${parent}/${entry}.zip"
+  local -a excludes=(
+    '-xr!__MACOSX'
+    '-xr!.DS_Store'
+    '-xr!._*'
+    '-xr!.AppleDouble'
+    '-xr!.Spotlight-V100'
+    '-xr!.Trashes'
+    '-xr!.fseventsd'
+  )
+
+  if [[ -e "$archive" ]]; then
+    echo "zip: archive already exists: $archive"
+    return 1
+  fi
+
+  (
+    cd "$parent" || return
+    "$sevenzip" a -tzip -mx=0 "$archive" "$entry" "${excludes[@]}"
+  ) || return
+
+  if ! osascript \
+    -e 'on run argv' \
+    -e 'set trashTarget to POSIX file (item 1 of argv) as alias' \
+    -e 'tell application "Finder" to delete trashTarget' \
+    -e 'end run' \
+    "$src"; then
+    echo "zip: archive created but failed to move to Trash: $src"
+    return 1
+  fi
+}
+
+_unzip_archive() {
+  local sevenzip="$1"
+  local src="${2:A}"
+  local parent="${src:h}"
+  local entry="${src:t}"
+  local base="${entry:r}"
+
+  if [[ ! -f "$src" ]]; then
+    echo "unzip: not a file: $src"
+    return 1
+  fi
+
+  if [[ "${entry:l}" != *.zip ]]; then
+    echo "unzip: expected a .zip file: $src"
+    return 1
+  fi
+
+  local dest="${parent}/${base}"
+  if [[ -e "$dest" ]]; then
+    echo "unzip: destination already exists: $dest"
+    return 1
+  fi
+
+  mkdir "$dest" || return
+  "$sevenzip" x "$src" "-o$dest" || return
+}
+
+unzip() {
+  if [[ $# -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: unzip <zip-file-or-folder>"
+    return 1
+  fi
+
+  local src="${1:A}"
+  if [[ ! -e "$src" ]]; then
+    echo "unzip: path not found: $1"
+    return 1
+  fi
+
+  local sevenzip="${commands[7zz]:-${commands[7z]}}"
+  if [[ -z "$sevenzip" ]]; then
+    echo "unzip: 7-Zip executable not found"
+    return 127
+  fi
+
+  if [[ -d "$src" ]]; then
+    local -a raw_archives archives
+    local -A seen
+    local archive
+
+    raw_archives=("$src"/*.zip(N) "$src"/*.ZIP(N))
+    for archive in "${raw_archives[@]}"; do
+      [[ -n "${seen[$archive]}" ]] && continue
+      seen[$archive]=1
+      archives+=("$archive")
+    done
+
+    if [[ ${#archives[@]} -eq 0 ]]; then
+      echo "unzip: no .zip files found in folder: $1"
+      return 1
+    fi
+
+    for archive in "${archives[@]}"; do
+      _unzip_archive "$sevenzip" "$archive" || return
+    done
+    return
+  fi
+
+  _unzip_archive "$sevenzip" "$src"
+}
+
 alias cl="clear"
 alias ex="exit"
 alias ff="fastfetch"

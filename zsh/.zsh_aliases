@@ -153,6 +153,37 @@ vim() {
 }
 
 alias ip="ipconfig getifaddr en0"
+
+killport() {
+  if [[ $# -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: killport <port>"
+    return 1
+  fi
+
+  local port="$1"
+  if [[ "$port" != <-> || port -lt 1 || port -gt 65535 ]]; then
+    echo "killport: invalid port: $port"
+    return 1
+  fi
+
+  local output
+  output="$(lsof -nP -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null)"
+  if [[ -z "$output" ]]; then
+    echo "killport: no process listening on port $port"
+    return 1
+  fi
+
+  local -a pids
+  pids=("${(@f)output}")
+  kill "${pids[@]}" || return
+
+  echo "killport: sent TERM to PID(s): ${pids[*]}"
+}
+
+kip() {
+  killport "$@"
+}
+
 # Copy the last command to clipboard
 alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"

@@ -183,8 +183,8 @@ PY
 
 # Screen saver preferences moved to the per-host (ByHost) domain in macOS 14;
 # user-domain writes are silently ignored on Sonoma+ and Tahoe.
-echo "Screen Saver: Start after 5 minutes"
-defaults_current_host_write com.apple.screensaver idleTime -int 300
+echo "Screen Saver: Disable (never start)"
+defaults_current_host_write com.apple.screensaver idleTime -int 0
 
 echo "Screen Saver: Require password immediately"
 defaults_current_host_write com.apple.screensaver askForPassword -int 1

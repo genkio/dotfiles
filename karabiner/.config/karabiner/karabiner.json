@@ -17,6 +17,10 @@
                         {
                             "from": { "key_code": "f2" },
                             "to": [{ "key_code": "grave_accent_and_tilde" }]
+                        },
+                        {
+                            "from": { "consumer_key_code": "eject" },
+                            "to": [{ "consumer_key_code": "al_terminal_lock_or_screensaver" }]
                         }
                     ]
                 }

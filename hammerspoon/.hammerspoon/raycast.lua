@@ -2,7 +2,7 @@
 --
 -- Features:
 --   - Search and run Apple Shortcuts from the Shortcuts app
---   - Quick links from raycast.config.lua with {argument}, {query}, or {id}
+--   - Quick links from raycast.config.lua with {query} placeholders
 --   - Type a search directly, then pick a quick link to open it
 
 local M = {}
@@ -106,13 +106,27 @@ local function normalizeQuickLinks(config)
       return nil, ("quickLinks[%d].name must be a non-empty string"):format(index)
     end
 
-    if type(quickLink.link) ~= "string" or quickLink.link == "" then
-      return nil, ("quickLinks[%d].link must be a non-empty string"):format(index)
+    local links = {}
+
+    if type(quickLink.link) == "string" and quickLink.link ~= "" then
+      table.insert(links, quickLink.link)
+    elseif type(quickLink.links) == "table" then
+      for linkIndex, link in ipairs(quickLink.links) do
+        if type(link) ~= "string" or link == "" then
+          return nil, ("quickLinks[%d].links[%d] must be a non-empty string"):format(index, linkIndex)
+        end
+
+        table.insert(links, link)
+      end
+    end
+
+    if #links == 0 then
+      return nil, ("quickLinks[%d] must define link or links"):format(index)
     end
 
     table.insert(normalized, {
       name = quickLink.name,
-      link = quickLink.link,
+      links = links,
       iconName = quickLink.iconName,
     })
   end
@@ -156,9 +170,13 @@ local function encodeUrlComponent(value)
 end
 
 local function quickLinkRequiresArgument(quickLink)
-  return quickLink.link:find("{argument}", 1, true) ~= nil
-    or quickLink.link:find("{query}", 1, true) ~= nil
-    or quickLink.link:find("{id}", 1, true) ~= nil
+  for _, link in ipairs(quickLink.links) do
+    if link:find("{query}", 1, true) then
+      return true
+    end
+  end
+
+  return false
 end
 
 local function firstWord(value)
@@ -171,12 +189,14 @@ end
 
 local function expandQuickLink(quickLink, argument)
   local encodedArgument = encodeUrlComponent(argument)
-  local expanded = quickLink.link
+  local expanded = {}
 
-  for _, placeholder in ipairs({ "argument", "query", "id" }) do
-    expanded = expanded:gsub("{" .. placeholder .. "}", function()
+  for _, link in ipairs(quickLink.links) do
+    local url = link:gsub("{query}", function()
       return encodedArgument
     end)
+
+    table.insert(expanded, url)
   end
 
   return expanded
@@ -190,12 +210,13 @@ local function openQuickLink(quickLink, argument)
     return
   end
 
-  local url = expandQuickLink(quickLink, argument)
-  local ok = hs.urlevent.openURL(url)
+  for _, url in ipairs(expandQuickLink(quickLink, argument)) do
+    local ok = hs.urlevent.openURL(url)
 
-  if not ok then
-    hs.alert.show("Could not open quick link")
-    print(("-- raycast-lite: could not open URL: %s"):format(url))
+    if not ok then
+      hs.alert.show("Could not open quick link")
+      print(("-- raycast-lite: could not open URL: %s"):format(url))
+    end
   end
 end
 
@@ -318,16 +339,31 @@ end
 
 local function quickLinkChoice(quickLink, argument)
   local hasArgument = argument and argument ~= ""
+  local linkCount = #quickLink.links
   local text = quickLink.name
-  local subText = "Quick Link"
-
-  if quickLinkRequiresArgument(quickLink) then
-    subText = ("Quick Link · type %s"):format(quickLinkInputHint(quickLink))
-  end
+  local subText
 
   if hasArgument then
     text = ("%s: %s"):format(quickLink.name, argument)
-    subText = expandQuickLink(quickLink, argument)
+    local urls = expandQuickLink(quickLink, argument)
+
+    if linkCount > 1 then
+      subText = ("Opens %d pages · %s"):format(linkCount, urls[1])
+    else
+      subText = urls[1]
+    end
+  else
+    local parts = { "Quick Link" }
+
+    if linkCount > 1 then
+      parts[#parts + 1] = ("opens %d pages"):format(linkCount)
+    end
+
+    if quickLinkRequiresArgument(quickLink) then
+      parts[#parts + 1] = ("type %s"):format(quickLinkInputHint(quickLink))
+    end
+
+    subText = table.concat(parts, " · ")
   end
 
   return {

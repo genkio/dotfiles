@@ -39,9 +39,6 @@ nvim
 - `<leader>lG` opens LazyGit in a new tab terminal with the compact layout.
 - `<leader>gd` opens a repo review against the default branch and includes local changes.
 - `<leader>gw` opens a working tree versus index diff for the current repo.
-- `<leader>gt` maps the symbol under the cursor with CodeTrace local scope.
-- `<leader>gT` maps the symbol under the cursor with CodeTrace wide scope.
-- `<leader>gs` re-shows the last CodeTrace map.
 - Diffview loads on first use instead of at startup.
 - `:!` shell commands can use zsh helper functions from your dotfiles.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
@@ -180,7 +177,7 @@ nvim
 
 ## Notes
 
-- `tokyonight.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, `code-trace.nvim`, and `diffview.nvim` are managed by `vim.pack`.
+- `tokyonight.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

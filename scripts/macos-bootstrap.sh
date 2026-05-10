@@ -205,6 +205,9 @@ defaults_write com.apple.dock wvous-tr-modifier -int 0
 echo "Power: Disable system sleep (AC and battery)"
 sudo pmset -a sleep 0
 
+echo "Power: Disable display sleep (AC and battery)"
+sudo pmset -a displaysleep 0
+
 echo "Power: Disable Power Nap (AC and battery)"
 sudo pmset -a powernap 0
 

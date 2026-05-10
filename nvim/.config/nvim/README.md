@@ -129,6 +129,15 @@ nvim
 - A multi-line visual selection is appended as `:start-end`
 - A single-line selection, or selecting the whole file, copies just the path
 
+## Markdown
+
+- Markdown buffers wrap long lines at window width
+- Wrapping breaks at word boundaries (`linebreak`) and preserves indentation on continuation lines (`breakindent`)
+- The global default elsewhere is `wrap = false`; this is a per-filetype override in `after/ftplugin/markdown.lua`
+- `j`, `k`, `$`, and `^` move by display line (one visual row per press) so navigation through wrapped paragraphs is row-by-row instead of jumping over whole paragraphs
+- A count still moves by logical line: `5j` jumps 5 real lines, and `2$` still goes to the end of the next logical line
+- Operator-pending motions are unchanged: `dj`, `d$`, `y^`, and `c$` still act on whole logical lines
+
 ## Markdown Vault Navigation
 
 - Vault roots are detected by `.obsidian/` or `logseq/config.edn`

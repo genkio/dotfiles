@@ -1,7 +1,6 @@
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 personality = "pragmatic"
-service_tier = "fast"
 model_context_window = 1000000
 model_auto_compact_token_limit = 900000
 suppress_unstable_features_warning = true
@@ -13,3 +12,9 @@ enabled = false
 
 [profiles.quick]
 model_reasoning_effort = "medium"
+
+[notice]
+fast_default_opt_out = true
+
+[features]
+goals = true

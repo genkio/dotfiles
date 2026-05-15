@@ -88,10 +88,6 @@ bindkey -M viins '^e' end-of-line
 # Aliases and helper functions (managed as ~/.zsh_aliases via stow)
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
-# Bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
 # Rust
 export PATH="$HOME/.cargo/bin:$PATH"
 

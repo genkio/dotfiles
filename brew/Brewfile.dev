@@ -1,7 +1,6 @@
 tap "sdkman/tap"
 
 brew "awscli"
-brew "oven-sh/bun/bun"
 brew "gh"
 brew "go"
 brew "git-delta"

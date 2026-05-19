@@ -8,6 +8,28 @@ set -euo pipefail
 # settings require admin rights and some only become visible after logout,
 # reboot, or the affected app restarting. Optional writes warn instead of
 # aborting because macOS preference domains drift between releases.
+#
+# Pass --dry-run (-n) to print every mutation without executing it.
+
+DRY_RUN=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run|-n)
+      DRY_RUN=1
+      ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--dry-run|-n]"
+      echo "  --dry-run, -n  Print what would be written without making changes."
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "Missing command: $1" >&2; exit 1; }; }
 need_cmd defaults
@@ -16,9 +38,32 @@ need_cmd killall
 need_cmd pmset
 need_cmd nvram
 need_cmd softwareupdate
+need_cmd sw_vers
+
+# Captured once for any version-gated logic below.
+MACOS_MAJOR="$(sw_vers -productVersion | cut -d. -f1)"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "macOS major $MACOS_MAJOR detected (dry-run mode)"
+else
+  echo "macOS major $MACOS_MAJOR detected"
+fi
+
+# Run a command unless DRY_RUN=1, in which case just print it.
+run() {
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf '  [dry-run] %s\n' "$*"
+    return 0
+  fi
+  "$@"
+}
 
 # Some preference domains drift across macOS releases; warn instead of aborting.
 optional() {
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf '  [dry-run] %s\n' "$*"
+    return 0
+  fi
+
   if "$@" >/dev/null 2>&1; then
     return 0
   fi
@@ -36,7 +81,7 @@ defaults_current_host_write() {
 }
 
 # Ask for admin once up front (used by Firewall, FileVault, Rosetta, and Spotlight mds refresh).
-if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 ]]; then
   sudo -v
 fi
 
@@ -84,16 +129,16 @@ defaults_write com.apple.universalaccess reduceTransparency -bool true
 ###############################################################################
 
 echo "Sound: Mute output by default"
-osascript -e "set volume with output muted" >/dev/null 2>&1 || echo "  Skipping: osascript volume mute failed"
+optional osascript -e "set volume with output muted"
 
 echo "Sound: Always show volume icon in menu bar"
 defaults_write com.apple.controlcenter "NSStatusItem Visible Sound" -bool true
 defaults_current_host_write com.apple.controlcenter Sound -int 18
 
 echo "Sound: Disable startup sound"
-if sudo nvram StartupMute=%01 >/dev/null 2>&1; then
-  :
-else
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  printf '  [dry-run] %s\n' 'sudo nvram StartupMute=%01'
+elif ! sudo nvram StartupMute=%01 >/dev/null 2>&1; then
   echo "  Skipping: could not set StartupMute NVRAM flag"
 fi
 
@@ -141,7 +186,10 @@ echo "Dock: Hide recent applications"
 defaults_write com.apple.dock show-recents -bool false
 
 echo "Dock: Remove all apps, keep app launcher and Terminal"
-python3 - <<'PY'
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "  [dry-run] would rewrite com.apple.dock persistent-apps via Python plist mutation"
+else
+  python3 - <<'PY'
 import plistlib
 import os
 import subprocess
@@ -182,6 +230,7 @@ pl["persistent-apps"] = [make_dock_entry(app) for app in apps]
 out = plistlib.dumps(pl, fmt=plistlib.FMT_XML)
 subprocess.run(["defaults", "import", "com.apple.dock", "-"], input=out, check=True)
 PY
+fi
 
 ###############################################################################
 # Screen Saver & Lock
@@ -209,20 +258,23 @@ defaults_write com.apple.dock wvous-tr-modifier -int 0
 ###############################################################################
 
 echo "Power: Disable system sleep (AC and battery)"
-sudo pmset -a sleep 0
+run sudo pmset -a sleep 0
 
 echo "Power: Disable display sleep (AC and battery)"
-sudo pmset -a displaysleep 0
+run sudo pmset -a displaysleep 0
 
 echo "Power: Disable Power Nap (AC and battery)"
-sudo pmset -a powernap 0
+run sudo pmset -a powernap 0
 
 ###############################################################################
 # Spotlight
 ###############################################################################
 
 echo "Spotlight: Disable all categories except Applications, Calculator, System Settings"
-python3 - <<'PY'
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "  [dry-run] would rewrite com.apple.Spotlight orderedItems via Python plist mutation"
+else
+  python3 - <<'PY'
 import plistlib, subprocess, sys
 
 def run(*args, input_bytes=None):
@@ -265,6 +317,7 @@ pl["orderedItems"] = items
 out = plistlib.dumps(pl, fmt=plistlib.FMT_XML)
 run("defaults", "import", domain, "-", input_bytes=out)
 PY
+fi
 
 ###############################################################################
 # Desktop Background
@@ -275,8 +328,7 @@ BLACK_PNG="/System/Library/Desktop Pictures/Solid Colors/Black.png"
 if [[ -f "$BLACK_PNG" ]]; then
   # The wallpaper subsystem has been unreliable on Tahoe (26.x); tolerate failure
   # so the rest of bootstrap still completes — set it manually if it skips.
-  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$BLACK_PNG\"" \
-    >/dev/null 2>&1 || echo "  Skipping: could not set desktop picture via AppleScript"
+  optional osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$BLACK_PNG\""
 else
   echo "  Skipping: $BLACK_PNG not found"
 fi
@@ -286,14 +338,18 @@ fi
 ###############################################################################
 
 echo "Security: Enable Firewall"
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  printf '  [dry-run] %s\n' 'sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on'
+else
+  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
+fi
 
 ###############################################################################
 # System
 ###############################################################################
 
 echo "System: Install Rosetta 2"
-sudo softwareupdate --install-rosetta --agree-to-license || true
+run sudo softwareupdate --install-rosetta --agree-to-license || true
 
 echo "Menu Bar: Reduce item spacing"
 defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
@@ -304,18 +360,24 @@ defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
 ###############################################################################
 
 echo "Applying changes..."
-killall cfprefsd 2>/dev/null || true
-killall ControlCenter 2>/dev/null || true
-killall Dock 2>/dev/null || true
-killall Finder 2>/dev/null || true
-sudo killall mds 2>/dev/null || true
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "  [dry-run] would killall cfprefsd, ControlCenter, Dock, Finder; sudo killall mds; activateSettings -u"
+else
+  killall cfprefsd 2>/dev/null || true
+  killall ControlCenter 2>/dev/null || true
+  killall Dock 2>/dev/null || true
+  killall Finder 2>/dev/null || true
+  sudo killall mds 2>/dev/null || true
 
-if [[ -x /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings ]]; then
-  /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
+  if [[ -x /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings ]]; then
+    /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
+  fi
 fi
 
 echo "Security: Enable FileVault"
-if sudo fdesetup isactive >/dev/null 2>&1; then
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  echo "  [dry-run] would check fdesetup isactive and run 'sudo fdesetup enable' if not active"
+elif sudo fdesetup isactive >/dev/null 2>&1; then
   echo "  FileVault already active; skipping enable."
 else
   sudo fdesetup enable

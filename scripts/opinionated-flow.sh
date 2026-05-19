@@ -79,7 +79,8 @@ fi
 
 brew bundle --file brew/Brewfile.base
 sudo brew services start tailscale
-stow -t "$HOME" brew nvim tmux yazi zsh
+mkdir -p "$HOME/.config/mpv"
+stow -t "$HOME" brew mpv nvim tmux yazi zsh
 
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"

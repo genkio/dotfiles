@@ -14,6 +14,14 @@ fi
 
 mkdir -p "$TARGET_DIR"
 
+if command -v stow >/dev/null 2>&1; then
+  cd "$REPO_ROOT"
+  stow -t "$HOME" codex
+  echo "Stowed Codex hook config into ~/.codex"
+else
+  echo "GNU stow not found; skipping stow of codex package (config.toml will still be seeded)." >&2
+fi
+
 if [[ -e "$TARGET_FILE" ]]; then
   echo "Skipping Codex config restore: $TARGET_FILE already exists."
   exit 0

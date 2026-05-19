@@ -50,5 +50,27 @@
   "theme": "auto",
   "editorMode": "vim",
   "autoScrollEnabled": false,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
+          }
+        ]
+      }
+    ]
+  }
 }

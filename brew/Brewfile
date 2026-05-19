@@ -1,4 +1,2 @@
-tap "homebrew/bundle"
-
 instance_eval(File.read(File.join(__dir__, "Brewfile.base")))
 instance_eval(File.read(File.join(__dir__, "Brewfile.apps")))

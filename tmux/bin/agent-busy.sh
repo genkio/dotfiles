@@ -14,4 +14,5 @@ window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}' 2>/dev/null)
 
 tmux set-window-option -q -t "$window_id" @agent_busy 1
 tmux set-window-option -q -t "$window_id" @agent_awaiting 0
+tmux set-window-option -q -t "$window_id" @agent_attention 0
 exit 0

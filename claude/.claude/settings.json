@@ -62,6 +62,16 @@
         ]
       }
     ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

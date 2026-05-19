@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Fired by Claude Code's Stop hook and Codex's Stop hook. Marks the
-# window as no longer busy. If the user does not currently appear to
-# be watching the window, also sets @agent_awaiting so the window
-# turns red until the user comes back to it.
+# window as no longer busy and clears any pending approval flag. If
+# the user does not currently appear to be watching the window, also
+# sets @agent_awaiting so the window turns green (completion) until
+# the user comes back to it.
 #
 # "Watching" is decided in two layers:
 #   1. On macOS, the terminal app (Ghostty by default; configurable via
@@ -25,6 +26,7 @@ window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}' 2>/dev/null)
 [ -n "$window_id" ] || exit 0
 
 tmux set-window-option -q -t "$window_id" @agent_busy 0
+tmux set-window-option -q -t "$window_id" @agent_attention 0
 
 terminal_is_frontmost() {
   [ "$(uname)" = "Darwin" ] || return 0

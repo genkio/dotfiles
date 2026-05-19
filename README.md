@@ -25,7 +25,7 @@ Install stow:
 - `stow vim` or `stow git`
 - Core packages: `mkdir -p ~/.ssh && chmod 700 ~/.ssh && stow brew git nvim tmux yazi zsh ssh`
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
-- Optional app packages: `stow hammerspoon karabiner`
+- Optional app packages: `stow hammerspoon`
 - Optional dev packages: `stow ghostty && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
 - Yazi: `stow yazi`
 
@@ -61,5 +61,5 @@ Run the automated script:
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue.
 - `--include-all` to install both GUI apps and dev tools.
-- `--include-apps` to install GUI apps and stow `hammerspoon` and `karabiner`.
+- `--include-apps` to install GUI apps and stow `hammerspoon`.
 - `--include-dev` to install dev tools (sdkman-cli, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.

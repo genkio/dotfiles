@@ -66,6 +66,9 @@ defaults_write com.apple.driver.AppleBluetoothMultitouch.trackpad DragLock -bool
 echo "Keyboard: Disable automatic capitalization"
 defaults_write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 
+echo "Keyboard: Use F1, F2, etc. as standard function keys"
+defaults_write NSGlobalDomain com.apple.keyboard.fnState -bool true
+
 ###############################################################################
 # Accessibility
 ###############################################################################

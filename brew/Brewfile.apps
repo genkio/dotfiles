@@ -1,3 +1,7 @@
-cask "aldente"
+macos_major = `/usr/bin/sw_vers -productVersion`.to_i
+
+# macOS 26 (Tahoe) ships a native battery charge limit in Settings -> Battery.
+# Only install AlDente on older releases that lack it.
+cask "aldente" if macos_major.positive? && macos_major < 26
 cask "brave-browser"
 cask "hammerspoon"

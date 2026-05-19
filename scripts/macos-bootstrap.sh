@@ -76,6 +76,9 @@ defaults_write NSGlobalDomain com.apple.keyboard.fnState -bool true
 echo "Accessibility: Enable Reduce motion"
 defaults_write com.apple.universalaccess reduceMotion -bool true
 
+echo "Accessibility: Enable Reduce transparency (clearer Liquid Glass on macOS 26+)"
+defaults_write com.apple.universalaccess reduceTransparency -bool true
+
 ###############################################################################
 # Sound
 ###############################################################################

@@ -48,6 +48,11 @@ else
   echo "macOS major $MACOS_MAJOR detected"
 fi
 
+# Tracks commands that failed under `optional` so the end of the run can
+# surface them as a manual-followup list (e.g. settings Apple now restricts
+# via TCC on macOS 26).
+SKIPPED=()
+
 # Run a command unless DRY_RUN=1, in which case just print it.
 run() {
   if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -68,6 +73,7 @@ optional() {
     return 0
   fi
 
+  SKIPPED+=("$*")
   printf '  Skipping: %s\n' "$*"
   return 0
 }
@@ -80,7 +86,7 @@ defaults_current_host_write() {
   optional defaults -currentHost write "$@"
 }
 
-# Ask for admin once up front (used by Firewall, FileVault, Rosetta, and Spotlight mds refresh).
+# Ask for admin once up front (used by Firewall, FileVault, and Rosetta).
 if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 ]]; then
   sudo -v
 fi
@@ -118,6 +124,10 @@ defaults_write NSGlobalDomain com.apple.keyboard.fnState -bool true
 # Accessibility
 ###############################################################################
 
+# macOS 26 sandboxes com.apple.universalaccess via TCC, so these writes are
+# typically rejected from a terminal process even with sudo. Failures land in
+# the Skipped summary at the end — toggle them in System Settings →
+# Accessibility → Display when needed.
 echo "Accessibility: Enable Reduce motion"
 defaults_write com.apple.universalaccess reduceMotion -bool true
 
@@ -185,7 +195,7 @@ defaults_write com.apple.finder FXDefaultSearchScope -string "SCcf"
 echo "Dock: Hide recent applications"
 defaults_write com.apple.dock show-recents -bool false
 
-echo "Dock: Remove all apps, keep app launcher and Terminal"
+echo "Dock: Remove all apps, keep app launcher and System Settings"
 if [[ "$DRY_RUN" -eq 1 ]]; then
   echo "  [dry-run] would rewrite com.apple.dock persistent-apps via Python plist mutation"
 else
@@ -210,7 +220,7 @@ for launcher in ["/System/Applications/Apps.app", "/System/Applications/Launchpa
 # Apps to add (Finder is always first, no need to add)
 candidate_apps = [
     app_launcher,
-    "/System/Applications/Utilities/Terminal.app",
+    "/System/Applications/System Settings.app",
 ]
 apps = [app for app in candidate_apps if app and os.path.exists(app)]
 
@@ -267,59 +277,6 @@ echo "Power: Disable Power Nap (AC and battery)"
 optional sudo pmset -a powernap 0
 
 ###############################################################################
-# Spotlight
-###############################################################################
-
-echo "Spotlight: Disable all categories except Applications, Calculator, System Settings"
-if [[ "$DRY_RUN" -eq 1 ]]; then
-  echo "  [dry-run] would rewrite com.apple.Spotlight orderedItems via Python plist mutation"
-else
-  python3 - <<'PY'
-import plistlib, subprocess, sys
-
-def run(*args, input_bytes=None):
-    p = subprocess.run(args, input=input_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if p.returncode != 0:
-        sys.stderr.write(p.stderr.decode("utf-8", "ignore"))
-        raise SystemExit(p.returncode)
-    return p.stdout
-
-domain = "com.apple.Spotlight"
-
-data = run("defaults", "export", domain, "-")
-pl = plistlib.loads(data)
-
-items = pl.get("orderedItems")
-if not isinstance(items, list):
-    sys.stderr.write("Spotlight orderedItems not found; skipping Spotlight category changes.\n")
-    raise SystemExit(0)
-
-keep_tokens = {
-    "APPLICATIONS",
-    "APP",
-    "CALCULATOR",
-    "SYSTEM_PREFS",
-    "SYSTEMPREFERENCES",
-    "SYSTEM_PREFERENCES",
-    "SYSTEM_SETTINGS",
-    "PREFERENCES",
-}
-
-def should_keep(name: str) -> bool:
-    u = (name or "").upper()
-    return any(tok in u for tok in keep_tokens)
-
-for it in items:
-    if isinstance(it, dict) and "name" in it:
-        it["enabled"] = bool(should_keep(str(it.get("name",""))))
-
-pl["orderedItems"] = items
-out = plistlib.dumps(pl, fmt=plistlib.FMT_XML)
-run("defaults", "import", domain, "-", input_bytes=out)
-PY
-fi
-
-###############################################################################
 # Desktop Background
 ###############################################################################
 
@@ -361,13 +318,12 @@ defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
 
 echo "Applying changes..."
 if [[ "$DRY_RUN" -eq 1 ]]; then
-  echo "  [dry-run] would killall cfprefsd, ControlCenter, Dock, Finder; sudo killall mds; activateSettings -u"
+  echo "  [dry-run] would killall cfprefsd, ControlCenter, Dock, Finder; activateSettings -u"
 else
   killall cfprefsd 2>/dev/null || true
   killall ControlCenter 2>/dev/null || true
   killall Dock 2>/dev/null || true
   killall Finder 2>/dev/null || true
-  sudo killall mds 2>/dev/null || true
 
   if [[ -x /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings ]]; then
     /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null || true
@@ -384,4 +340,13 @@ else
 fi
 
 echo "Done."
-echo "Note: Trackpad and Spotlight changes may require log out/in to fully apply."
+
+if [[ ${#SKIPPED[@]} -gt 0 ]]; then
+  echo ""
+  echo "Skipped writes (the OS rejected these — apply manually if needed):"
+  for cmd in "${SKIPPED[@]}"; do
+    printf '  - %s\n' "$cmd"
+  done
+fi
+
+echo "Note: Trackpad changes may require log out/in to fully apply."

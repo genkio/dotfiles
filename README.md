@@ -19,6 +19,11 @@ Install stow:
 - `cd ~/dotfiles && stow vim`
   Creates: `~/.vimrc -> ~/dotfiles/vim/.vimrc`
 
+## Add a new coding-agent skill
+
+- Drop the skill at `skills/<skill-name>/SKILL.md` (folder name must match the `name:` field).
+- Link it into both targets: `cd ~/dotfiles && stow -R -t ~/.claude/skills skills && stow -R -t ~/.codex/skills skills`
+
 ## Restore on a new machine
 
 - `git clone git@github.com:yourusername/dotfiles.git ~/dotfiles && cd ~/dotfiles`
@@ -27,6 +32,7 @@ Install stow:
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
 - Optional app packages: `stow hammerspoon`
 - Optional dev packages: `stow ghostty && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
+  - Both restore scripts also stow the shared `skills/` package into `~/.claude/skills/` and `~/.codex/skills/` so coding-agent skills are kept in one place.
 - Yazi: `stow yazi`
 
 ## Remove symlinks

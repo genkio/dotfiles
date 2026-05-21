@@ -15,3 +15,6 @@ claude/.claude/**
 
 # Legacy repo-local git identity override (kept ignored for compatibility)
 git/.gitconfig.local
+
+# Skills package: keep tracked content only
+skills/.DS_Store

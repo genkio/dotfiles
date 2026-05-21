@@ -9,8 +9,11 @@ if ! command -v stow >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p "$HOME/.claude"
+mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
 
 cd "$REPO_ROOT"
 stow -t "$HOME" claude
 echo "Restored Claude Code settings into ~/.claude"
+
+stow -t "$HOME/.claude/skills" skills
+echo "Restored shared coding-agent skills into ~/.claude/skills"

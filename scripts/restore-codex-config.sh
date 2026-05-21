@@ -12,12 +12,14 @@ if [[ ! -f "$SOURCE_FILE" ]]; then
   exit 1
 fi
 
-mkdir -p "$TARGET_DIR"
+mkdir -p "$TARGET_DIR" "$TARGET_DIR/skills"
 
 if command -v stow >/dev/null 2>&1; then
   cd "$REPO_ROOT"
   stow -t "$HOME" codex
   echo "Stowed Codex hook config into ~/.codex"
+  stow -t "$TARGET_DIR/skills" skills
+  echo "Restored shared coding-agent skills into ~/.codex/skills"
 else
   echo "GNU stow not found; skipping stow of codex package (config.toml will still be seeded)." >&2
 fi

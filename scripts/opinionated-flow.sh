@@ -79,6 +79,7 @@ fi
 
 brew bundle --file brew/Brewfile.base
 sudo brew services start tailscale
+# `sudo tailscale up --ssh` after `tailscale login`
 mkdir -p "$HOME/.config/mpv"
 stow -t "$HOME" brew mpv nvim tmux yazi zsh
 

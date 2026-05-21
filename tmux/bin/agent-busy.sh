@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Fired by Claude Code's UserPromptSubmit hook and Codex's
-# UserPromptSubmit hook. Marks the window containing the agent's tmux
-# pane as actively working, so tmux-window-agent's status-format
-# overlay turns it orange.
+# Fired by Claude Code and Codex on UserPromptSubmit and PreToolUse.
+# Marks the window containing the agent's tmux pane as actively
+# working, so the status-format overlay turns it orange.
+#
+# PreToolUse coverage is what transitions the window out of the red
+# "needs approval" state once the user has approved a permission
+# prompt and the tool actually starts running — without it, red would
+# stay until the entire turn ended.
 
 set -u
 

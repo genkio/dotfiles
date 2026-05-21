@@ -6,9 +6,10 @@
 # the user comes back to it.
 #
 # "Watching" is decided in two layers:
-#   1. On macOS, the terminal app (Ghostty by default; configurable via
-#      $TMUX_WINDOW_AGENT_TERMINAL_BUNDLES) must be the frontmost app.
-#      If anything else is frontmost, the user is not watching, period
+#   1. On macOS, the terminal app (Ghostty and Apple Terminal by
+#      default; configurable via $TMUX_WINDOW_AGENT_TERMINAL_BUNDLES,
+#      space-separated bundle ids) must be the frontmost app. If
+#      anything else is frontmost, the user is not watching, period
 #      — even if tmux still considers the window active in its session.
 #   2. The window must be the active window in some attached tmux
 #      client. If the user is on a different tmux window inside the
@@ -36,7 +37,7 @@ terminal_is_frontmost() {
   front="$(osascript -e 'tell application "System Events" to get bundle identifier of first application process whose frontmost is true' 2>/dev/null)"
   [ -n "$front" ] || return 0
 
-  bundles="${TMUX_WINDOW_AGENT_TERMINAL_BUNDLES:-com.mitchellh.ghostty}"
+  bundles="${TMUX_WINDOW_AGENT_TERMINAL_BUNDLES:-com.mitchellh.ghostty com.apple.Terminal}"
   for b in $bundles; do
     [ "$front" = "$b" ] && return 0
   done

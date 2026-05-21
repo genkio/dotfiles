@@ -42,6 +42,17 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+# Ask for admin once up front and keep the sudo timestamp warm in the
+# background so later steps (tailscale, macos-bootstrap) don't re-prompt
+# after the default 5-minute timeout. Loop exits with this script.
+# FileVault's fdesetup still prompts separately (Secure Token auth).
+if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+  sudo -v
+  ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
+  SUDO_KEEPALIVE_PID=$!
+  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
+fi
+
 if [[ -d "$DOTFILES_DIR/.git" ]]; then
   if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Using existing repo at $DOTFILES_DIR"

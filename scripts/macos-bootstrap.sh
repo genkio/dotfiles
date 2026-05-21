@@ -87,8 +87,14 @@ defaults_current_host_write() {
 }
 
 # Ask for admin once up front (used by Firewall, FileVault, and Rosetta).
+# Keep the sudo timestamp warm in the background so long-running steps
+# (Rosetta install, etc.) don't re-prompt after the default 5-minute timeout.
+# The loop exits when this script does.
 if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 ]]; then
   sudo -v
+  ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
+  SUDO_KEEPALIVE_PID=$!
+  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
 fi
 
 ###############################################################################

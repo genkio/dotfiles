@@ -276,6 +276,15 @@ function M.setup()
   end, { desc = 'Search text in cwd' })
 
   map({ 'n', 'x' }, '<leader>sw', function()
+    local file = vim.api.nvim_buf_get_name(0)
+    if file == '' then
+      vim.notify('No file for current buffer', vim.log.levels.WARN)
+      return
+    end
+    Snacks.picker.grep_word(picker_opts { dirs = { file } })
+  end, { desc = 'Search current word in current file' })
+
+  map({ 'n', 'x' }, '<leader>sW', function()
     Snacks.picker.grep_word(picker_opts())
   end, { desc = 'Search current word in cwd' })
 

@@ -13,35 +13,11 @@ cd "$REPO_ROOT"
 
 # Install dev tools via Homebrew
 brew bundle --file brew/Brewfile.dev
-stow -t "$HOME" ghostty
+stow -t "$HOME" ghostty mise
 
-# Install Volta (Node version manager)
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-if ! command -v volta >/dev/null 2>&1; then
-  curl https://get.volta.sh | bash -s -- --skip-setup
-fi
-volta install node
-volta install ctx7@latest
-volta install @playwright/cli@latest
-volta install typescript@latest typescript-language-server@latest
-
-# Install pyenv (Python version manager)
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-if ! command -v pyenv >/dev/null 2>&1; then
-  curl -fsSL https://pyenv.run | bash
-fi
-eval "$(pyenv init -)"
-PYTHON_LATEST=$(pyenv install --list | grep -E '^\s*3\.[0-9]+\.[0-9]+$' | tail -1 | tr -d ' ')
-pyenv install -s "$PYTHON_LATEST"
-pyenv global "$PYTHON_LATEST"
-
-# Install Rust via rustup
-export PATH="$HOME/.cargo/bin:$PATH"
-if ! command -v rustup >/dev/null 2>&1; then
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
-fi
+# mise: node, python, java + global npm tools (versions declared in mise/.config/mise/config.toml)
+eval "$(mise activate bash)"
+mise install
 
 # Install Claude Code via official shell installer (self-updates via `claude update`)
 export PATH="$HOME/.local/bin:$PATH"
@@ -51,11 +27,6 @@ fi
 
 # Restore Claude Code settings
 bash scripts/restore-claude-settings.sh
-
-if ! command -v claude >/dev/null 2>&1; then
-  echo "Claude Code CLI was not found after installation." >&2
-  exit 1
-fi
 
 claude plugin marketplace add https://github.com/anthropics/claude-plugins-official.git
 

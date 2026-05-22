@@ -88,21 +88,7 @@ bindkey -M viins '^e' end-of-line
 # Aliases and helper functions (managed as ~/.zsh_aliases via stow)
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
-# Rust
-export PATH="$HOME/.cargo/bin:$PATH"
-
-# Volta
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-export VOLTA_FEATURE_PNPM=1
-
-# pyenv
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+# mise: node, python, java + global npm tools
+eval "$(mise activate zsh)"
 
 eval "$(zoxide init zsh)"
-
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="$(brew --prefix sdkman-cli)/libexec"
-[[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"

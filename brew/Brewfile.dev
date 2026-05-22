@@ -1,5 +1,3 @@
-tap "sdkman/tap"
-
 brew "awscli"
 brew "gh"
 brew "go"
@@ -7,7 +5,7 @@ brew "git-delta"
 brew "gnupg"
 brew "lazydocker"
 brew "lazygit"
-brew "sdkman/tap/sdkman-cli"
+brew "mise"
 brew "uv"
 
 cask "codex"

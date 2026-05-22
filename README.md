@@ -68,4 +68,4 @@ Run the automated script:
 - On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue.
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps and stow `hammerspoon`.
-- `--include-dev` to install dev tools (sdkman-cli, claude-code, codex, version managers, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
+- `--include-dev` to install dev tools (mise, codex, claude-code, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.

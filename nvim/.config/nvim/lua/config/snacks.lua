@@ -183,6 +183,7 @@ local function grep_prompt()
   require('snacks').picker.grep(picker_opts {
     search = search,
     regex = false,
+    args = { '-w' },
     dirs = split_csv(prompt_optional 'Dirs (comma-separated, optional): '),
     glob = split_csv(prompt_optional 'Include globs (comma-separated, optional): '),
     exclude = split_csv(prompt_optional 'Exclude globs (comma-separated, optional): '),

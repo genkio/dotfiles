@@ -10,5 +10,6 @@ brew "uv"
 
 cask "codex"
 cask "ghostty"
+cask "orbstack"
 cask "sublime-text"
 cask "tableplus"

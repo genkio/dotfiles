@@ -22,8 +22,11 @@ if ! command -v volta >/dev/null 2>&1; then
   curl https://get.volta.sh | bash -s -- --skip-setup
 fi
 volta install node
-volta install @anthropic-ai/claude-code
-volta install @openai/codex
+volta install @anthropic-ai/claude-code@latest
+volta install @openai/codex@latest
+volta install ctx7@latest
+volta install @playwright/cli@latest
+volta install typescript@latest typescript-language-server@latest
 
 # Install pyenv (Python version manager)
 export PYENV_ROOT="$HOME/.pyenv"

@@ -10,6 +10,7 @@ brew "lazygit"
 brew "sdkman/tap/sdkman-cli"
 brew "uv"
 
+cask "codex"
 cask "ghostty"
 cask "sublime-text"
 cask "tableplus"

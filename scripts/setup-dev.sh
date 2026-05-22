@@ -22,8 +22,6 @@ if ! command -v volta >/dev/null 2>&1; then
   curl https://get.volta.sh | bash -s -- --skip-setup
 fi
 volta install node
-volta install @anthropic-ai/claude-code@latest
-volta install @openai/codex@latest
 volta install ctx7@latest
 volta install @playwright/cli@latest
 volta install typescript@latest typescript-language-server@latest
@@ -43,6 +41,12 @@ pyenv global "$PYTHON_LATEST"
 export PATH="$HOME/.cargo/bin:$PATH"
 if ! command -v rustup >/dev/null 2>&1; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+fi
+
+# Install Claude Code via official shell installer (self-updates via `claude update`)
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v claude >/dev/null 2>&1; then
+  curl -fsSL https://claude.ai/install.sh | bash
 fi
 
 # Restore Claude Code settings

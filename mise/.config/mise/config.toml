@@ -2,6 +2,8 @@
 node = "lts"
 python = "latest"
 java = "temurin-25"
+go = "latest"
+uv = "latest"
 
 "npm:ctx7" = "latest"
 "npm:@playwright/cli" = "latest"
@@ -9,4 +11,4 @@ java = "temurin-25"
 "npm:typescript-language-server" = "latest"
 
 [settings]
-idiomatic_version_file_enable_tools = ["node", "python", "java"]
+idiomatic_version_file_enable_tools = ["node", "python", "java", "go"]

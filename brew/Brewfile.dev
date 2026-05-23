@@ -1,12 +1,10 @@
 brew "awscli"
 brew "gh"
-brew "go"
 brew "git-delta"
 brew "gnupg"
 brew "lazydocker"
 brew "lazygit"
 brew "mise"
-brew "uv"
 
 cask "codex"
 cask "ghostty"

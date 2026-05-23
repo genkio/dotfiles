@@ -88,7 +88,7 @@ bindkey -M viins '^e' end-of-line
 # Aliases and helper functions (managed as ~/.zsh_aliases via stow)
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
-# mise: node, python, java + global npm tools
+# mise: node, python, java, go, uv + global npm tools
 eval "$(mise activate zsh)"
 
 eval "$(zoxide init zsh)"

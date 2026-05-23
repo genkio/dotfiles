@@ -61,7 +61,8 @@ Only dev tools:
 
 Run the automated script:
 
-- `chmod +x scripts/opinionated-flow.sh && ./scripts/opinionated-flow.sh --bootstrap-macos --include-all`
+- `make` (equivalent to `./scripts/opinionated-flow.sh --bootstrap-macos --include-all`)
+- Other targets: `make bootstrap`, `make apps`, `make dev`, `make ssh`, `make gpg`
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - The core stow step installs `nvim`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).

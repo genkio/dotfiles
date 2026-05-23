@@ -145,9 +145,16 @@ echo "Public key${COPIED}:"
 echo ""
 echo "$PUBKEY"
 echo ""
+PASTE_URL=""
 case "$HOST" in
-  github)    echo "Paste at: https://github.com/settings/ssh/new" ;;
-  bitbucket) echo "Paste at: https://bitbucket.org/account/settings/ssh-keys/" ;;
-  gitlab)    echo "Paste at: https://gitlab.com/-/user_settings/ssh_keys" ;;
+  github)    PASTE_URL="https://github.com/settings/ssh/new" ;;
+  bitbucket) PASTE_URL="https://bitbucket.org/account/settings/ssh-keys/" ;;
+  gitlab)    PASTE_URL="https://gitlab.com/-/user_settings/ssh_keys" ;;
 esac
+if [[ -n "$PASTE_URL" ]]; then
+  echo "Paste at: $PASTE_URL"
+  if command -v open >/dev/null 2>&1; then
+    open "$PASTE_URL"
+  fi
+fi
 echo "Test with: ssh -T git@${HOSTNAME}"

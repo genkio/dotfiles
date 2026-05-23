@@ -127,5 +127,9 @@ echo "Public key${COPIED}:"
 echo ""
 echo "$PUBKEY"
 echo ""
-echo "Paste at: https://github.com/settings/gpg/new"
+PASTE_URL="https://github.com/settings/gpg/new"
+echo "Paste at: $PASTE_URL"
+if command -v open >/dev/null 2>&1; then
+  open "$PASTE_URL"
+fi
 echo "Test with: echo test | gpg --clearsign --local-user $KEY_ID"

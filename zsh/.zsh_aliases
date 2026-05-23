@@ -1,3 +1,4 @@
+alias vmise='mise use $(jq -r ".volta | to_entries[] | \"\(.key)@\(.value)\"" package.json)'
 alias y="yazi"
 cc() {
   if [[ $# -eq 0 ]]; then
@@ -137,7 +138,7 @@ unzip() {
   _unzip_archive "$sevenzip" "$src"
 }
 
-alias cl="clear"
+alias cr="clear"
 alias ex="exit"
 alias ff="fastfetch"
 alias ls="eza --group-directories-first"
@@ -189,9 +190,7 @@ alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
 alias src="source ~/.zshrc"
-alias vrc="vim ~/.zshrc"
-alias vrch="vim ~/.zsh_history"
-alias vrca="vim ~/.zsh_aliases"
+alias his="vim ~/.zsh_history"
 
 TMUX_DEFAULT_SESSION="${TMUX_DEFAULT_SESSION:-tmp}"
 

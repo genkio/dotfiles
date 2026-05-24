@@ -86,11 +86,22 @@ defaults_current_host_write() {
   optional defaults -currentHost write "$@"
 }
 
+# Wrapper that feeds the captured password to sudo via stdin. Needed because
+# Homebrew's brew.sh resets the sudo timestamp on every invocation, so the
+# cache may be cold by the time we get here. Falls back to plain sudo when
+# no password is set (standalone invocation).
+sudo_pw() {
+  if [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
+    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@"
+  else
+    sudo "$@"
+  fi
+}
+
 # Ask for admin once up front (used by Firewall, FileVault, and Rosetta).
-# Keep the sudo timestamp warm in the background so long-running steps
-# (Rosetta install, etc.) don't re-prompt after the default 5-minute timeout.
-# The loop exits when this script does.
-if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 ]]; then
+# Skip when invoked from opinionated-flow.sh, which already captured the
+# password into DOTFILES_SUDO_PASSWORD; sudo_pw feeds it on every call.
+if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 && -z "${DOTFILES_SUDO_WARMED:-}" ]]; then
   sudo -v
   ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
   SUDO_KEEPALIVE_PID=$!
@@ -154,7 +165,7 @@ defaults_current_host_write com.apple.controlcenter Sound -int 18
 echo "Sound: Disable startup sound"
 if [[ "$DRY_RUN" -eq 1 ]]; then
   printf '  [dry-run] %s\n' 'sudo nvram StartupMute=%01'
-elif ! sudo nvram StartupMute=%01 >/dev/null 2>&1; then
+elif ! sudo_pw nvram StartupMute=%01 >/dev/null 2>&1; then
   echo "  Skipping: could not set StartupMute NVRAM flag"
 fi
 
@@ -274,13 +285,13 @@ defaults_write com.apple.dock wvous-tr-modifier -int 0
 ###############################################################################
 
 echo "Power: Disable system sleep (AC and battery)"
-optional sudo pmset -a sleep 0
+optional sudo_pw pmset -a sleep 0
 
 echo "Power: Disable display sleep (AC and battery)"
-optional sudo pmset -a displaysleep 0
+optional sudo_pw pmset -a displaysleep 0
 
 echo "Power: Disable Power Nap (AC and battery)"
-optional sudo pmset -a powernap 0
+optional sudo_pw pmset -a powernap 0
 
 ###############################################################################
 # Desktop Background
@@ -304,7 +315,7 @@ echo "Security: Enable Firewall"
 if [[ "$DRY_RUN" -eq 1 ]]; then
   printf '  [dry-run] %s\n' 'sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on'
 else
-  sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
+  sudo_pw /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
 fi
 
 ###############################################################################
@@ -312,7 +323,7 @@ fi
 ###############################################################################
 
 echo "System: Install Rosetta 2"
-run sudo softwareupdate --install-rosetta --agree-to-license || true
+run sudo_pw softwareupdate --install-rosetta --agree-to-license || true
 
 echo "Menu Bar: Reduce item spacing"
 defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
@@ -339,8 +350,18 @@ fi
 echo "Security: Enable FileVault"
 if [[ "$DRY_RUN" -eq 1 ]]; then
   echo "  [dry-run] would check fdesetup isactive and run 'sudo fdesetup enable' if not active"
-elif sudo fdesetup isactive >/dev/null 2>&1; then
+elif sudo_pw fdesetup isactive >/dev/null 2>&1; then
   echo "  FileVault already active; skipping enable."
+elif [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
+  # Feed username + password via -inputplist so fdesetup doesn't prompt
+  # interactively. Python handles XML escaping for special chars.
+  /usr/bin/python3 -c '
+import os, plistlib, sys
+sys.stdout.buffer.write(plistlib.dumps({
+    "Username": os.environ["USER"],
+    "Password": os.environ["DOTFILES_SUDO_PASSWORD"],
+}, fmt=plistlib.FMT_XML))
+' | sudo_pw fdesetup enable -inputplist
 else
   sudo fdesetup enable
 fi

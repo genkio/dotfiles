@@ -42,16 +42,47 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# Ask for admin once up front and keep the sudo timestamp warm in the
-# background so later steps (tailscale, macos-bootstrap) don't re-prompt
-# after the default 5-minute timeout. Loop exits with this script.
-# FileVault's fdesetup still prompts separately (Secure Token auth).
+# Capture password once up front. Used for sudo (kept warm via -S in the
+# keepalive so it survives even if the timestamp expires during long brew
+# steps) and for FileVault's fdesetup -inputplist (avoids its separate
+# Secure Token prompt). Cleared on exit. Exported so macos-bootstrap.sh
+# inherits it; DOTFILES_SUDO_WARMED tells children to skip their own prompt.
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
-  sudo -v
-  ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
+  if [[ -z "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
+    printf 'Password (used once for sudo and FileVault): '
+    stty -echo
+    IFS= read -r DOTFILES_SUDO_PASSWORD
+    stty echo
+    printf '\n'
+  fi
+  export DOTFILES_SUDO_PASSWORD
+  export DOTFILES_SUDO_WARMED=1
+
+  if ! printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S -v 2>/dev/null; then
+    echo "Error: sudo authentication failed." >&2
+    unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED
+    exit 1
+  fi
+
+  ( while kill -0 "$$" 2>/dev/null; do
+      printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S -v 2>/dev/null || true
+      sleep 60
+    done ) &
   SUDO_KEEPALIVE_PID=$!
-  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
+  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true; unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED' EXIT
 fi
+
+# Wrapper that feeds the captured password to sudo via stdin. Needed because
+# Homebrew's brew.sh runs `sudo --reset-timestamp` on every invocation
+# (Library/Homebrew/brew.sh:~1136), so the cache is dead right after any
+# `brew` call. Falls back to plain sudo when no password is set.
+sudo_pw() {
+  if [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
+    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@"
+  else
+    sudo "$@"
+  fi
+}
 
 if [[ -d "$DOTFILES_DIR/.git" ]]; then
   if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -89,7 +120,7 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 brew bundle --file brew/Brewfile.base
-sudo brew services start tailscale
+sudo_pw brew services start tailscale
 # `sudo tailscale up --ssh` after `tailscale login`
 mkdir -p "$HOME/.config/mpv"
 stow -t "$HOME" brew mpv nvim tmux yazi zsh

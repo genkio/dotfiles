@@ -130,6 +130,9 @@ echo ""
 PASTE_URL="https://github.com/settings/gpg/new"
 echo "Paste at: $PASTE_URL"
 if command -v open >/dev/null 2>&1; then
-  open "$PASTE_URL"
+  read -r -p "Open in browser? [y/N]: " ans
+  case "$ans" in
+    y|Y|yes|YES) open "$PASTE_URL" ;;
+  esac
 fi
 echo "Test with: echo test | gpg --clearsign --local-user $KEY_ID"

@@ -154,7 +154,10 @@ esac
 if [[ -n "$PASTE_URL" ]]; then
   echo "Paste at: $PASTE_URL"
   if command -v open >/dev/null 2>&1; then
-    open "$PASTE_URL"
+    read -r -p "Open in browser? [y/N]: " ans
+    case "$ans" in
+      y|Y|yes|YES) open "$PASTE_URL" ;;
+    esac
   fi
 fi
 echo "Test with: ssh -T git@${HOSTNAME}"

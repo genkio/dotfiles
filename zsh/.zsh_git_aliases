@@ -89,7 +89,7 @@ gtreen() {
   parent_dir=$(dirname "$main_worktree") || return
   target_dir="$parent_dir/$project_name-${branch//\//-}"
 
-  git worktree add -b "$branch" "$target_dir" "$base" || return
+  git worktree add --no-track -b "$branch" "$target_dir" "$base" || return
   cd "$target_dir"
 }
 

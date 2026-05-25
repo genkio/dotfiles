@@ -131,8 +131,10 @@ if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
 fi
 
 brew bundle --file brew/Brewfile.base
+# sudo: run as root LaunchDaemon for always-on server (no user login required).
+# Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 sudo_pw brew services start tailscale
-# `sudo tailscale up --ssh` after `tailscale login`
+# After bootstrap: `sudo tailscale up --ssh` (prints login URL, auth in browser)
 mkdir -p "$HOME/.config/mpv"
 stow -t "$HOME" brew mpv nvim tmux yazi zsh
 

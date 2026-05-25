@@ -47,6 +47,15 @@
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/no-emdash.sh"
+          }
+        ]
       }
     ],
     "Notification": [

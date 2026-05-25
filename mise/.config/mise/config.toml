@@ -1,7 +1,6 @@
 [tools]
 node = "lts"
 python = "latest"
-java = "temurin-25"
 go = "latest"
 uv = "latest"
 

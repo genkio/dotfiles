@@ -16,6 +16,8 @@ brew bundle --file brew/Brewfile.dev
 stow -t "$HOME" ghostty mise
 
 # mise: node, python, java, go, uv + global npm tools (versions declared in mise/.config/mise/config.toml)
+# Install node first so `npm` exists when activate resolves `npm:*@latest` versions.
+mise install node
 eval "$(mise activate bash)"
 mise install
 

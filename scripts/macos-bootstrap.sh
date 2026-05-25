@@ -353,15 +353,23 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
 elif sudo_pw fdesetup isactive >/dev/null 2>&1; then
   echo "  FileVault already active; skipping enable."
 elif [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
-  # Feed username + password via -inputplist so fdesetup doesn't prompt
-  # interactively. Python handles XML escaping for special chars.
+  # Use SUDO_ASKPASS so the sudo password channel doesn't collide with
+  # fdesetup's plist on stdin (sudo_pw's `printf | sudo -S` would steal stdin
+  # and starve fdesetup -> "Incoming data needs to be in a plist format").
+  ASKPASS_SCRIPT=$(mktemp)
+  cat >"$ASKPASS_SCRIPT" <<'ASKPASS_EOF'
+#!/bin/sh
+printf '%s\n' "$DOTFILES_SUDO_PASSWORD"
+ASKPASS_EOF
+  chmod 700 "$ASKPASS_SCRIPT"
   /usr/bin/python3 -c '
 import os, plistlib, sys
 sys.stdout.buffer.write(plistlib.dumps({
     "Username": os.environ["USER"],
     "Password": os.environ["DOTFILES_SUDO_PASSWORD"],
 }, fmt=plistlib.FMT_XML))
-' | sudo_pw fdesetup enable -inputplist
+' | SUDO_ASKPASS="$ASKPASS_SCRIPT" sudo -A fdesetup enable -inputplist
+  rm -f "$ASKPASS_SCRIPT"
 else
   sudo fdesetup enable
 fi

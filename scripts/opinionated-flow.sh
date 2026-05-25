@@ -119,6 +119,17 @@ if ! command -v stow >/dev/null 2>&1; then
   brew install stow
 fi
 
+# Run early so tap-to-click etc. apply during the long brew bundle below.
+# Homebrew install above pulled in Xcode CLT -> /usr/bin/python3 (Dock mutation) works.
+if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
+  if [[ ! -f scripts/macos-bootstrap.sh ]]; then
+    echo "Error: scripts/macos-bootstrap.sh not found." >&2
+    exit 1
+  fi
+
+  bash scripts/macos-bootstrap.sh
+fi
+
 brew bundle --file brew/Brewfile.base
 sudo_pw brew services start tailscale
 # `sudo tailscale up --ssh` after `tailscale login`
@@ -172,13 +183,4 @@ fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then
   bash scripts/setup-dev.sh
-fi
-
-if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
-  if [[ ! -f scripts/macos-bootstrap.sh ]]; then
-    echo "Error: scripts/macos-bootstrap.sh not found." >&2
-    exit 1
-  fi
-
-  bash scripts/macos-bootstrap.sh
 fi

@@ -137,19 +137,8 @@ defaults_write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 echo "Keyboard: Use F1, F2, etc. as standard function keys"
 defaults_write NSGlobalDomain com.apple.keyboard.fnState -bool true
 
-###############################################################################
-# Accessibility
-###############################################################################
-
-# macOS 26 sandboxes com.apple.universalaccess via TCC, so these writes are
-# typically rejected from a terminal process even with sudo. Failures land in
-# the Skipped summary at the end — toggle them in System Settings →
-# Accessibility → Display when needed.
-echo "Accessibility: Enable Reduce motion"
-defaults_write com.apple.universalaccess reduceMotion -bool true
-
-echo "Accessibility: Enable Reduce transparency (clearer Liquid Glass on macOS 26+)"
-defaults_write com.apple.universalaccess reduceTransparency -bool true
+echo "Keyboard: Press fn key to change input source"
+defaults_write com.apple.HIToolbox AppleFnUsageType -int 1
 
 ###############################################################################
 # Sound

@@ -21,6 +21,7 @@ alias gau="git restore --staged ."
 alias gco="git checkout"
 alias gcof="git checkout -f && git clean -df"
 
+# git checkout <default-branch>
 gcom() {
   local target
 
@@ -32,6 +33,7 @@ gcom() {
   git checkout "${target#origin/}"
 }
 
+# git rebase <default-branch>
 grb() {
   local target
 
@@ -155,6 +157,16 @@ gpuf() {
   git push origin "$br" --force-with-lease
 }
 
+# git reset --soft HEAD~1 (undo last commit, keep changes staged)
 gundo() {
   git reset --soft HEAD~1
+}
+
+# git show --format= <commit> | pbcopy
+gdc() {
+  if [ $# -eq 0 ]; then
+    echo "usage: gdc <commit>" >&2
+    return 1
+  fi
+  git show --format= "$1" | pbcopy
 }

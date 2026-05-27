@@ -5,6 +5,7 @@ brew "gnupg"
 brew "lazydocker"
 brew "lazygit"
 brew "mise"
+brew "xcodesorg/made/xcodes"
 
 cask "codex"
 cask "ghostty"

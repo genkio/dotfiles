@@ -6,14 +6,18 @@
       "context": "Scroll",
       "bindings": {
         "shift+j": "scroll:bottom",
-        "shift+k": "scroll:top"
+        "shift+k": "scroll:top",
+        "shift+u": "scroll:halfPageUp",
+        "shift+d": "scroll:halfPageDown"
       }
     },
     {
       "context": "Transcript",
       "bindings": {
         "shift+j": "scroll:bottom",
-        "shift+k": "scroll:top"
+        "shift+k": "scroll:top",
+        "shift+u": "scroll:halfPageUp",
+        "shift+d": "scroll:halfPageDown"
       }
     }
   ]

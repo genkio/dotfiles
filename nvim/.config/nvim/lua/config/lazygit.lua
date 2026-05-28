@@ -25,17 +25,37 @@ end
 
 local function ensure_delta_config()
   local path = delta_config_path()
-  vim.fn.writefile({
-    '[delta]',
-    'dark = true',
-    'paging = never',
-    'line-numbers = true',
-    'hyperlinks = true',
-    'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
-    'syntax-theme = Monokai Extended',
-    'minus-style = "syntax #3b2240"',
-    'plus-style = "syntax #1f3a32"',
-  }, path)
+  local apple_terminal = vim.env.TERM_PROGRAM == 'Apple_Terminal'
+  local lines
+  if apple_terminal then
+    -- Terminal.app lacks truecolor; truecolor styles render as muddy near-blue
+    -- tones on the light Basic profile. Use a light-theme syntax + ANSI-named
+    -- diff backgrounds so labels stay legible on white.
+    lines = {
+      '[delta]',
+      'light = true',
+      'paging = never',
+      'line-numbers = true',
+      'hyperlinks = true',
+      'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
+      'syntax-theme = GitHub',
+      'minus-style = "syntax auto"',
+      'plus-style = "syntax auto"',
+    }
+  else
+    lines = {
+      '[delta]',
+      'dark = true',
+      'paging = never',
+      'line-numbers = true',
+      'hyperlinks = true',
+      'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
+      'syntax-theme = Monokai Extended',
+      'minus-style = "syntax #3b2240"',
+      'plus-style = "syntax #1f3a32"',
+    }
+  end
+  vim.fn.writefile(lines, path)
   return path
 end
 

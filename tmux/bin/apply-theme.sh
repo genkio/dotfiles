@@ -12,7 +12,9 @@ if ! tmux info >/dev/null 2>&1; then
   exit 0
 fi
 
-if defaults read -g AppleInterfaceStyle 2>/dev/null | grep -q Dark; then
+theme="$("${DOTFILES_DIR:-$HOME/dotfiles}/scripts/current-theme.sh")"
+
+if [ "$theme" = "dark" ]; then
   # Nordfox
   bg='#232831'
   fg='#abb1bb'

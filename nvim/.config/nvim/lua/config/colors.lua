@@ -5,8 +5,9 @@ local function pick_scheme()
 end
 
 local function detect_macos_background()
-  local result = vim.fn.system({ 'defaults', 'read', '-g', 'AppleInterfaceStyle' })
-  if vim.v.shell_error == 0 and result:match('Dark') then
+  local helper = vim.fn.expand('~/dotfiles/scripts/current-theme.sh')
+  local result = vim.fn.system({ helper })
+  if vim.v.shell_error == 0 and result:match('dark') then
     return 'dark'
   end
   return 'light'

@@ -152,6 +152,7 @@ vim.pack.add({
 
 require('config.colors').setup()
 require('config.auto_reload').setup()
+require('config.auto_save').setup()
 require('config.copy_range').setup()
 require('config.directory_resume').setup()
 require('config.diffview').setup()

@@ -28,6 +28,7 @@ nvim
 ## Behaviors
 
 - Files changed on disk are reloaded automatically for normal file buffers.
+- Markdown and plain-text buffers auto-save in single-file sessions, e.g. `vi ~/notes/draft.md` or `vi ~/notes/scratch.txt`. Directory launches such as `vi` or `vi some/folder/` leave auto-save off.
 - Reopening a normal file restores the last cursor position from the `'"` mark.
 - `updatetime` is set to `250ms` so `CursorHold`-based reloads feel responsive in tmux.
 - `nvim .` reopens the last real file you had focused in that directory.
@@ -129,6 +130,13 @@ nvim
 - The copied path is `$HOME`-relative, so files under your home directory show up as `~/…`
 - A multi-line visual selection is appended as `:start-end`
 - A single-line selection, or selecting the whole file, copies just the path
+
+## Auto Save
+
+- Only activates when Neovim is launched with a single file argument that is not a directory (e.g. `vi ~/notes/draft.md`)
+- Bare `vi` and `vi some/folder/` leave auto-save off so normal browse-and-edit sessions are unaffected
+- Once active, any markdown or plain-text buffer in the session is written on `InsertLeave`, `TextChanged`, and `FocusLost`
+- Writes go through normal autocmds so gitsigns, undo history, and `BufWritePost` consumers still update
 
 ## Markdown
 

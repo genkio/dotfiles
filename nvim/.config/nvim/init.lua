@@ -151,5 +151,6 @@ require('config.search_highlight').setup()
 require('config.snacks').setup()
 require('config.statusline').setup()
 require('config.which_key').setup()
+require('config.yank_highlight').setup()
 
 vim.lsp.enable 'ts_ls'

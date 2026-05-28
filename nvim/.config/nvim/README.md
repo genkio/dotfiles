@@ -51,6 +51,7 @@ nvim
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.
+- Yanked text flashes briefly via `vim.hl.on_yank` on `TextYankPost`.
 
 ## Snacks.nvim
 

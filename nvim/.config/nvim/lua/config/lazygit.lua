@@ -15,6 +15,14 @@ local function delta_config_path()
   return '/tmp/nvim-next-delta.gitconfig'
 end
 
+local function osc52_clip_path()
+  return '/tmp/nvim-next-lazygit-osc52-clip.sh'
+end
+
+local function osc52_copy_helper()
+  return vim.fn.expand '~/dotfiles/tmux/bin/osc52-copy.sh'
+end
+
 local function ensure_delta_config()
   local path = delta_config_path()
   vim.fn.writefile({
@@ -27,6 +35,30 @@ local function ensure_delta_config()
     'syntax-theme = Monokai Extended',
     'minus-style = "syntax #3b2240"',
     'plus-style = "syntax #1f3a32"',
+  }, path)
+  return path
+end
+
+-- Lazygit executes copyToClipboardCmd directly via argv (no shell), so a pipe
+-- in the YAML wouldn't work. Drop a tiny wrapper that bridges the {{text}} arg
+-- to osc52-copy.sh's stdin (OSC52 works over SSH + tmux; mirrors to pbcopy locally).
+local function ensure_osc52_clip_script()
+  local copy_helper = osc52_copy_helper()
+  if vim.fn.executable(copy_helper) ~= 1 then
+    return nil
+  end
+
+  local path = osc52_clip_path()
+  vim.fn.writefile({
+    '#!/usr/bin/env bash',
+    'set -euo pipefail',
+    '',
+    'text=${1:-}',
+    'if [ -z "$text" ]; then',
+    '  text=$(cat)',
+    'fi',
+    '',
+    string.format('printf -- \'%%s\' "$text" | %s', copy_helper),
   }, path)
   return path
 end
@@ -51,6 +83,14 @@ local function ensure_override_config(kind, opts)
   end
 
   table.insert(lines, 'promptToReturnFromSubprocess: false')
+
+  local osc52_clip = ensure_osc52_clip_script()
+  if osc52_clip then
+    vim.list_extend(lines, {
+      'os:',
+      '  copyToClipboardCmd: "bash ' .. osc52_clip .. ' {{text}}"',
+    })
+  end
 
   if vim.fn.executable 'delta' == 1 then
     vim.list_extend(lines, {

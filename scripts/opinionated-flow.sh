@@ -84,6 +84,19 @@ sudo_pw() {
   fi
 }
 
+# Skip the slow `brew bundle` install attempt when every entry is already
+# installed AND up-to-date. `brew bundle check` only dependency-resolves
+# (no install). HOMEBREW_NO_AUTO_UPDATE=1 keeps the probe itself fast;
+# the real install below can still auto-update when it actually runs.
+brew_bundle_install() {
+  local file="$1"
+  if HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --file "$file" >/dev/null 2>&1; then
+    echo "brew bundle: $file already satisfied, skipping"
+    return 0
+  fi
+  brew bundle --file "$file"
+}
+
 if [[ -d "$DOTFILES_DIR/.git" ]]; then
   if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Using existing repo at $DOTFILES_DIR"
@@ -130,7 +143,7 @@ if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
   bash scripts/macos-bootstrap.sh
 fi
 
-brew bundle --file brew/Brewfile.base
+brew_bundle_install brew/Brewfile.base
 # sudo: run as root LaunchDaemon for always-on server (no user login required).
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 sudo_pw brew services start tailscale
@@ -179,7 +192,7 @@ else
 fi
 
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
-  brew bundle --file brew/Brewfile.apps
+  brew_bundle_install brew/Brewfile.apps
   stow -t "$HOME" hammerspoon
 fi
 

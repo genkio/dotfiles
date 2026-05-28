@@ -31,7 +31,8 @@ local function ensure_delta_config()
   return path
 end
 
-local function ensure_override_config(kind)
+local function ensure_override_config(kind, opts)
+  opts = opts or {}
   local lines = {
     'gui:',
     '  showCommandLog: false',
@@ -60,12 +61,23 @@ local function ensure_override_config(kind)
     ensure_delta_config()
   end
 
-  local path = override_config_path(kind)
+  if opts.quit_nvim_on_Q then
+    vim.list_extend(lines, {
+      'customCommands:',
+      [[  - key: 'Q']],
+      [[    command: 'nvim --server "$NVIM" --remote-expr ''execute("LazyGitQuitAll")''']],
+      [[    context: 'global']],
+      [[    output: 'none']],
+    })
+  end
+
+  local suffix = opts.quit_nvim_on_Q and '-quitall' or ''
+  local path = override_config_path(kind .. suffix)
   vim.fn.writefile(lines, path)
   return path
 end
 
-local function lazygit_command(kind)
+local function lazygit_command(kind, opts)
   local command = { 'lazygit' }
 
   if kind == 'compact' then
@@ -74,18 +86,18 @@ local function lazygit_command(kind)
 
   vim.list_extend(command, {
     '--use-config-file',
-    ensure_override_config(kind),
+    ensure_override_config(kind, opts),
   })
 
   return command
 end
 
-local function open(kind)
+local function open(kind, opts)
   vim.cmd.tabnew()
   local buf = vim.api.nvim_get_current_buf()
   vim.bo[buf].bufhidden = 'wipe'
 
-  vim.fn.termopen(lazygit_command(kind), {
+  vim.fn.termopen(lazygit_command(kind, opts), {
     cwd = vim.fn.getcwd(),
     on_exit = function()
       vim.schedule(function()
@@ -112,9 +124,40 @@ function M.open_default()
   open 'default'
 end
 
+function M.open_quit_all()
+  open('default', { quit_nvim_on_Q = true })
+end
+
+function M.quit_all()
+  local has_unsaved = false
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.bo[buf].modified and vim.bo[buf].buflisted and vim.bo[buf].buftype == '' then
+      has_unsaved = true
+      break
+    end
+  end
+
+  if not has_unsaved then
+    vim.cmd 'qa!'
+    return
+  end
+
+  local choice = vim.fn.confirm('Unsaved changes. Quit anyway?', '&Save all\n&Discard\n&Cancel', 3)
+
+  if choice == 1 then
+    pcall(vim.cmd, 'wall')
+    vim.cmd 'qa!'
+  elseif choice == 2 then
+    vim.cmd 'qa!'
+  end
+end
+
 function M.setup()
   vim.api.nvim_create_user_command('LazyGit', M.open, {
     desc = 'Open LazyGit with the default layout',
+  })
+  vim.api.nvim_create_user_command('LazyGitQuitAll', M.quit_all, {
+    desc = 'Quit lazygit and Neovim (prompts on unsaved buffers)',
   })
 
   vim.keymap.set('n', '<leader>lg', M.open_default, { desc = 'LazyGit default layout' })

@@ -319,6 +319,14 @@ defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
 defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
 
 ###############################################################################
+# Terminal.app
+###############################################################################
+
+echo "Terminal: Set font size to 13 (default and startup profiles)"
+optional osascript -e 'tell application "Terminal" to set font size of default settings to 13'
+optional osascript -e 'tell application "Terminal" to set font size of startup settings to 13'
+
+###############################################################################
 # Apply Changes
 ###############################################################################
 

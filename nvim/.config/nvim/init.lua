@@ -52,7 +52,23 @@ vim.o.smartcase = true -- case sensitive search if uppercase in string
 local resolved_config_dir = vim.fn.resolve(vim.fn.stdpath 'config')
 local dotfiles_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(resolved_config_dir)))
 
-local is_ssh = vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY
+local function detect_ssh()
+  if vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY then
+    return true
+  end
+  -- When we attach to a pre-existing tmux session, the shell that spawned us may
+  -- predate the SSH attach and miss SSH_CONNECTION entirely. Tmux's session env
+  -- (kept current via update-environment) is the source of truth in that case.
+  if vim.env.TMUX then
+    local result = vim.system({ 'tmux', 'show-environment', 'SSH_CONNECTION' }, { text = true }):wait()
+    if result.code == 0 and result.stdout and result.stdout:match '^SSH_CONNECTION=%S' then
+      return true
+    end
+  end
+  return false
+end
+
+local is_ssh = detect_ssh()
 local osc52_helper = vim.fs.joinpath(dotfiles_root, 'tmux', 'bin', 'osc52-copy.sh')
 
 if is_ssh and vim.env.TMUX and vim.fn.executable(osc52_helper) == 1 then

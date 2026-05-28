@@ -12,5 +12,4 @@ brew "mise"
 cask "codex"
 cask "ghostty"
 cask "orbstack" unless in_vm
-cask "sublime-text"
 cask "tableplus"

@@ -1,4 +1,4 @@
-.PHONY: all bootstrap apps dev ssh gpg
+.PHONY: all bootstrap apps dev stow ssh gpg
 
 all:
 	./scripts/opinionated-flow.sh --bootstrap-macos --include-all
@@ -11,6 +11,9 @@ apps:
 
 dev:
 	./scripts/opinionated-flow.sh --include-dev
+
+stow:
+	./scripts/restow.sh
 
 ssh:
 	./scripts/generate-ssh-key.sh

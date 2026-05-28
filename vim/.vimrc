@@ -7,7 +7,7 @@ set nocompatible " for vim only
 set encoding=utf-8
 set clipboard=unnamed " yank to clipboard (macos only)
 set rnu
-set wrap
+set nowrap
 set wildmenu
 set hlsearch
 set splitbelow
@@ -17,7 +17,8 @@ set undofile
 set undodir=~/.vim/undo
 
 set autoindent
-set tabstop=8       " how many spaces a <Tab> counts for (display)
+set smartindent
+set tabstop=2       " how many spaces a <Tab> counts for (display)
 set softtabstop=2   " how many spaces <Tab> inserts when editing
 set shiftwidth=2    " indentation width
 set expandtab       " use spaces instead of literal tabs

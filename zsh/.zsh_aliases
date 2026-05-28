@@ -13,7 +13,7 @@ alias ccx="claude --dangerously-skip-permissions"
 alias cx="codex"
 
 lg() {
-  vim . -c "lua vim.defer_fn(require('config.lazygit').open_quit_all, 50)"
+  vi . -c "lua vim.defer_fn(require('config.lazygit').open_quit_all, 50)"
 }
 alias ld="lazydocker"
 
@@ -147,7 +147,7 @@ alias ls="eza --group-directories-first"
 alias ll="eza --group-directories-first --all -lh"
 alias lt="eza --group-directories-first --tree --level=2 --icons"
 alias lti="eza --group-directories-first --all --tree --icons"
-vim() {
+vi() {
   if [[ $# -gt 0 ]]; then
     nvim "$@"
   else
@@ -192,7 +192,7 @@ alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
 alias src="source ~/.zshrc"
-alias his="vim ~/.zsh_history"
+alias his="vi ~/.zsh_history"
 
 TMUX_DEFAULT_SESSION="${TMUX_DEFAULT_SESSION:-tmp}"
 

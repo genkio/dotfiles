@@ -16,11 +16,11 @@ Everything below comes from personal configuration (commits to this repo).
 | `vi` / `vi <file>` | `nvim .` / `nvim <file>` |
 | `y` | `yazi` |
 | `cc` | `claude` |
+| `ccx` | `claude --dangerously-skip-permissions` |
 | `cx` | `codex` |
-| `cct` | Run Claude with `claude-trace` |
 | `lg` | `lazygit` |
 | `ld` | `lazydocker` |
-| `cl` | `clear` |
+| `cr` | `clear` |
 | `ex` | `exit` |
 | `ff` | `fastfetch` |
 | `ls` | `eza --group-directories-first` |
@@ -30,9 +30,13 @@ Everything below comes from personal configuration (commits to this repo).
 | `ip` | `ipconfig getifaddr en0` |
 | `cp1` | Copy the last command to clipboard |
 | `src` | `source ~/.zshrc` |
-| `vrc` | Open `~/.zshrc` |
-| `vhi` | Open `~/.zsh_history` |
-| `vrca` | Open `~/.zsh_aliases` |
+| `his` | Open `~/.zsh_history` |
+| `zip <path>` | Zip a file/folder via 7-Zip (no compression), strip macOS metadata, move source to Trash |
+| `unzip <path>` | Extract a `.zip` next to itself; on a folder, extract every `.zip` inside it |
+| `killport <port>` | TERM whatever process is listening on the given TCP port |
+| `kip <port>` | Alias for `killport` |
+| `ltail <path>` | `lnav <path>` (log navigator) |
+| `vmise` | Convert `package.json`'s `volta` versions into `mise use` invocations |
 
 **Tmux helpers**
 

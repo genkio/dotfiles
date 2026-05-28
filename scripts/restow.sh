@@ -28,9 +28,7 @@ mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
 mkdir -p "$HOME/.codex" "$HOME/.codex/skills"
 
 # Packages that stow straight to $HOME with no guards.
-# vim is deliberately omitted: zsh/.zsh_aliases shadows `vi` and `vim` with
-# a function that calls nvim, so ~/.vimrc is never read in practice.
-HOME_PKGS=(brew mpv nvim tmux yazi zsh hammerspoon ghostty mise claude codex)
+HOME_PKGS=(brew mpv nvim tmux yazi zsh hammerspoon ghostty mise claude codex vim)
 
 echo "Restowing into ~: ${HOME_PKGS[*]}"
 stow -R -t "$HOME" "${HOME_PKGS[@]}"

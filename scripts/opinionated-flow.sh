@@ -136,7 +136,7 @@ brew bundle --file brew/Brewfile.base
 sudo_pw brew services start tailscale
 # After bootstrap: `sudo tailscale up --ssh` (prints login URL, auth in browser)
 mkdir -p "$HOME/.config/mpv"
-stow -t "$HOME" brew mpv nvim tmux yazi zsh
+stow -t "$HOME" brew mpv nvim tmux vim yazi zsh
 
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"

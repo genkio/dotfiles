@@ -13,7 +13,7 @@ Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). M
 cd ~/dotfiles && stow zsh
 
 # Apply the core packages
-cd ~/dotfiles && mkdir -p ~/.config/mpv && stow brew git mpv nvim tmux yazi zsh ssh
+cd ~/dotfiles && mkdir -p ~/.config/mpv && stow brew git mpv nvim tmux vim yazi zsh ssh
 
 # Apply optional app packages
 cd ~/dotfiles && stow hammerspoon
@@ -37,7 +37,7 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git mpv nvim tmux yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, mise, codex, etc.), stow `ghostty`, `mise`, and `claude`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew git mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (ghostty, mise, codex, etc.), stow `ghostty`, `mise`, and `claude`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
 
 ## Stow Packages
 
@@ -54,7 +54,7 @@ cd ~/dotfiles && stow -D zsh
 | `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
 | `mise` | `~/.config/mise/` | Polyglot version manager (node/python/java + global npm CLIs) |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; only `settings.json` and `statusline-command.sh` are linked |
-| `vim` | `~/.vimrc` | Legacy vim config |
+| `vim` | `~/.vimrc` | Config for the OS-shipped `/usr/bin/vim`; `vi` is shadowed to nvim via `zsh/.zsh_aliases` |
 | `iterm2` | — | Empty/placeholder |
 
 ## Neovim Config

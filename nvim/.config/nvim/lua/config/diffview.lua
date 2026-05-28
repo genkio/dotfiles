@@ -8,6 +8,34 @@
 local M = {}
 local loaded = false
 
+-- Toggle the file panel and, when closing it, land on the "new" (local) pane
+-- instead of the previous window. After `swap_local_to_left`, `layout.b` holds
+-- the working-tree side, which is what we want focused on close.
+local function toggle_files_focus_new()
+  local ok, lib = pcall(require, 'diffview.lib')
+  if not ok then
+    return
+  end
+
+  local view = lib.get_current_view()
+  if not view or not view.panel then
+    return
+  end
+
+  local was_open = view.panel:is_open()
+  view.panel:toggle(true)
+
+  if not was_open then
+    return
+  end
+
+  local layout = view.cur_layout
+  local win = layout and layout.b and layout.b.id
+  if win and vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_set_current_win(win)
+  end
+end
+
 function M.ensure_loaded()
   if loaded then
     return
@@ -21,6 +49,11 @@ function M.ensure_loaded()
 
   require('diffview').setup {
     use_icons = false,
+    keymaps = {
+      file_panel = {
+        { 'n', '<leader>b', toggle_files_focus_new, { desc = 'Toggle file panel, focus new file on close' } },
+      },
+    },
   }
 
   loaded = true

@@ -15,6 +15,11 @@
       "src": "https://github.com/lewis6991/gitsigns.nvim",
       "version": "'v1.0.0'"
     },
+    "nightfox.nvim": {
+      "rev": "26b61b1f856ec37cae3cb64f5690adb955f246a1",
+      "src": "https://github.com/EdenEast/nightfox.nvim",
+      "version": "'main'"
+    },
     "plenary.nvim": {
       "rev": "fcb3e9ac127d178b4c189088396165b3facc219e",
       "src": "https://github.com/nvim-lua/plenary.nvim",
@@ -23,11 +28,6 @@
     "snacks.nvim": {
       "rev": "ad9ede6a9cddf16cedbd31b8932d6dcdee9b716e",
       "src": "https://github.com/folke/snacks.nvim",
-      "version": "'main'"
-    },
-    "tokyonight.nvim": {
-      "rev": "cdc07ac78467a233fd62c493de29a17e0cf2b2b6",
-      "src": "https://github.com/folke/tokyonight.nvim",
       "version": "'main'"
     },
     "which-key.nvim": {

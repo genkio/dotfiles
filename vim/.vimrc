@@ -7,6 +7,7 @@ set nocompatible " for vim only
 set encoding=utf-8
 set clipboard=unnamed " yank to clipboard (macos only)
 set rnu
+set cursorline " highlight the entire current line
 set nowrap
 set wildmenu
 set hlsearch

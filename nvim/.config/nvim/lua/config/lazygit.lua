@@ -42,7 +42,21 @@ local function ensure_delta_config()
       'minus-style = "syntax auto"',
       'plus-style = "syntax auto"',
     }
+  elseif vim.o.background == 'light' then
+    -- Diff backgrounds match Dawnfox: bg1 #faf4ed blended 20% with red/green base.
+    lines = {
+      '[delta]',
+      'light = true',
+      'paging = never',
+      'line-numbers = true',
+      'hyperlinks = true',
+      'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
+      'syntax-theme = GitHub',
+      'minus-style = "syntax #ecd7d6"',
+      'plus-style = "syntax #dbded4"',
+    }
   else
+    -- Diff backgrounds match Nordfox: bg1 #2e3440 blended 15% with red/green dim.
     lines = {
       '[delta]',
       'dark = true',
@@ -50,9 +64,9 @@ local function ensure_delta_config()
       'line-numbers = true',
       'hyperlinks = true',
       'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
-      'syntax-theme = Monokai Extended',
-      'minus-style = "syntax #3b2240"',
-      'plus-style = "syntax #1f3a32"',
+      'syntax-theme = Nord',
+      'minus-style = "syntax #403843"',
+      'plus-style = "syntax #3c4547"',
     }
   end
   vim.fn.writefile(lines, path)

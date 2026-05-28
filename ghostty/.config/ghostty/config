@@ -2,6 +2,8 @@ window-save-state = "always"
 macos-option-as-alt = true
 confirm-close-surface = false
 
+theme = light:Dawnfox,dark:Nordfox
+
 # Next/previous pane
 keybind = cmd+k=goto_split:next
 keybind = cmd+j=goto_split:previous

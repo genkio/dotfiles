@@ -16,6 +16,7 @@ vim.o.wrap = false
 vim.o.mouse = 'a' -- enable mouse support
 vim.o.number = true -- show line numbers
 vim.o.relativenumber = true
+vim.o.cursorline = true -- highlight the entire current line
 vim.o.confirm = true -- raise dialog asking if you wish to save the current file
 vim.o.undofile = true -- save undo history
 vim.o.scrolloff = 10 -- keep 10 lines above/below cursor
@@ -116,7 +117,7 @@ vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
 
 -- Plugins
 vim.pack.add({
-  { src = 'https://github.com/folke/tokyonight.nvim', version = 'main' },
+  { src = 'https://github.com/EdenEast/nightfox.nvim', version = 'main' },
   { src = 'https://github.com/folke/flash.nvim', version = 'main' },
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },

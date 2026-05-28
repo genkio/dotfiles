@@ -32,7 +32,7 @@ nvim
 - `updatetime` is set to `250ms` so `CursorHold`-based reloads feel responsive in tmux.
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
-- The `tokyonight.nvim` Storm colorscheme is the default theme.
+- The `nightfox.nvim` theme follows macOS appearance: Dawnfox in light mode, Nordfox in dark mode.
 - In JSON and JSONC buffers, `zc` and `zo` on a `{` or `[` manage a manual fold for that exact block under the cursor instead of relying on line-based indent folding.
 - Search defaults to the current working directory, not the git root.
 - `<leader>lg` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.
@@ -92,9 +92,9 @@ nvim
 
 ## Colors
 
-- The default theme is `tokyonight.nvim` Storm
-- `background=dark` uses TokyoNight Storm
-- `background=light` uses TokyoNight's light mode derived from Storm via `light_style = 'storm'`
+- `background` is detected from `defaults read -g AppleInterfaceStyle` at startup and on `FocusGained`
+- `background=light` uses Dawnfox, `background=dark` uses Nordfox
+- An `OptionSet background` autocmd swaps the colorscheme whenever `background` changes
 
 ## Statusline
 
@@ -186,7 +186,7 @@ nvim
 
 ## Notes
 
-- `tokyonight.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
+- `nightfox.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

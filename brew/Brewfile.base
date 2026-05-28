@@ -1,15 +1,18 @@
+in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
+        `/usr/sbin/sysctl -n hw.model 2>/dev/null`.strip.match?(/VirtualMac|VMware|Parallels|QEMU/i)
+
 brew "bat"
 brew "btop"
 brew "genkio/tap/carbonyl"
 brew "eza"
 brew "fastfetch"
 brew "fd"
-brew "ffmpeg"
+brew "ffmpeg" unless in_vm
 brew "fzf"
 brew "jq"
 brew "lnav"
 brew "mole"
-brew "mpv"
+brew "mpv" unless in_vm
 brew "neovim"
 brew "ripgrep"
 brew "sevenzip"

@@ -1,13 +1,16 @@
+in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
+        `/usr/sbin/sysctl -n hw.model 2>/dev/null`.strip.match?(/VirtualMac|VMware|Parallels|QEMU/i)
+
 brew "awscli"
 brew "gh"
 brew "git-delta"
 brew "gnupg"
-brew "lazydocker"
+brew "lazydocker" unless in_vm
 brew "lazygit"
 brew "mise"
 
 cask "codex"
 cask "ghostty"
-cask "orbstack"
+cask "orbstack" unless in_vm
 cask "sublime-text"
 cask "tableplus"

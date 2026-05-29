@@ -40,6 +40,11 @@ if ! command -v claude >/dev/null 2>&1; then
   curl -fsSL https://claude.ai/install.sh | bash
 fi
 
+if ! command -v maestral >/dev/null 2>&1; then
+  uv tool install maestral
+  # Enable autostart on login with `dropbox autostart on`
+fi
+
 # Restore Claude Code settings
 bash scripts/restore-claude-settings.sh
 

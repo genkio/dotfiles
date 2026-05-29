@@ -16,6 +16,7 @@ lg() {
   vi . -c "lua vim.defer_fn(require('config.lazygit').open_quit_all, 50)"
 }
 alias ld="lazydocker"
+alias dropbox="maestral"
 
 zip() {
   if [[ $# -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then

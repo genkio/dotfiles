@@ -1,10 +1,10 @@
 ---
-name: typescript-rules
+name: ts-rules
 description: TypeScript style and safety rules. Use when writing, reviewing, or refactoring TypeScript code. Bans type-system escape hatches (as, !, any, @ts-ignore, eslint-disable), enforces consistent patterns (discriminated unions, exhaustive switches, prefer-const, eqeqeq), and prescribes structural choices (no enum, no Record, pick interface or type).
 license: MIT
 ---
 
-# TypeScript Rules
+# TS Rules
 
 Don't lie to the compiler. Fix types, never silence them.
 

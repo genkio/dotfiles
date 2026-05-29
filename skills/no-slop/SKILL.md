@@ -1,10 +1,10 @@
 ---
-name: karpathy-guidelines
+name: no-slop
 description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, surface assumptions, define verifiable success criteria, prevent shortcuts that create technical debt, and respect the type system in typed languages.
 license: MIT
 ---
 
-# Karpathy Guidelines
+# No-Slop Coding Guidelines
 
 Behavioral guidelines to reduce common LLM coding mistakes, derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
 

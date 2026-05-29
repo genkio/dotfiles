@@ -138,11 +138,11 @@ nvim
 - Once active, any markdown or plain-text buffer in the session is written on `InsertLeave`, `TextChanged`, and `FocusLost`
 - Writes go through normal autocmds so gitsigns, undo history, and `BufWritePost` consumers still update
 
-## Markdown
+## Markdown and Text
 
-- Markdown buffers wrap long lines at window width
+- Markdown and plain-text buffers wrap long lines at window width
 - Wrapping breaks at word boundaries (`linebreak`) and preserves indentation on continuation lines (`breakindent`)
-- The global default elsewhere is `wrap = false`; this is a per-filetype override in `after/ftplugin/markdown.lua`
+- The global default elsewhere is `wrap = false`; this is a per-filetype override in `after/ftplugin/markdown.lua` and `after/ftplugin/text.lua`
 - `j`, `k`, `$`, and `^` move by display line (one visual row per press) so navigation through wrapped paragraphs is row-by-row instead of jumping over whole paragraphs
 - A count still moves by logical line: `5j` jumps 5 real lines, and `2$` still goes to the end of the next logical line
 - Operator-pending motions are unchanged: `dj`, `d$`, `y^`, and `c$` still act on whole logical lines

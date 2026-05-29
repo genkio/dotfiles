@@ -7,7 +7,7 @@
 #
 # To revert to following macOS appearance, delete both:
 #   $XDG_CACHE_HOME/dotfiles/theme-override
-#   ~/.config/ghostty/theme-active.conf
+#   $XDG_CACHE_HOME/dotfiles/ghostty-theme-active.conf
 
 set -euo pipefail
 
@@ -35,6 +35,6 @@ mkdir -p "$(dirname "$ghostty_active")"
 if [ "$next" = "dark" ]; then
   printf 'theme = Nordfox\n' > "$ghostty_active"
 else
-  printf 'theme = Dawnfox\n' > "$ghostty_active"
+  printf 'theme = Dawnfox-soft\n' > "$ghostty_active"
 fi
 pkill -USR2 -x ghostty 2>/dev/null || true

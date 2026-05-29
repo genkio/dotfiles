@@ -2,8 +2,8 @@ window-save-state = "always"
 macos-option-as-alt = true
 confirm-close-surface = false
 
-theme = light:Dawnfox,dark:Nordfox
-# Manual override; theme-toggle.sh writes `theme = Dawnfox` or `theme = Nordfox`
+theme = light:Dawnfox-soft,dark:Nordfox
+# Manual override; theme-toggle.sh writes `theme = Dawnfox-soft` or `theme = Nordfox`
 # here to force one regardless of macOS appearance. Missing file = follow macOS.
 # Lives outside the stowed config dir so it isn't tracked by git.
 config-file = ?~/.cache/dotfiles/ghostty-theme-active.conf

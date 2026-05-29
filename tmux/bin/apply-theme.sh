@@ -27,13 +27,13 @@ if [ "$theme" = "dark" ]; then
   busy='#ebcb8b'
   awaiting='#a3be8c'
 else
-  # Dawnfox
-  bg='#ebe5df'
+  # Dawnfox-soft (status bar recedes below the softer #f2ebe0 editor surface)
+  bg='#e8e0d3'
   fg='#625c87'
   muted='#9893a5'
   border='#bdbfc9'
   active_border='#618774'
-  current_bg='#faf4ed'
+  current_bg='#f2ebe0'
   current_fg='#575279'
   attention='#b4637a'
   busy='#ea9d34'

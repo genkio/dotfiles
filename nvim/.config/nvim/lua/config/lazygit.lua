@@ -43,7 +43,7 @@ local function ensure_delta_config()
       'plus-style = "syntax auto"',
     }
   elseif vim.o.background == 'light' then
-    -- Diff backgrounds match Dawnfox: bg1 #faf4ed blended 20% with red/green base.
+    -- Diff backgrounds match Dawnfox-soft: bg1 #f2ebe0 blended 20% with red/green base.
     lines = {
       '[delta]',
       'light = true',
@@ -52,8 +52,8 @@ local function ensure_delta_config()
       'hyperlinks = true',
       'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
       'syntax-theme = GitHub',
-      'minus-style = "syntax #ecd7d6"',
-      'plus-style = "syntax #dbded4"',
+      'minus-style = "syntax #e6d0cc"',
+      'plus-style = "syntax #d5d7ca"',
     }
   else
     -- Diff backgrounds match Nordfox: bg1 #2e3440 blended 15% with red/green dim.
@@ -110,12 +110,13 @@ local function theme_lines()
       '    selectedLineBgColor: [reverse]',
     }
   elseif vim.o.background == 'light' then
-    -- Dawnfox: highlight_med #dfdad9 is the canonical selected-line bg.
+    -- Dawnfox-soft: selected row matches the editor cursorline (bg3 #e6ddcd) so
+    -- a selection in lazygit reads like a selection in nvim.
     return {
       '  theme:',
       "    activeBorderColor: ['#618774', bold]",
       "    inactiveBorderColor: ['#bdbfc9']",
-      "    selectedLineBgColor: ['#dfdad9']",
+      "    selectedLineBgColor: ['#e6ddcd']",
     }
   else
     -- Nordfox: bg3 #444a55 sits one step above bg1, matches tmux current_bg.

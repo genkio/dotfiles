@@ -26,7 +26,21 @@ function M.setup()
   end
 
   vim.o.background = detect_macos_background()
-  require('nightfox').setup({})
+  require('nightfox').setup({
+    palettes = {
+      -- Softer, slightly darker warm-paper background for Dawnfox light mode.
+      -- bg1 (#f2ebe0) matches the Ghostty `Dawnfox-soft` theme so the editor
+      -- surface is seamless with the terminal. bg0/bg2/bg3 are darkened in step
+      -- to keep float / fold / cursorline layering readable. To dial darker,
+      -- lower these together with Ghostty's Dawnfox-soft `background`.
+      dawnfox = {
+        bg0 = '#e8e0d3', -- status line, floats
+        bg1 = '#f2ebe0', -- default editor background
+        bg2 = '#ece4d7', -- folds, color column
+        bg3 = '#e6ddcd', -- cursor line
+      },
+    },
+  })
   vim.cmd.colorscheme(pick_scheme())
 
   -- Swap fox variants when `:set background=...` toggles at runtime.

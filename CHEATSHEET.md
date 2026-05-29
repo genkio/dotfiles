@@ -20,8 +20,8 @@ Everything below comes from personal configuration (commits to this repo).
 | `cx` | `codex` |
 | `lg` | `lazygit` |
 | `ld` | `lazydocker` |
-| `cr` | `clear` |
-| `ex` | `exit` |
+| `x` | `clear` |
+| `xx` | `exit` |
 | `ff` | `fastfetch` |
 | `ls` | `eza --group-directories-first` |
 | `ll` | `eza --group-directories-first --all -lh` |

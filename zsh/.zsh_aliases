@@ -141,8 +141,8 @@ unzip() {
   _unzip_archive "$sevenzip" "$src"
 }
 
-alias cr="clear"
-alias ex="exit"
+alias x="clear"
+alias xx="exit"
 alias ff="fastfetch"
 alias ls="eza --group-directories-first"
 alias ll="eza --group-directories-first --all -lh"

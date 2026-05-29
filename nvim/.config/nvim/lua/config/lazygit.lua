@@ -97,12 +97,44 @@ local function ensure_osc52_clip_script()
   return path
 end
 
+-- Lazygit's default selectedLineBgColor (blue) renders as muddy dark teal on
+-- Dawnfox light, killing contrast against the red sha / message text. Pick a
+-- bg per theme so the selected row stays legible.
+local function theme_lines()
+  local apple_terminal = vim.env.TERM_PROGRAM == 'Apple_Terminal'
+  if apple_terminal then
+    return {
+      '  theme:',
+      '    activeBorderColor: [green, bold]',
+      '    inactiveBorderColor: [default]',
+      '    selectedLineBgColor: [reverse]',
+    }
+  elseif vim.o.background == 'light' then
+    -- Dawnfox: highlight_med #dfdad9 is the canonical selected-line bg.
+    return {
+      '  theme:',
+      "    activeBorderColor: ['#618774', bold]",
+      "    inactiveBorderColor: ['#bdbfc9']",
+      "    selectedLineBgColor: ['#dfdad9']",
+    }
+  else
+    -- Nordfox: bg3 #444a55 sits one step above bg1, matches tmux current_bg.
+    return {
+      '  theme:',
+      "    activeBorderColor: ['#a3be8c', bold]",
+      "    inactiveBorderColor: ['#5a657d']",
+      "    selectedLineBgColor: ['#444a55']",
+    }
+  end
+end
+
 local function ensure_override_config(kind, opts)
   opts = opts or {}
   local lines = {
     'gui:',
     '  showCommandLog: false',
   }
+  vim.list_extend(lines, theme_lines())
 
   if kind == 'compact' then
     vim.list_extend(lines, {

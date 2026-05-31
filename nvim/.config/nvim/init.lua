@@ -17,6 +17,7 @@ vim.o.mouse = 'a' -- enable mouse support
 vim.o.number = true -- show line numbers
 vim.o.relativenumber = true
 vim.o.cursorline = true -- highlight the entire current line
+vim.o.cursorlineopt = 'number,screenline' -- highlight only cursor's screen row, not whole wrapped line
 vim.o.confirm = true -- raise dialog asking if you wish to save the current file
 vim.o.undofile = true -- save undo history
 vim.o.scrolloff = 10 -- keep 10 lines above/below cursor

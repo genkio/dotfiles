@@ -1,6 +1,7 @@
 vim.opt_local.wrap = true
 vim.opt_local.linebreak = true
 vim.opt_local.breakindent = true
+vim.opt_local.iskeyword:remove '-' -- treat - as word boundary so w/b/e step across hyphenated prose
 
 local function by_display_line(key)
   return function()

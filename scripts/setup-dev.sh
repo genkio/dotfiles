@@ -41,7 +41,7 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 
 if ! command -v maestral >/dev/null 2>&1; then
-  uv tool install maestral
+  mise exec -- uv tool install maestral
   # Enable autostart on login with `dropbox autostart on`
 fi
 

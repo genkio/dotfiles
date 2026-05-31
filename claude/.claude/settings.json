@@ -26,7 +26,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-opus-4-7",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -104,5 +103,6 @@
   "theme": "auto",
   "editorMode": "vim",
   "autoScrollEnabled": false,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "skipWorkflowUsageWarning": true
 }

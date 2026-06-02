@@ -100,9 +100,9 @@
   "effortLevel": "xhigh",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "theme": "auto",
   "editorMode": "vim",
   "autoScrollEnabled": false,
-  "skipAutoPermissionPrompt": true,
-  "skipWorkflowUsageWarning": true
+  "skipAutoPermissionPrompt": true
 }

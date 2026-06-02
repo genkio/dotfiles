@@ -17,5 +17,5 @@ return {
   n = { action = "notification_center" },
   o = { action = "finder_in_ghostty" },
   t = "TablePlus",
-  s = "Sublime Text"
+  s = "Safari"
 }

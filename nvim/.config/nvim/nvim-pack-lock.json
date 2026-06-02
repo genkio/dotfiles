@@ -1,10 +1,5 @@
 {
   "plugins": {
-    "diffview.nvim": {
-      "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
-      "src": "https://github.com/sindrets/diffview.nvim",
-      "version": "'main'"
-    },
     "flash.nvim": {
       "rev": "fcea7ff883235d9024dc41e638f164a450c14ca2",
       "src": "https://github.com/folke/flash.nvim",
@@ -19,11 +14,6 @@
       "rev": "c23bbd3ed2c7a3fdc3399e97e24f9e158f57612f",
       "src": "https://github.com/lewis6991/gitsigns.nvim",
       "version": "'v1.0.0'"
-    },
-    "plenary.nvim": {
-      "rev": "fcb3e9ac127d178b4c189088396165b3facc219e",
-      "src": "https://github.com/nvim-lua/plenary.nvim",
-      "version": "'master'"
     },
     "snacks.nvim": {
       "rev": "ad9ede6a9cddf16cedbd31b8932d6dcdee9b716e",

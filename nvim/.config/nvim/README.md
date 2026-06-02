@@ -38,9 +38,6 @@ nvim
 - Search defaults to the current working directory, not the git root.
 - `<leader>lg` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.
 - `<leader>lG` opens LazyGit in a new tab terminal with the compact layout.
-- `<leader>gd` opens a repo review against the default branch and includes local changes.
-- `<leader>gw` opens a working tree versus index diff for the current repo.
-- Diffview loads on first use instead of at startup.
 - `:!` shell commands can use zsh helper functions from your dotfiles.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
 - Trailing spaces are shown as `+`.
@@ -169,17 +166,6 @@ nvim
 - `<leader>er` returns to the previous explorer when netrw has return state
 - After a restart, `<leader>er` reopens netrw at the current working directory and expands the current file's directory path when possible
 
-## Diffview.nvim
-
-- `plenary.nvim` is installed because Diffview requires it
-- `<leader>gd`: review the current branch against the default branch, including local changes
-- `<leader>gw`: review the working tree against the index
-- `<leader>gD`: close Diffview
-- `<leader>gf`: file history for the current file
-- `<leader>gF`: file history for the current repo
-- Diffview is loaded on first use
-- The default-branch review resolves `origin/HEAD` first, then falls back to `origin/main`, `origin/master`, `main`, or `master`
-
 ## Neovim 0.12 Built-ins
 
 - `v_an`: select the parent node, expanding outward
@@ -195,7 +181,7 @@ nvim
 
 ## Notes
 
-- `flexoki-nvim`, `tokyonight.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
+- `flexoki-nvim`, `tokyonight.nvim`, `snacks.nvim`, `which-key.nvim`, and `gitsigns.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

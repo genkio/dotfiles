@@ -140,24 +140,13 @@ vim.pack.add({
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },
   { src = 'https://github.com/lewis6991/gitsigns.nvim', version = 'v1.0.0' },
-  { src = 'https://github.com/nvim-lua/plenary.nvim', version = 'master' },
 }, { confirm = false })
-
-vim.pack.add({
-  { src = 'https://github.com/sindrets/diffview.nvim', version = 'main' },
-}, {
-  confirm = false,
-  load = function()
-    -- Keep Diffview installed but unloaded until first use.
-  end,
-})
 
 require('config.colors').setup()
 require('config.auto_reload').setup()
 require('config.auto_save').setup()
 require('config.copy_range').setup()
 require('config.directory_resume').setup()
-require('config.diffview').setup()
 require('config.flash').setup()
 require('config.gitsigns').setup()
 require('config.lazygit').setup()

@@ -243,37 +243,6 @@ Usage: press `s`, type one or two characters from the target, then press the lab
 
 On narrow UIs, Yazi switches to a mobile profile with a single main column.
 
-**Neogit (Diffview / Review Helpers)**
-
-| Key | Action |
-|---|---|
-| `d` then `m` | Open PR review diff against the repo default branch (`origin/HEAD`, or fallback `main` / `master`) |
-| `V` | Enter visual-line mode in a hunk so `s` / `u` can stage or unstage selected rows instead of the whole chunk |
-| `<Tab>` | Open the diff for the next file while staying in the diff panes |
-| `<S-Tab>` | Open the diff for the previous file while staying in the diff panes |
-| `<leader>e` | Focus the left file list pane |
-| `gf` | Open the actual local file from Diffview without closing the review tab |
-| `<leader>id` | Open a delta preview float for the current Diffview file |
-| `<leader>ic` | Open the GitHub inline comment composer from Diffview |
-| `<leader>ia` | Open the approve-PR composer from Diffview |
-| visual `<leader>ie` | Open the LLM inline-send composer with selected code reference |
-| normal `<leader>ie` | Open the LLM inline-send composer (or capture current Neogit diff line context) |
-| `<leader>is` in float | Send the inline-send message to the sibling tmux pane |
-| `<leader>ia` in review float | Approve the PR with the typed comment |
-| `<C-s>` in review float | Submit the current review action |
-| `q` / `<Esc>` in float | Cancel and close the inline composer |
-
-With 2 tmux panes, inline-send auto-targets the other pane. With 3+, it shows a picker.
-
-**Diffview (PR diff / history)**
-
-| Key | Action |
-|---|---|
-| `<leader>gd` | Open `DiffviewOpen origin/HEAD...HEAD --imply-local` (merge-base PR diff; local/LSP side swapped to left) |
-| `<leader>gD` | Close Diffview |
-| `<leader>gf` | File history for current file |
-| `<leader>gF` | File history for repo |
-
 **Snacks GitHub (PR / Issues picker)**
 
 | Key | Action |

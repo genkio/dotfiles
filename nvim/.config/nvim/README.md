@@ -33,7 +33,7 @@ nvim
 - `updatetime` is set to `250ms` so `CursorHold`-based reloads feel responsive in tmux.
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
-- The `nightfox.nvim` theme follows macOS appearance: Dawnfox (with a softened, slightly darker background) in light mode, Nordfox in dark mode.
+- The `flexoki-nvim` theme follows macOS appearance: Flexoki Light (the `dawn` variant) in light mode, Flexoki Dark (the `moon` variant) in dark mode.
 - In JSON and JSONC buffers, `zc` and `zo` on a `{` or `[` manage a manual fold for that exact block under the cursor instead of relying on line-based indent folding.
 - Search defaults to the current working directory, not the git root.
 - `<leader>lg` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.
@@ -95,8 +95,8 @@ nvim
 ## Colors
 
 - `background` is detected via `scripts/current-theme.sh` (manual override if set, else macOS appearance) at startup and on `FocusGained`
-- `background=light` uses Dawnfox with its `bg0`-`bg3` overridden in `colors.lua` to a softer, slightly darker warm-paper tone (`bg1=#f2ebe0`) that matches Ghostty's `Dawnfox-soft` theme; `background=dark` uses Nordfox
-- An `OptionSet background` autocmd swaps the colorscheme whenever `background` changes
+- The `flexoki` colorscheme follows `background`: `light` renders the `dawn` variant (Flexoki Light, paper `#fffcf0`) and `dark` renders the `moon` variant (Flexoki Dark, ink `#100f0f`), matching Ghostty's bundled `Flexoki Light` / `Flexoki Dark` themes so the editor surface is seamless with the terminal
+- An `OptionSet background` autocmd re-applies the colorscheme whenever `background` changes so the dawn/moon variant swaps
 
 ## Statusline
 
@@ -195,7 +195,7 @@ nvim
 
 ## Notes
 
-- `nightfox.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
+- `flexoki-nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`, `plenary.nvim`, and `diffview.nvim` are managed by `vim.pack`.
 - The pack lockfile is tracked in `nvim-pack-lock.json`.
 - To add a plugin properly: add it to `vim.pack.add()` in `init.lua`, restart Neovim to install it, then review and commit the plugin spec plus `nvim-pack-lock.json`.
 - To remove a plugin properly: delete its `vim.pack.add()` spec, restart Neovim, then run `:lua vim.pack.del({ 'plugin-name' })`.

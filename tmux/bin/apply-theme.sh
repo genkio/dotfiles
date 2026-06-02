@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Apply Dawnfox (light) or Nordfox (dark) palette to tmux based on the
-# current macOS appearance. Sourced from .tmux.conf at startup/reload,
+# Apply Flexoki Light (light) or Flexoki Dark (dark) palette to tmux based on
+# the current macOS appearance. Sourced from .tmux.conf at startup/reload,
 # and re-run by Hammerspoon when AppleInterfaceThemeChangedNotification
 # fires so the status bar tracks system appearance live.
 
@@ -15,29 +15,29 @@ fi
 theme="$("${DOTFILES_DIR:-$HOME/dotfiles}/scripts/current-theme.sh")"
 
 if [ "$theme" = "dark" ]; then
-  # Nordfox
-  bg='#232831'
-  fg='#abb1bb'
-  muted='#60728a'
-  border='#5a657d'
-  active_border='#a3be8c'
-  current_bg='#444c5e'
-  current_fg='#cdcecf'
-  attention='#bf616a'
-  busy='#ebcb8b'
-  awaiting='#a3be8c'
+  # Flexoki Dark (status bar sits just above the inky #100f0f editor base)
+  bg='#1c1b1a'
+  fg='#878580'
+  muted='#6f6e69'
+  border='#403e3c'
+  active_border='#879a39'
+  current_bg='#282726'
+  current_fg='#cecdc3'
+  attention='#d14d41'
+  busy='#d0a215'
+  awaiting='#879a39'
 else
-  # Dawnfox-soft (status bar recedes below the softer #f2ebe0 editor surface)
-  bg='#e8e0d3'
-  fg='#625c87'
-  muted='#9893a5'
-  border='#bdbfc9'
-  active_border='#618774'
-  current_bg='#f2ebe0'
-  current_fg='#575279'
-  attention='#b4637a'
-  busy='#ea9d34'
-  awaiting='#618774'
+  # Flexoki Light (status bar recedes below the #fffcf0 paper editor surface)
+  bg='#e6e4d9'
+  fg='#6f6e69'
+  muted='#878580'
+  border='#b7b5ac'
+  active_border='#66800b'
+  current_bg='#fffcf0'
+  current_fg='#100f0f'
+  attention='#af3029'
+  busy='#ad8301'
+  awaiting='#66800b'
 fi
 
 # `#,` inside a `#{?cond,then,else}` conditional escapes the comma so it

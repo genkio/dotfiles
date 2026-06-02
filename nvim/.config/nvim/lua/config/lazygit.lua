@@ -43,7 +43,8 @@ local function ensure_delta_config()
       'plus-style = "syntax auto"',
     }
   elseif vim.o.background == 'light' then
-    -- Diff backgrounds match Dawnfox-soft: bg1 #f2ebe0 blended 20% with red/green base.
+    -- Diff backgrounds match Flexoki Light: the #fffcf0 paper base tinted with
+    -- the red-50 / green-50 wash. GitHub keeps code tokens legible on paper.
     lines = {
       '[delta]',
       'light = true',
@@ -52,11 +53,12 @@ local function ensure_delta_config()
       'hyperlinks = true',
       'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
       'syntax-theme = GitHub',
-      'minus-style = "syntax #e6d0cc"',
-      'plus-style = "syntax #d5d7ca"',
+      'minus-style = "syntax #ffe1d5"',
+      'plus-style = "syntax #edeecf"',
     }
   else
-    -- Diff backgrounds match Nordfox: bg1 #2e3440 blended 15% with red/green dim.
+    -- Diff backgrounds match Flexoki Dark: the inky #100f0f base tinted warm
+    -- red / green for deletions and additions.
     lines = {
       '[delta]',
       'dark = true',
@@ -65,8 +67,8 @@ local function ensure_delta_config()
       'hyperlinks = true',
       'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
       'syntax-theme = Nord',
-      'minus-style = "syntax #403843"',
-      'plus-style = "syntax #3c4547"',
+      'minus-style = "syntax #3c1e1b"',
+      'plus-style = "syntax #26301c"',
     }
   end
   vim.fn.writefile(lines, path)
@@ -98,8 +100,8 @@ local function ensure_osc52_clip_script()
 end
 
 -- Lazygit's default selectedLineBgColor (blue) renders as muddy dark teal on
--- Dawnfox light, killing contrast against the red sha / message text. Pick a
--- bg per theme so the selected row stays legible.
+-- the Flexoki light paper, killing contrast against the red sha / message
+-- text. Pick a bg per theme so the selected row stays legible.
 local function theme_lines()
   local apple_terminal = vim.env.TERM_PROGRAM == 'Apple_Terminal'
   if apple_terminal then
@@ -110,21 +112,22 @@ local function theme_lines()
       '    selectedLineBgColor: [reverse]',
     }
   elseif vim.o.background == 'light' then
-    -- Dawnfox-soft: selected row matches the editor cursorline (bg3 #e6ddcd) so
-    -- a selection in lazygit reads like a selection in nvim.
+    -- Flexoki Light: green-600 active border, base-300 inactive, and a base-100
+    -- selected row that reads like the editor cursorline.
     return {
       '  theme:',
-      "    activeBorderColor: ['#618774', bold]",
-      "    inactiveBorderColor: ['#bdbfc9']",
-      "    selectedLineBgColor: ['#e6ddcd']",
+      "    activeBorderColor: ['#66800b', bold]",
+      "    inactiveBorderColor: ['#b7b5ac']",
+      "    selectedLineBgColor: ['#e6e4d9']",
     }
   else
-    -- Nordfox: bg3 #444a55 sits one step above bg1, matches tmux current_bg.
+    -- Flexoki Dark: green-400 active border, base-700 inactive, and a base-900
+    -- selected row one step above the inky #100f0f base, matching tmux current_bg.
     return {
       '  theme:',
-      "    activeBorderColor: ['#a3be8c', bold]",
-      "    inactiveBorderColor: ['#5a657d']",
-      "    selectedLineBgColor: ['#444a55']",
+      "    activeBorderColor: ['#879a39', bold]",
+      "    inactiveBorderColor: ['#575653']",
+      "    selectedLineBgColor: ['#282726']",
     }
   end
 end

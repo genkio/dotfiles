@@ -10,15 +10,15 @@
       "src": "https://github.com/folke/flash.nvim",
       "version": "'main'"
     },
+    "flexoki-nvim": {
+      "rev": "079554c242a86be5d1a95598c7c6368d6eedd7a3",
+      "src": "https://github.com/nuvic/flexoki-nvim",
+      "version": "'main'"
+    },
     "gitsigns.nvim": {
       "rev": "c23bbd3ed2c7a3fdc3399e97e24f9e158f57612f",
       "src": "https://github.com/lewis6991/gitsigns.nvim",
       "version": "'v1.0.0'"
-    },
-    "nightfox.nvim": {
-      "rev": "26b61b1f856ec37cae3cb64f5690adb955f246a1",
-      "src": "https://github.com/EdenEast/nightfox.nvim",
-      "version": "'main'"
     },
     "plenary.nvim": {
       "rev": "fcb3e9ac127d178b4c189088396165b3facc219e",

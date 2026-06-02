@@ -1,9 +1,5 @@
 local M = {}
 
-local function pick_scheme()
-  return vim.o.background == 'light' and 'dawnfox' or 'nordfox'
-end
-
 local function detect_macos_background()
   local helper = vim.fn.expand('~/dotfiles/scripts/current-theme.sh')
   local result = vim.fn.system({ helper })
@@ -25,29 +21,29 @@ function M.setup()
     return
   end
 
-  vim.o.background = detect_macos_background()
-  require('nightfox').setup({
-    palettes = {
-      -- Softer, slightly darker warm-paper background for Dawnfox light mode.
-      -- bg1 (#f2ebe0) matches the Ghostty `Dawnfox-soft` theme so the editor
-      -- surface is seamless with the terminal. bg0/bg2/bg3 are darkened in step
-      -- to keep float / fold / cursorline layering readable. To dial darker,
-      -- lower these together with Ghostty's Dawnfox-soft `background`.
-      dawnfox = {
-        bg0 = '#e8e0d3', -- status line, floats
-        bg1 = '#f2ebe0', -- default editor background
-        bg2 = '#ece4d7', -- folds, color column
-        bg3 = '#e6ddcd', -- cursor line
-      },
-    },
+  -- Flexoki (nuvic/flexoki-nvim). The `flexoki` colorscheme follows
+  -- `vim.o.background`, rendering the `dawn` (light) or `moon` (dark)
+  -- variant. Its palette matches Ghostty's bundled `Flexoki Light` /
+  -- `Flexoki Dark` themes so the editor surface is seamless with the
+  -- terminal.
+  --
+  -- `enable.terminal` is left off on purpose: the plugin's terminal_color
+  -- export mislabels green/blue/cyan, so `:terminal` buffers (e.g. the
+  -- LazyGit launcher) use Nvim's default ANSI palette instead.
+  require('flexoki').setup({
+    variant = 'auto',
   })
-  vim.cmd.colorscheme(pick_scheme())
 
-  -- Swap fox variants when `:set background=...` toggles at runtime.
+  vim.o.background = detect_macos_background()
+  vim.cmd.colorscheme('flexoki')
+
+  -- flexoki reads `background` only when the colorscheme is applied, so
+  -- re-apply it whenever `:set background=...` toggles at runtime to swap
+  -- the dawn/moon variant.
   vim.api.nvim_create_autocmd('OptionSet', {
     pattern = 'background',
     callback = function()
-      vim.cmd.colorscheme(pick_scheme())
+      vim.cmd.colorscheme('flexoki')
     end,
   })
 

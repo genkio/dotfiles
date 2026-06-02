@@ -134,7 +134,7 @@ vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
 
 -- Plugins
 vim.pack.add({
-  { src = 'https://github.com/EdenEast/nightfox.nvim', version = 'main' },
+  { src = 'https://github.com/nuvic/flexoki-nvim', version = 'main' },
   { src = 'https://github.com/folke/flash.nvim', version = 'main' },
   { src = 'https://github.com/folke/snacks.nvim', version = 'main' },
   { src = 'https://github.com/folke/which-key.nvim', version = 'main' },

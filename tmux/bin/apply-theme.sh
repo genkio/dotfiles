@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Apply Flexoki Light (light) or Flexoki Dark (dark) palette to tmux based on
-# the current macOS appearance. Sourced from .tmux.conf at startup/reload,
+# Apply Flexoki Light (light) or TokyoNight Storm (dark) palette to tmux based
+# on the current macOS appearance. Sourced from .tmux.conf at startup/reload,
 # and re-run by Hammerspoon when AppleInterfaceThemeChangedNotification
 # fires so the status bar tracks system appearance live.
 
@@ -15,17 +15,17 @@ fi
 theme="$("${DOTFILES_DIR:-$HOME/dotfiles}/scripts/current-theme.sh")"
 
 if [ "$theme" = "dark" ]; then
-  # Flexoki Dark (status bar sits just above the inky #100f0f editor base)
-  bg='#1c1b1a'
-  fg='#878580'
-  muted='#6f6e69'
-  border='#403e3c'
-  active_border='#879a39'
-  current_bg='#282726'
-  current_fg='#cecdc3'
-  attention='#d14d41'
-  busy='#d0a215'
-  awaiting='#879a39'
+  # TokyoNight Storm (status bar recedes below the #24283b editor surface)
+  bg='#1f2335'
+  fg='#a9b1d6'
+  muted='#565f89'
+  border='#414868'
+  active_border='#9ece6a'
+  current_bg='#3b4261'
+  current_fg='#c0caf5'
+  attention='#f7768e'
+  busy='#e0af68'
+  awaiting='#9ece6a'
 else
   # Flexoki Light (status bar recedes below the #fffcf0 paper editor surface)
   bg='#e6e4d9'

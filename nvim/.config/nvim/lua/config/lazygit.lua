@@ -57,8 +57,8 @@ local function ensure_delta_config()
       'plus-style = "syntax #edeecf"',
     }
   else
-    -- Diff backgrounds match Flexoki Dark: the inky #100f0f base tinted warm
-    -- red / green for deletions and additions.
+    -- Diff backgrounds match TokyoNight Storm: the #24283b base tinted with a
+    -- dim red / green wash. Monokai Extended keeps code legible on the dark bg.
     lines = {
       '[delta]',
       'dark = true',
@@ -66,9 +66,9 @@ local function ensure_delta_config()
       'line-numbers = true',
       'hyperlinks = true',
       'hyperlinks-file-link-format = lazygit-edit://{path}:{line}',
-      'syntax-theme = Nord',
-      'minus-style = "syntax #3c1e1b"',
-      'plus-style = "syntax #26301c"',
+      'syntax-theme = Monokai Extended',
+      'minus-style = "syntax #3b2240"',
+      'plus-style = "syntax #1f3a32"',
     }
   end
   vim.fn.writefile(lines, path)
@@ -121,13 +121,13 @@ local function theme_lines()
       "    selectedLineBgColor: ['#e6e4d9']",
     }
   else
-    -- Flexoki Dark: green-400 active border, base-700 inactive, and a base-900
-    -- selected row one step above the inky #100f0f base, matching tmux current_bg.
+    -- TokyoNight Storm: green active border, dark3 inactive border, and a
+    -- #3b4261 selected row that matches tmux current_bg.
     return {
       '  theme:',
-      "    activeBorderColor: ['#879a39', bold]",
-      "    inactiveBorderColor: ['#575653']",
-      "    selectedLineBgColor: ['#282726']",
+      "    activeBorderColor: ['#9ece6a', bold]",
+      "    inactiveBorderColor: ['#545c7e']",
+      "    selectedLineBgColor: ['#3b4261']",
     }
   end
 end

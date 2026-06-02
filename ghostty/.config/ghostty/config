@@ -2,8 +2,8 @@ window-save-state = "always"
 macos-option-as-alt = true
 confirm-close-surface = false
 
-theme = light:Flexoki Light,dark:Flexoki Dark
-# Manual override; theme-toggle.sh writes `theme = Flexoki Light` or `theme = Flexoki Dark`
+theme = light:Flexoki Light,dark:TokyoNight Storm
+# Manual override; theme-toggle.sh writes `theme = Flexoki Light` or `theme = TokyoNight Storm`
 # here to force one regardless of macOS appearance. Missing file = follow macOS.
 # Lives outside the stowed config dir so it isn't tracked by git.
 config-file = ?~/.cache/dotfiles/ghostty-theme-active.conf

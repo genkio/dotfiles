@@ -9,6 +9,13 @@ local function detect_macos_background()
   return 'light'
 end
 
+-- Light mode uses Flexoki (its `dawn` variant); dark mode uses TokyoNight
+-- Storm. Each matches the corresponding Ghostty theme so the editor surface
+-- stays seamless with the terminal.
+local function pick_scheme()
+  return vim.o.background == 'light' and 'flexoki' or 'tokyonight-storm'
+end
+
 function M.setup()
   -- macOS Terminal.app advertises xterm-256color but does not support
   -- truecolor or report its background via OSC 11, so truecolor schemes
@@ -21,29 +28,29 @@ function M.setup()
     return
   end
 
-  -- Flexoki (nuvic/flexoki-nvim). The `flexoki` colorscheme follows
-  -- `vim.o.background`, rendering the `dawn` (light) or `moon` (dark)
-  -- variant. Its palette matches Ghostty's bundled `Flexoki Light` /
-  -- `Flexoki Dark` themes so the editor surface is seamless with the
-  -- terminal.
-  --
+  -- `flexoki` (nuvic/flexoki-nvim) follows `vim.o.background`; in light mode it
+  -- renders the `dawn` variant matching Ghostty's `Flexoki Light`.
   -- `enable.terminal` is left off on purpose: the plugin's terminal_color
-  -- export mislabels green/blue/cyan, so `:terminal` buffers (e.g. the
-  -- LazyGit launcher) use Nvim's default ANSI palette instead.
+  -- export mislabels green/blue/cyan, so `:terminal` buffers (e.g. the LazyGit
+  -- launcher) use Nvim's default ANSI palette instead.
   require('flexoki').setup({
     variant = 'auto',
   })
+  -- `tokyonight-storm` (folke/tokyonight.nvim) is the dark scheme, matching
+  -- Ghostty's `TokyoNight Storm`.
+  require('tokyonight').setup({
+    style = 'storm',
+  })
 
   vim.o.background = detect_macos_background()
-  vim.cmd.colorscheme('flexoki')
+  vim.cmd.colorscheme(pick_scheme())
 
-  -- flexoki reads `background` only when the colorscheme is applied, so
-  -- re-apply it whenever `:set background=...` toggles at runtime to swap
-  -- the dawn/moon variant.
+  -- Both schemes read `background` only when applied, so re-pick whenever
+  -- `:set background=...` toggles at runtime.
   vim.api.nvim_create_autocmd('OptionSet', {
     pattern = 'background',
     callback = function()
-      vim.cmd.colorscheme('flexoki')
+      vim.cmd.colorscheme(pick_scheme())
     end,
   })
 

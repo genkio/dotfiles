@@ -33,7 +33,7 @@ printf '%s\n' "$next" > "$override"
 # auto-switch line, then SIGUSR2 to make Ghostty reload its config.
 mkdir -p "$(dirname "$ghostty_active")"
 if [ "$next" = "dark" ]; then
-  printf 'theme = Flexoki Dark\n' > "$ghostty_active"
+  printf 'theme = TokyoNight Storm\n' > "$ghostty_active"
 else
   printf 'theme = Flexoki Light\n' > "$ghostty_active"
 fi

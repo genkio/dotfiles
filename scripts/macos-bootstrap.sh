@@ -98,6 +98,21 @@ sudo_pw() {
   fi
 }
 
+# Single cleanup hook: stop the sudo keepalive and remove the FileVault askpass
+# helper, even if the run is interrupted. One EXIT trap so neither clobbers the
+# other (bash keeps only the last trap registered per signal).
+SUDO_KEEPALIVE_PID=""
+ASKPASS_SCRIPT=""
+cleanup() {
+  if [[ -n "$SUDO_KEEPALIVE_PID" ]]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+  fi
+  if [[ -n "$ASKPASS_SCRIPT" ]]; then
+    rm -f "$ASKPASS_SCRIPT"
+  fi
+}
+trap cleanup EXIT
+
 # Ask for admin once up front (used by Firewall, FileVault, and Rosetta).
 # Skip when invoked from opinionated-flow.sh, which already captured the
 # password into DOTFILES_SUDO_PASSWORD; sudo_pw feeds it on every call.
@@ -105,7 +120,6 @@ if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 && -z "${DOTFILES_SUDO_WARME
   sudo -v
   ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
   SUDO_KEEPALIVE_PID=$!
-  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
 fi
 
 ###############################################################################

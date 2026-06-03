@@ -67,7 +67,7 @@ case "$KEY_TYPE" in
   *) echo "Unsupported key type: $KEY_TYPE" >&2; exit 1 ;;
 esac
 
-KEY_PATH="$SSH_DIR/${HOST}"
+KEY_PATH="$SSH_DIR/id_${KEY_TYPE}_${HOST}"
 
 if [[ -e "$KEY_PATH" || -e "${KEY_PATH}.pub" ]]; then
   echo "Key already exists at $KEY_PATH"

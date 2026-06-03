@@ -48,6 +48,9 @@ fi
 # Restore Claude Code settings
 bash scripts/restore-claude-settings.sh
 
-claude plugin marketplace add https://github.com/anthropics/claude-plugins-official.git
+# Idempotent: `add` errors (and aborts under set -e) if the marketplace exists.
+if ! claude plugin marketplace list 2>/dev/null | grep -q 'claude-plugins-official'; then
+  claude plugin marketplace add https://github.com/anthropics/claude-plugins-official.git
+fi
 
 bash scripts/restore-codex-config.sh

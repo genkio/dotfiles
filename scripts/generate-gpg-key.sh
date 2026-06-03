@@ -58,8 +58,22 @@ case "$KEY_TYPE" in
   *) echo "Unsupported key type: $KEY_TYPE (use RSA or EDDSA)" >&2; exit 1 ;;
 esac
 
+# A key for this identity may already exist; generating another leaves
+# duplicate keys in the keyring, and Git keeps using the old user.signingkey
+# unless this script rewrites it below. Default to aborting.
+if gpg --list-secret-keys --with-colons "$EMAIL" 2>/dev/null | grep -q '^sec:'; then
+  echo "A GPG secret key already exists for $EMAIL:"
+  gpg --list-secret-keys --keyid-format=long "$EMAIL" 2>/dev/null || true
+  read -r -p "Create another key anyway? [y/N]: " ans
+  case "$ans" in
+    y|Y|yes|YES) ;;
+    *) echo "Aborting."; exit 1 ;;
+  esac
+fi
+
 BATCH_FILE="$(mktemp -t gpg-genkey.XXXXXX)"
-trap 'rm -f "$BATCH_FILE"' EXIT
+STATUS_FILE="$(mktemp -t gpg-genstatus.XXXXXX)"
+trap 'rm -f "$BATCH_FILE" "$STATUS_FILE"' EXIT
 
 {
   if [[ "$KEY_TYPE" == "EDDSA" ]]; then
@@ -80,12 +94,11 @@ trap 'rm -f "$BATCH_FILE"' EXIT
 } > "$BATCH_FILE"
 
 echo "Generating $KEY_TYPE key for $NAME <$EMAIL> (expires: $EXPIRE)..."
-gpg --batch --generate-key "$BATCH_FILE"
+gpg --batch --status-file "$STATUS_FILE" --generate-key "$BATCH_FILE"
 
-# Find the long key id for the freshly created signing key matching this email.
-KEY_ID="$(gpg --list-secret-keys --with-colons "$EMAIL" \
-  | awk -F: '/^sec:/ {print $5}' \
-  | tail -n 1)"
+# Read the fingerprint straight from gpg's status output for the key we just
+# created, so we never mis-select an older key when several share this email.
+KEY_ID="$(awk '/^\[GNUPG:\] KEY_CREATED/ { print $4 }' "$STATUS_FILE")"
 
 if [[ -z "$KEY_ID" ]]; then
   echo "Could not locate generated key for $EMAIL" >&2

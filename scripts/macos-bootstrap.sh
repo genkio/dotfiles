@@ -48,6 +48,13 @@ else
   echo "macOS major $MACOS_MAJOR detected"
 fi
 
+# Detect a guest VM (mirrors the Brewfile check) so host-only steps such as
+# FileVault can be skipped on virtual machines.
+is_vm() {
+  [[ "$(/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null)" == "1" ]] && return 0
+  /usr/sbin/sysctl -n hw.model 2>/dev/null | grep -qiE 'VirtualMac|VMware|Parallels|QEMU'
+}
+
 # Tracks commands that failed under `optional` so the end of the run can
 # surface them as a manual-followup list (e.g. settings Apple now restricts
 # via TCC on macOS 26).
@@ -359,7 +366,9 @@ else
 fi
 
 echo "Security: Enable FileVault"
-if [[ "$DRY_RUN" -eq 1 ]]; then
+if is_vm; then
+  echo "  Running inside a VM; skipping FileVault."
+elif [[ "$DRY_RUN" -eq 1 ]]; then
   echo "  [dry-run] would check fdesetup isactive and run 'sudo fdesetup enable' if not active"
 elif sudo_pw fdesetup isactive >/dev/null 2>&1; then
   echo "  FileVault already active; skipping enable."

@@ -60,7 +60,8 @@ nvim
 - `<leader>sf`: fuzzy files in the current working directory
 - `<leader>sg`: grep text in the current working directory, literal mode by default
 - `<leader>sG`: grep with prompts for search text, directories, include globs, and exclude globs
-- `<leader>sw`: grep the current word, or the visual selection, in the current working directory
+- `<leader>sw`: grep the current word, or the visual selection, in the current file
+- `<leader>sW`: grep the current word, or the visual selection, in the current working directory
 - `<leader>ss`: document symbols, preferring LSP and falling back to Treesitter
 - `<leader>sS`: workspace symbols from LSP
 - `<leader>sr`: resume the last Snacks picker

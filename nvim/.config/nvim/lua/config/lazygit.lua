@@ -20,7 +20,7 @@ local function osc52_clip_path()
 end
 
 local function osc52_copy_helper()
-  return vim.fn.expand '~/dotfiles/tmux/bin/osc52-copy.sh'
+  return require('config.paths').join('tmux', 'bin', 'osc52-copy.sh')
 end
 
 local function ensure_delta_config()

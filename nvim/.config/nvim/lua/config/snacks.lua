@@ -16,7 +16,7 @@ local function current_cwd()
 end
 
 local function is_dotfiles_dir(path)
-  local root = normalize(vim.fn.expand '~/dotfiles')
+  local root = normalize(require('config.paths').dotfiles_root)
   return path == root or vim.startswith(path, root .. '/')
 end
 
@@ -231,7 +231,15 @@ local function workspace_symbols()
     end
   end
 
-  local lsp = require 'snacks.picker.source.lsp'
+  -- Reaches into snacks' internal picker source (bufmap/request/results_to_items)
+  -- to run a workspace/symbol request from another buffer's client. snacks tracks
+  -- `main`, so guard the internal require and fail soft if a future update moves it.
+  local ok, lsp = pcall(require, 'snacks.picker.source.lsp')
+  if not ok or not (lsp.bufmap and lsp.request and lsp.results_to_items) then
+    vim.notify('Workspace symbols: snacks internal API changed', vim.log.levels.WARN)
+    return
+  end
+
   Snacks.picker.pick {
     source = 'lsp_workspace_symbols',
     filter = { default = true },

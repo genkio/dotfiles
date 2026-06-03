@@ -50,8 +50,7 @@ vim.o.splitbelow = true
 vim.o.ignorecase = true -- case insensitive search
 vim.o.smartcase = true -- case sensitive search if uppercase in string
 
-local resolved_config_dir = vim.fn.resolve(vim.fn.stdpath 'config')
-local dotfiles_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(resolved_config_dir)))
+local dotfiles_root = require('config.paths').dotfiles_root
 
 local function detect_ssh()
   if vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY then

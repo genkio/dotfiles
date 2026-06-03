@@ -1,7 +1,7 @@
 local M = {}
 
 local function detect_macos_background()
-  local helper = vim.fn.expand('~/dotfiles/scripts/current-theme.sh')
+  local helper = require('config.paths').join('scripts', 'current-theme.sh')
   local result = vim.fn.system({ helper })
   if vim.v.shell_error == 0 and result:match('dark') then
     return 'dark'

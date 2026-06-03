@@ -1,6 +1,5 @@
 #!/bin/bash
 # Claude Code Statusline
-# Uses built-in rate_limits from Claude Code v2.1.80+
 
 set -euo pipefail
 
@@ -41,8 +40,6 @@ cwd=$(pwd)
 cwd_display=$cwd
 if [ -n "$HOME" ] && [[ "$cwd_display" == "$HOME"* ]]; then
     cwd_display="~${cwd_display#"$HOME"}"
-elif [[ "$cwd_display" == "/Users/neo"* ]]; then
-    cwd_display="~${cwd_display#/Users/neo}"
 fi
 
 # Git branch
@@ -66,71 +63,7 @@ get_git_changes() {
 
 git_changes=$(get_git_changes 2>/dev/null || true)
 
-# === Parse built-in rate_limits from stdin ===
-
-# Format reset time as absolute time (e.g., "7pm" or "tmr 10pm")
-format_reset_time() {
-    local reset_epoch="$1"
-    [[ -z "$reset_epoch" || "$reset_epoch" == "null" || "$reset_epoch" == "0" ]] && { echo "?"; return; }
-
-    local now today_start
-    now=$(date +%s)
-    today_start=$(date -j -f "%Y-%m-%d %H:%M:%S" "$(date +%Y-%m-%d) 00:00:00" +%s)
-
-    local reset_day_start days_diff
-    reset_day_start=$(date -j -r "$reset_epoch" +%Y-%m-%d 2>/dev/null)
-    reset_day_start=$(date -j -f "%Y-%m-%d %H:%M:%S" "$reset_day_start 00:00:00" +%s 2>/dev/null || echo "$today_start")
-    days_diff=$(( (reset_day_start - today_start) / 86400 ))
-
-    # Round to nearest hour
-    local minutes time_str
-    minutes=$(date -j -r "$reset_epoch" "+%M" 2>/dev/null)
-    if (( 10#$minutes >= 30 )); then
-        reset_epoch=$((reset_epoch + 3600 - (10#$minutes * 60)))
-    fi
-    time_str=$(date -j -r "$reset_epoch" "+%-I%p" 2>/dev/null | tr '[:upper:]' '[:lower:]')
-
-    if (( days_diff == 0 )); then
-        echo "$time_str"
-    elif (( days_diff == 1 )); then
-        echo "tmr $time_str"
-    elif (( days_diff < 7 )); then
-        local day_name
-        day_name=$(date -j -r "$reset_epoch" "+%a" 2>/dev/null)
-        echo "$day_name $time_str"
-    else
-        local date_str
-        date_str=$(date -j -r "$reset_epoch" "+%b%-d" 2>/dev/null)
-        echo "$date_str $time_str"
-    fi
-}
-
-get_usage_info() {
-    local s_pct s_reset w_pct w_reset
-
-    s_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
-    s_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
-    w_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
-    w_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
-
-    # Bail if no rate limit data available
-    [[ -z "$s_pct" && -z "$w_pct" ]] && return 1
-
-    s_pct=$(awk "BEGIN {printf \"%.0f\", ${s_pct:-0}}" 2>/dev/null || echo "?")
-    w_pct=$(awk "BEGIN {printf \"%.0f\", ${w_pct:-0}}" 2>/dev/null || echo "?")
-
-    local s_time w_time
-    s_time=$(format_reset_time "$s_reset")
-    w_time=$(format_reset_time "$w_reset")
-
-    echo "${s_time} (${s_pct}%) · ${w_time} (${w_pct}%)"
-}
-
-# === Build Output ===
-
-usage_info=$(get_usage_info 2>/dev/null || echo "")
-
-# First line: model/tokens plus local repo context
+# Build the status line: model/tokens plus local repo context
 printf "%s · %dk/%s (%s%%) · %s" \
     "$model_id" "$total_k" "$context_display" "$used_percent" "$cwd_display"
 
@@ -141,8 +74,3 @@ if [[ -n "$git_branch" ]]; then
         printf " · %s" "$git_branch"
     fi
 fi
-
-# Second line: usage info from built-in rate_limits
-# if [[ -n "$usage_info" ]]; then
-#     printf "\n%s" "$usage_info"
-# fi

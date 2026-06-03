@@ -174,11 +174,6 @@ if [[ -x "$TPM_DIR/bin/install_plugins" ]]; then
   echo "Installed tmux plugins from ~/.tmux.conf"
 fi
 
-if [[ ! -f "$HOME/.gitignore_global" ]]; then
-  echo "Downloading standard global gitignore to ~/.gitignore_global"
-  curl -fsSL "https://raw.githubusercontent.com/github/gitignore/master/Global/macOS.gitignore" -o "$HOME/.gitignore_global"
-fi
-
 if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
   echo "Skipping git stow: ~/.gitconfig already exists and is not a symlink."
   echo "Move it aside and run 'cd $DOTFILES_DIR && stow git' when you're ready."

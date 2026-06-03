@@ -44,7 +44,7 @@ cd ~/dotfiles && stow -D zsh
 | Package | Target | Notes |
 |---------|--------|-------|
 | `brew` | `~/brew/` | Brewfiles |
-| `git` | `~/.gitconfig` | Shared Git config; private identity in machine-local `~/.gitconfig.local` |
+| `git` | `~/.gitconfig` + `~/.gitignore_global` | Shared Git config and global ignore; private identity in machine-local `~/.gitconfig.local` |
 | `zsh` | `~/.zshrc` | Oh My Zsh + vi mode + aliases |
 | `nvim` | `~/.config/nvim/` | Daily-driver Neovim 0.12 profile launched with `nvim` |
 | `tmux` | `~/.tmux.conf` + `~/bin/` | Prefix: `C-j` / `C-f`; uses TPM + tmux-resurrect |

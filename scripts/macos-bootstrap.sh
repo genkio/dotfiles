@@ -333,7 +333,11 @@ fi
 ###############################################################################
 
 echo "System: Install Rosetta 2"
-run sudo_pw softwareupdate --install-rosetta --agree-to-license || true
+if [[ "$(uname -m)" == "arm64" ]]; then
+  run sudo_pw softwareupdate --install-rosetta --agree-to-license || true
+else
+  echo "  Skipping: Rosetta only applies to Apple Silicon (arch: $(uname -m))"
+fi
 
 echo "Menu Bar: Reduce item spacing"
 defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2

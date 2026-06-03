@@ -207,7 +207,8 @@ local function open(kind, opts)
   local buf = vim.api.nvim_get_current_buf()
   vim.bo[buf].bufhidden = 'wipe'
 
-  vim.fn.termopen(lazygit_command(kind, opts), {
+  vim.fn.jobstart(lazygit_command(kind, opts), {
+    term = true,
     cwd = vim.fn.getcwd(),
     on_exit = function()
       vim.schedule(function()

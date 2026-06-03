@@ -16,22 +16,22 @@ function M.setup()
 
   local map = vim.keymap.set
 
-  map('n', 'gc', function()
+  map('n', ']c', function()
     if vim.wo.diff then
       vim.cmd.normal { ']c', bang = true }
       return
     end
 
-    gitsigns.next_hunk()
+    gitsigns.nav_hunk('next')
   end, { desc = 'Next hunk' })
 
-  map('n', 'gC', function()
+  map('n', '[c', function()
     if vim.wo.diff then
       vim.cmd.normal { '[c', bang = true }
       return
     end
 
-    gitsigns.prev_hunk()
+    gitsigns.nav_hunk('prev')
   end, { desc = 'Previous hunk' })
 
   map('n', '<leader>gp', gitsigns.preview_hunk, { desc = 'Git preview hunk' })

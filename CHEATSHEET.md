@@ -188,15 +188,13 @@ Inline blame is OFF by default. Signs: `+` add, `~` change, `_` delete.
 
 | Key | Action |
 |---|---|
-| `gc` / `gC` | Next / previous git hunk (in a diff, falls back to `]c` / `[c`) |
+| `]c` / `[c` | Next / previous git hunk (built-in diff-change nav inside a diff) |
 | `<leader>gp` | Preview the current hunk |
 | `<leader>gb` | Blame the current line |
 | `<leader>gB` | Open the GitHub PR for the blamed line's commit (needs `gh`) |
 | `<leader>lg` | Open LazyGit (default layout, command log hidden) |
 | `<leader>lG` | Open LazyGit (compact layout for small screens) |
 | `:LazyGit` | Open LazyGit (default layout) |
-
-> Note: `gc` shadows Neovim's built-in `gc` comment operator in normal mode.
 
 ### Motion & jumps (Flash)
 
@@ -263,4 +261,6 @@ Inside Markdown files in an Obsidian/Logseq-style vault (detected by `.obsidian/
 |---|---|
 | `v_an` | Select the parent Treesitter node (expand outward) |
 | `v_in` | Select the child Treesitter node (move inward) |
+| `gcc` / `gc{motion}` | Toggle line comment (current line, or over a motion like `gcip`) |
+| `gc` (visual) | Toggle comment on the selection |
 | `<C-x><C-o>` | Omni completion (used for `[[note]]` / `#tag` in vaults) |

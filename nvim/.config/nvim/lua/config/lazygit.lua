@@ -1,7 +1,8 @@
 -- LazyGit terminal launcher with per-invocation override configs.
 --
 -- The keymaps open LazyGit in a disposable tab terminal, hiding the command log
--- by default and optionally applying a compact layout for smaller screens. When
+-- by default and optionally applying a folded layout that narrows the side
+-- panels into a slim column beside a wide diff. When
 -- delta is available, a temporary config also wires LazyGit's pager to delta so
 -- file links can jump back into Neovim.
 
@@ -140,15 +141,19 @@ local function ensure_override_config(kind, opts)
   }
   vim.list_extend(lines, theme_lines())
 
-  if kind == 'compact' then
+  if kind == 'folded' then
+    -- Normal screen mode keeps all five side panels, but a narrow sidePanelWidth
+    -- plus the focused-panel accordion folds the unfocused panels (branches,
+    -- commits) down to slivers so Files dominates a ~20% left column beside a
+    -- wide Diff. status/stash stay pinned at 3 lines (lazygit has no zero-fold).
     vim.list_extend(lines, {
-      '  screenMode: half',
-      '  portraitMode: auto',
-      '  enlargedSideViewLocation: top',
+      '  screenMode: normal',
+      '  portraitMode: never',
+      '  sidePanelWidth: 0.20',
       '  expandFocusedSidePanel: true',
-      '  expandedSidePanelWeight: 4',
+      '  expandedSidePanelWeight: 20',
       '  mainPanelSplitMode: flexible',
-      '  showPanelJumps: false',
+      '  showPanelJumps: true',
     })
   end
 
@@ -190,10 +195,6 @@ end
 local function lazygit_command(kind, opts)
   local command = { 'lazygit' }
 
-  if kind == 'compact' then
-    vim.list_extend(command, { '--screen-mode', 'half' })
-  end
-
   vim.list_extend(command, {
     '--use-config-file',
     ensure_override_config(kind, opts),
@@ -227,25 +228,27 @@ local function open(kind, opts)
   vim.cmd.startinsert()
 end
 
-function M.open()
-  open 'compact'
+function M.open_folded()
+  open 'folded'
 end
 
 function M.open_default()
   open 'default'
 end
 
+-- Entry point for the terminal `lg` launcher: folded layout, with Q wired to
+-- quit the host Neovim that lg spins up to host LazyGit.
 function M.open_quit_all()
-  open('default', { quit_nvim_on_Q = true })
+  open('folded', { quit_nvim_on_Q = true })
 end
 
 function M.setup()
-  vim.api.nvim_create_user_command('LazyGit', M.open, {
+  vim.api.nvim_create_user_command('LazyGit', M.open_default, {
     desc = 'Open LazyGit with the default layout',
   })
 
   vim.keymap.set('n', '<leader>lg', M.open_default, { desc = 'LazyGit default layout' })
-  vim.keymap.set('n', '<leader>lG', M.open, { desc = 'LazyGit compact layout' })
+  vim.keymap.set('n', '<leader>lf', M.open_folded, { desc = 'LazyGit folded layout' })
 end
 
 return M

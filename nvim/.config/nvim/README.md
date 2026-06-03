@@ -37,7 +37,7 @@ nvim
 - In JSON and JSONC buffers, `zc` and `zo` on a `{` or `[` manage a manual fold for that exact block under the cursor instead of relying on line-based indent folding.
 - Search defaults to the current working directory, not the git root.
 - `<leader>lg` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.
-- `<leader>lG` opens LazyGit in a new tab terminal with the compact layout.
+- `<leader>lf` opens LazyGit in a new tab terminal with the folded layout (20% Files column, other side panels folded to slivers, beside a wide Diff).
 - `:!` shell commands can use zsh helper functions from your dotfiles.
 - Git diff signs appear in the sign column for added, changed, and deleted lines.
 - Trailing spaces are shown as `+`.
@@ -85,9 +85,9 @@ nvim
 ## LazyGit
 
 - `<leader>lg`: open LazyGit with the default layout, but without the command log pane
-- `<leader>lG`: open LazyGit with the compact laptop-oriented layout
+- `<leader>lf`: open LazyGit with the folded layout (20% Files column with the other side panels folded to slivers, beside a wide Diff)
 - `:LazyGit`: open LazyGit with the default layout
-- The compact launcher applies a small-screen layout override for LazyGit, including stacked half-screen mode and a more aggressive focused-side expansion
+- The folded launcher applies a layout override for LazyGit: a narrow side-panel column (~20% width) with the focused-panel accordion folding the unfocused side panels into slivers, beside a wide diff
 - If `delta` is installed, LazyGit uses it as the diff pager via a small launcher-specific override config
 
 ## Colors

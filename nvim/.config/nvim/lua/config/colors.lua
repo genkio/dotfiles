@@ -25,6 +25,21 @@ function M.setup()
     vim.o.termguicolors = false
     vim.o.background = 'light'
     vim.cmd.colorscheme 'morning'
+    -- Copy Normal's background onto EndOfBuffer so the whole editor surface is one shade.
+    local normal = vim.api.nvim_get_hl(0, { name = 'Normal' })
+    local eob = vim.api.nvim_get_hl(0, { name = 'EndOfBuffer' })
+    vim.api.nvim_set_hl(0, 'EndOfBuffer', {
+      ctermfg = eob.ctermfg,
+      ctermbg = normal.ctermbg,
+      fg = eob.fg,
+      bg = normal.bg,
+    })
+    vim.api.nvim_set_hl(0, 'Search', {
+      ctermfg = 16,
+      ctermbg = 116,
+      fg = '#000000',
+      bg = '#87d7d7',
+    })
     return
   end
 

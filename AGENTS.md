@@ -29,10 +29,10 @@ cd ~/dotfiles && stow -D zsh
 
 ## Brewfile Structure
 
-- `brew/Brewfile` — meta file that sources both base and apps
-- `brew/Brewfile.base` — CLI tools (always installed)
-- `brew/Brewfile.apps` — GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` — dev tools (ghostty, gh, mise, codex, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`
+- `brew/Brewfile` - meta file that sources both base and apps
+- `brew/Brewfile.base` - CLI tools (always installed)
+- `brew/Brewfile.apps` - GUI apps (opt-in with `--include-apps`)
+- `brew/Brewfile.dev` - dev tools (ghostty, gh, mise, codex, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup
@@ -65,7 +65,7 @@ Yazi config is stowed separately under `yazi/.config/` for shell `yazi`, with `y
 ## Clipboard / OSC52
 
 A recurring pattern across tools: clipboard integration uses OSC52 escape sequences so copy works over SSH and inside tmux.
-- `tmux/bin/osc52-copy.sh` — tmux copy helper
+- `tmux/bin/osc52-copy.sh` - tmux copy helper
 - Ghostty config enables `clipboard-read = allow` / `clipboard-write = allow`
 
 ## Commit Message Convention
@@ -83,7 +83,7 @@ Examples from history:
 ## Machine-Specific Config
 
 Local overrides not tracked by git go in:
-- `~/.zshrc.local` — sourced at end of .zshrc
-- `~/.local/bin/env` — sourced at end of .zshrc
-- `~/.gitconfig.local` — included from `.gitconfig` for private Git identity; seeded from `git/.gitconfig.local.example`, not stowed
-- `~/.codex/config.toml` — machine-local Codex config; seeded from `codex/.codex/config.toml.example`, not stowed, because Codex persists project trust and permission state there
+- `~/.zshrc.local` - sourced at end of .zshrc
+- `~/.local/bin/env` - sourced at end of .zshrc
+- `~/.gitconfig.local` - included from `.gitconfig` for private Git identity; seeded from `git/.gitconfig.local.example`, not stowed
+- `~/.codex/config.toml` - machine-local Codex config; seeded from `codex/.codex/config.toml.example`, not stowed, because Codex persists project trust and permission state there

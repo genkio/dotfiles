@@ -1,25 +1,25 @@
 # Cheatsheet
 
-Quick reference for all custom and built-in keybindings across tools.
+Quick reference for the custom and notable keybindings across tools.
 Leader key is `<Space>` in Neovim. Tmux prefix is `C-j` or `C-f`.
+
+Everything here comes from this repo's configuration. For the full Neovim
+behavior reference see `nvim/.config/nvim/README.md`.
 
 ---
 
-## Custom
+## Zsh Aliases & Functions
 
-Everything below comes from personal configuration (commits to this repo).
-
-### Zsh Aliases & Functions
-
-| Alias / Fn | Expands To |
+| Alias / Fn | What it does |
 |---|---|
 | `vi` / `vi <file>` | `nvim .` / `nvim <file>` |
 | `y` | `yazi` |
-| `cc` | `claude` |
+| `cc` | `claude`; `cc <text>` starts Claude with that prompt; `cc -<flag>` passes flags through |
 | `ccx` | `claude --dangerously-skip-permissions` |
 | `cx` | `codex` |
-| `lg` | `lazygit` |
+| `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |
+| `dropbox` | `maestral` |
 | `x` | `clear` |
 | `xx` | `exit` |
 | `ff` | `fastfetch` |
@@ -33,21 +33,19 @@ Everything below comes from personal configuration (commits to this repo).
 | `his` | Open `~/.zsh_history` |
 | `zip <path>` | Zip a file/folder via 7-Zip (no compression), strip macOS metadata, move source to Trash |
 | `unzip <path>` | Extract a `.zip` next to itself; on a folder, extract every `.zip` inside it |
-| `killport <port>` | TERM whatever process is listening on the given TCP port |
-| `kip <port>` | Alias for `killport` |
+| `killport <port>` / `kip <port>` | TERM whatever process is listening on the given TCP port |
 | `ltail <path>` | `lnav <path>` (log navigator) |
-| `vmise` | Convert `package.json`'s `volta` versions into `mise use` invocations |
+| `vmise` | Convert `package.json`'s `volta` versions into a `mise use` invocation |
 
 **Tmux helpers**
 
 | Command | What it does |
 |---|---|
 | `tx` | Attach or create default tmux session (`tmp`) |
-| `tx <name>` | Attach to named session |
+| `tx <name>` | Attach to or create a named session |
 | `txk [name]` | Kill named session, defaulting to `tmp` |
 | `txp <profile>` | `tmuxp load -y <profile>` |
 | `txl` | `tmux ls` |
-| `ssht <host>` | SSH + auto-attach tmux on remote |
 
 **Tailscale helpers**
 
@@ -61,11 +59,9 @@ Everything below comes from personal configuration (commits to this repo).
 | Alias / Fn | What it does |
 |---|---|
 | `gs` | `git status` |
-| `gst` | `git stash` |
-| `gstp` | `git stash pop` |
+| `gst` / `gstp` | `git stash` / `git stash pop` |
 | `glo` | `git log --pretty --oneline -5` |
-| `ga` | `git add` |
-| `gaa` | `git add .` |
+| `ga` / `gaa` | `git add` / `git add .` |
 | `gau` | `git restore --staged .` |
 | `gd` | `git diff` |
 | `gco` | `git checkout` |
@@ -74,12 +70,17 @@ Everything below comes from personal configuration (commits to this repo).
 | `grb` | Rebase onto the `origin` default branch |
 | `gbr` | 10 most recent branches with dates |
 | `gcm <msg>` | `git commit -m "<msg>"` |
-| `gpl` | Pull current branch from origin |
-| `gpu` | Push current branch to origin |
-| `gpuf` | Force-push with lease |
-| `gundo` | `git reset --soft HEAD~1` |
+| `gpl` / `gpu` | Pull / push the current branch from/to origin |
+| `gpuf` | Force-push current branch with lease |
+| `gundo` | `git reset --soft HEAD~1` (undo last commit, keep changes staged) |
+| `gdc <commit>` | Copy a commit's diff to the clipboard |
+| `gtreea [branch]` | Add a worktree tracking a remote branch (fzf-picks one if omitted), then `cd` in |
+| `gtreen [branch]` | Add a worktree on a new branch off the default branch, then `cd` in |
+| `gtreer [branch]` | Remove a worktree (fzf-picks one if omitted) and delete its branch, after confirmation |
 
-### Tmux
+---
+
+## Tmux
 
 **Prefix: `C-j` or `C-f`**
 
@@ -87,25 +88,33 @@ Everything below comes from personal configuration (commits to this repo).
 |---|---|
 | `prefix r` | Reload tmux config |
 | `prefix c` | Prompt for name, create new window in current path |
-| `prefix w` | Show list of windows of the current session |
+| `prefix w` | Choose a window from a tree |
 | `prefix v` | Vertical split (side-by-side) in current path |
 | `prefix h` | Horizontal split (top-bottom) in current path |
 | `prefix x` | Kill pane (auto-rebalance) |
 | `prefix X` | Kill all other panes in window |
 | `prefix y` | Toggle synchronize-panes |
 | `prefix T` | Set/edit pane label |
-| `prefix P` | Open GitHub PR from pane label number (needs `GH_PR_BASE_URL`) |
-| `prefix C-s` | Save tmux state (`tmux-resurrect`) |
-| `prefix C-r` | Restore tmux state (`tmux-resurrect`) |
+| `prefix P` | Copy the first number found in the pane label to clipboard |
+| `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |
 | `prefix I` | Install tmux plugins (`tpm`) |
-| `prefix q` | Show pane index numbers (press a number to jump to that pane) |
-| `C-z` | Toggle zoom (no prefix needed) |
-| `C-h/j/k/l` | Navigate between panes (no prefix) |
-| `S-Left / S-Right` | Previous / next window (no prefix) |
-| `C-p / C-n` | Previous / next window (no prefix) |
-| `C-S-Left / C-S-Right` | Reorder window left/right (no prefix) |
+| `prefix q` | Show pane index numbers (press a number to jump) |
 
-`tmux-continuum` auto-saves in the background and auto-restores on tmux server start.
+**No prefix needed**
+
+| Key | Action |
+|---|---|
+| `C-z` / `C-Up` | Toggle pane zoom |
+| `C-h/j/k/l` | Navigate between panes |
+| `C-Down` | Choose a window from a tree (same as `prefix w`) |
+| `S-Left` / `S-Right` | Previous / next window |
+| `C-p` / `C-n` | Previous / next window |
+| `C-S-Left` / `C-S-Right` | Reorder window left / right |
+| `M-1` .. `M-9` | Jump to window 1-9 |
+| `M-0` | Jump to the highest-numbered window |
+| `C-/` (or `C-_`) | Toggle copy-mode |
+
+Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by default), `genkio/tmux-spoony`. Resurrect captures pane contents; save/restore is manual via `prefix C-s` / `prefix C-r`.
 
 **Copy mode (vi keys)**
 
@@ -115,335 +124,143 @@ Everything below comes from personal configuration (commits to this repo).
 | `Enter` | Copy selection (stays in copy mode, OSC52) |
 | Mouse drag | Copy on drag end (OSC52) |
 
-### Ghostty
+---
+
+## Ghostty
 
 | Key | Action |
 |---|---|
 | `Cmd+k` | Next split |
 | `Cmd+j` | Previous split |
+| `Cmd+Shift+[` | Previous tmux window (sends `C-p`) |
+| `Cmd+Shift+]` | Next tmux window (sends `C-n`) |
 | `Shift+Enter` | Insert newline (multi-line prompt) |
 
-Ghostty shell integration enables `sudo`, `ssh-terminfo`, and `ssh-env` so SSH prefers `xterm-ghostty` when the remote host can support it and falls back cleanly when it cannot.
+Theme follows macOS appearance: `Flexoki Light` (light) / `TokyoNight Storm` (dark). `theme-toggle.sh` can force one regardless of appearance. Shell integration enables `sudo`, `ssh-terminfo`, and `ssh-env` so SSH prefers `xterm-ghostty` when the remote supports it.
 
-### Neovim - Custom Keymaps
+---
 
-**File navigation**
+## Neovim
 
-| Key | Action |
-|---|---|
-| `q` | Open Yazi at Git root and reveal current file (falls back to current dir outside Git) |
-| `<leader>cw` | Open Yazi in Neovim's current working directory |
+Neovim 0.12, launched with `nvim`. Plugins (via native `vim.pack`): `flexoki-nvim`, `tokyonight.nvim`, `flash.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`. LSP is core `vim.lsp` (`ts_ls`), no plugin manager UI. The file explorer is netrw; pickers and grep are Snacks.
 
-**Save & quit**
+### File explorer (netrw)
 
 | Key | Action |
 |---|---|
-| `ZZ` | Save + format + close window (built-in vim) |
-| `ZQ` | Close without saving (built-in vim) |
-| `ZW` | Save without auto-format (custom) |
+| `<CR>` (on dir) | Expand / collapse the directory inline (tree view) |
+| `<CR>` (on file) | Open it; closes the preview window if one was open |
+| `p` | Preview the file while keeping focus in netrw (auto-updates as the cursor moves) |
+| `q` | Close the preview window |
+| `<leader>er` | Return to the explorer and reveal the current file (reopens netrw at cwd after a restart) |
 
-**Window navigation (tmux-safe)**
+### Search & pickers (Snacks)
 
 | Key | Action |
 |---|---|
-| `<leader>wh/j/k/l` | Focus left/down/up/right window |
+| `<leader>sf` | Find files in cwd |
+| `<leader>sg` | Grep text in cwd (literal/fixed-string) |
+| `<leader>sG` | Grep with prompts for text, dirs, include globs, exclude globs (`-w` word match) |
+| `<leader>sw` | Grep the word under cursor / visual selection in the **current file** |
+| `<leader>sW` | Grep the word under cursor / visual selection in **cwd** |
+| `<leader>ss` | Document symbols (LSP, falls back to Treesitter) |
+| `<leader>sS` | Workspace symbols (LSP; can bootstrap a client from a hidden project file) |
+| `<leader>sr` | Resume the last Snacks picker |
 
-**LSP (custom keymaps)**
+Inside a Snacks picker (defaults): `<A-h>` toggle hidden, `<A-i>` toggle ignored, `<A-r>` toggle regex, `<C-q>` send to quickfix, `<C-s>` open in hsplit, `<C-v>` open in vsplit, `<C-t>` open in tab.
+When cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
+
+### LSP
+
+Set when an LSP attaches (outside vault markdown buffers):
 
 | Key | Action |
 |---|---|
 | `gd` | Go to definition |
 | `gh` | Hover (preview docs) |
-| `gr` | List references (Telescope) |
-| `gO` | Search symbols in current file (Telescope document symbols) |
-| `gW` | Search symbols across workspace/project (Telescope workspace symbols) |
-| `<leader>rn` | Rename symbol |
-| `<leader>rf` | Rename file (TypeScript, updates imports) |
-| `<leader>ci` | Add missing imports |
-| `<leader>co` | Organize imports |
-| `<leader>ca` | Code action (imports/quickfix) |
-| `<leader>dv` | Definition in vertical split |
-| `<leader>dh` | Definition in horizontal split |
+| `gr` | List references (Snacks picker) |
+| `<leader>xl` | Buffer diagnostics in the location list |
+| `<leader>xx` | Workspace diagnostics in the quickfix list |
 
-**Markdown vault navigation**
+### Git (Gitsigns) & LazyGit
 
-Inside Markdown files that live in an Obsidian/Logseq-style vault (detected by `.obsidian/` or `logseq/config.edn`), `gd` and `gr` are repurposed for note navigation:
+Inline blame is OFF by default. Signs: `+` add, `~` change, `_` delete.
 
 | Key | Action |
 |---|---|
-| `gd` on `[[note]]` | Open the linked note, or create it in the vault's configured new-note folder if missing |
-| `gd` on `#tag` | Open a matching tag page if one exists; otherwise search that tag in the current vault |
-| `gr` on a note page | Search backlinks to the current note in the current vault |
-| `gr` on `#tag` | Search references to that tag in the current vault |
-| Type `[[` | Open completion for linkable notes in the current vault |
-| Type `#` | Open completion for known tags in the current vault |
-| `Tab` | Insert two spaces |
+| `gc` / `gC` | Next / previous git hunk (in a diff, falls back to `]c` / `[c`) |
+| `<leader>gp` | Preview the current hunk |
+| `<leader>gb` | Blame the current line |
+| `<leader>gB` | Open the GitHub PR for the blamed line's commit (needs `gh`) |
+| `<leader>lg` | Open LazyGit (default layout, command log hidden) |
+| `<leader>lG` | Open LazyGit (compact layout for small screens) |
+| `:LazyGit` | Open LazyGit (default layout) |
 
-**Copy range**
+> Note: `gc` shadows Neovim's built-in `gc` comment operator in normal mode.
 
-| Key | Action |
-|---|---|
-| `<leader>yr` | Copy file path + line range to clipboard (normal & visual) |
-
-**Escape alternative**
+### Motion & jumps (Flash)
 
 | Key | Action |
 |---|---|
-| `jk` | Exit insert mode (useful in browser terminals / ttyd) |
+| `s` | Flash jump to a visible target (normal, visual, operator-pending). Press `s`, type 1-2 chars of the target, then the shown label |
+| `f` / `F` / `t` / `T` / `;` / `,` | Flash's enhanced character motions |
 
-### Neovim - Custom Plugins
+In Markdown and plain-text buffers (which wrap), `j` / `k` / `$` / `^` move by **display line**. A count moves by logical line (`5j`), and operator-pending motions stay logical (`dj`, `d$`).
 
-**Auto-session**
+### Markdown vault navigation
 
-Sessions auto-save on exit and auto-restore per directory when opening `nvim` with no arguments.
-
-| Command | Action |
-|---|---|
-| `:SessionSave` | Manually save session |
-| `:SessionRestore` | Manually restore session |
-| `:SessionDelete` | Delete session for cwd |
-| `:Autosession search` | Search and load a session |
-| `:Autosession delete` | Search and delete a session |
-
-**Flash**
+Inside Markdown files in an Obsidian/Logseq-style vault (detected by `.obsidian/` or `logseq/config.edn`):
 
 | Key | Action |
 |---|---|
-| `s` | Jump to visible text in normal, visual, or operator-pending mode |
+| `gd` on `[[note]]` | Open the linked note, or create it in the vault's new-note folder if missing |
+| `gd` on `#tag` | Open a matching tag page if one exists; otherwise search that tag |
+| `gr` on a note | Search backlinks to the current note |
+| `gr` on `#tag` | Search references to that tag |
+| Type `[[` | Omni completion for linkable notes |
+| Type `#` | Omni completion for known tags |
+| `<Tab>` | Insert two spaces |
 
-Usage: press `s`, type one or two characters from the target, then press the label shown on screen. This replaces Vim's built-in `s` substitute mapping.
-
-**LazyGit**
-
-| Key | Action |
-|---|---|
-| `<leader>lg` | Open LazyGit |
-
-**Yazi (file manager)**
+### Editing helpers
 
 | Key | Action |
 |---|---|
-| `q` | Open Yazi at Git root and reveal current file |
-| `<leader>cw` | Open Yazi in current working directory |
-| `z` (inside Yazi) | Fuzzy find from Git root; outside Git, fuzzy find from current Yazi dir |
-| `Z` (inside Yazi) | Jump to a recent directory via zoxide |
-| `/` (inside Yazi) | Search filenames in current view |
-| `f` (inside Yazi) | Filter files by name |
-| `S` (inside Yazi) | Search file contents with ripgrep |
-| `,` (inside Yazi) | Open sort options |
-| `s` / `M` (inside sort options) | Sort by size / modified time (descending) |
-| `c` (inside Yazi) | Open copy options |
-| Status bar | Shows hovered file size in footer |
-| Hidden files | Shown by default |
-| `F1` (inside Yazi) | Show Yazi key help |
-| `C-v` / `C-x` / `C-t` (inside Yazi) | Open selected file in vsplit / hsplit / tab |
-| `C-q` (inside Yazi) | Send selected files to quickfix |
-| `C-\` (inside Yazi) | Change Neovim cwd to Yazi's current directory |
-| `Enter` (files pane) | Toggle the expansion or collapse of the selected directory |
+| `<leader>yr` | Copy file path + line range to clipboard, `$HOME`-relative (normal & visual) |
+| `Q` | Quit all windows (prompts to save/discard on unsaved changes) |
+| `<Esc>` | Clear search highlight and the automatic cursor-word highlight |
+| `zc` / `zo` (JSON/JSONC) | Close / open the `{`...`}` or `[`...`]` block under the cursor |
+| `<leader>` then wait | Which-key popup of leader mappings (groups: Explorer, Git, LazyGit, Search, Diagnostics, Yank) |
+| `<leader>?` | Show buffer-local keymaps |
 
-On narrow UIs, Yazi switches to a mobile profile with a single main column.
+### Automatic behaviors
 
-**Snacks GitHub (PR / Issues picker)**
+- **Directory resume**: `nvim .` reopens the last real file you had focused in that directory.
+- **Auto-save**: markdown / plain-text buffers auto-save on `InsertLeave`, `TextChanged`, `FocusLost`, but only when launched with a single file argument (e.g. `vi ~/notes/draft.md`). Bare `vi` and `vi some/folder/` leave it off.
+- **Auto-reload**: files changed on disk reload automatically (notifies on reload).
+- **Restore cursor**: reopening a file restores the last cursor position.
+- **Cursor-word highlight**: idling on a word highlights its visible occurrences; moving the cursor clears it.
+- **Yank highlight**: yanked text flashes briefly.
+- **Theme follows macOS**: Flexoki Light (light) / TokyoNight Storm (dark), re-checked on focus.
 
-| Key | Action |
-|---|---|
-| `<leader>gi` | GitHub issues (open) |
-| `<leader>gI` | GitHub issues (all) |
-| `<leader>gp` | GitHub pull requests (open) |
-| `<leader>gP` | GitHub pull requests (all) |
-| `<leader>gr` | Resume last GitHub picker |
-| `<leader>gR` | Resume last GitHub diff |
-| In diff preview: `o` | Jump to file at diff line |
-| In diff preview: `a` | Add diff comment |
-| `C-w l` | Focus diff preview pane |
-| `C-w w` | Cycle back to list |
-
-**Gitsigns (extended config)**
-
-Inline blame is ON by default (current line).
-
-| Key | Action |
-|---|---|
-| `]c` / `[c` | Next / previous git hunk |
-| `<leader>hs` | Stage hunk (normal + visual) |
-| `<leader>hr` | Reset hunk (normal + visual) |
-| `<leader>hS` | Stage entire buffer |
-| `<leader>hu` | Undo stage hunk |
-| `<leader>hR` | Reset entire buffer |
-| `<leader>hp` | Preview hunk |
-| `<leader>hb` | Blame current line |
-| `<leader>hB` | Blame current line (full commit) |
-| `<leader>hd` | Diff against index |
-| `<leader>hD` | Diff against last commit |
-| `<leader>hm` | Diff against main/master |
-| `<leader>ho` | Open PR/commit for blamed line (GitHub: PR → commit fallback, Bitbucket: commit page) |
-| `<leader>tb` | Toggle inline blame |
-| `<leader>tD` | Toggle deleted lines preview |
-
-**Other custom behaviors**
-
-- Hyphenated words treated as one word (`ciw` on `<some-component>`) in HTML/JSX/TSX/Vue/Svelte
-- OSC52 clipboard: over SSH inside tmux, yanking uses the `osc52-copy.sh` helper; outside tmux it uses Neovim's built-in OSC52 provider
-- Telescope searches from git root; includes hidden files in `~/dotfiles`
-- Live grep defaults to fixed-string (`-F`); use `<leader>sG` for regex, `<leader>sa` for raw rg args
-
-### Neovim - Custom Telescope grep tips
-
-| Key (in live grep args picker) | Action |
-|---|---|
-| `C-k` | Toggle quoting around prompt |
-| `C-f` | Insert `--glob ` flag for file filtering |
-
-Example raw args: `myFunction --glob 'packages/backend/**'`
-
----
-
-## Out-of-the-Box (Kickstart.nvim)
-
-Features that come with the kickstart base config. You might not remember these exist.
-
-### Vim Options Worth Knowing
+### Vim options worth knowing
 
 | Setting | What it does |
 |---|---|
-| Relative line numbers | Enabled - jump with `5j`, `12k`, etc. |
-| `inccommand = 'split'` | Live preview of `:s/old/new/g` substitutions in a split |
-| `scrolloff = 10` | Cursor stays 10 lines from edge when scrolling |
+| Relative + absolute line numbers | Jump with `5j`, `12k`; current line shows its absolute number |
+| `inccommand = 'split'` | Live preview of `:s/old/new/g` in a split |
+| `scrolloff = 10` | Cursor stays 10 lines from the edge |
 | `confirm` | Prompts to save instead of erroring on `:q` with unsaved changes |
 | `undofile` | Undo history persists across sessions |
-| `clipboard = 'unnamedplus'` | Yank syncs to the OS clipboard locally; over SSH inside tmux it uses the OSC52 helper, otherwise it forces `g:clipboard = 'osc52'` |
-| Folding | Manual folds are available with `zc`/`zo`/`za` (starts open) |
-| Whitespace chars | Tabs shown as `>>`, trailing spaces as `*`, nbsp as `_` |
+| `clipboard = 'unnamedplus'` | Yank syncs to the OS clipboard locally; over SSH it uses OSC52 (the `osc52-copy.sh` helper inside tmux, the built-in provider otherwise) |
+| `signcolumn = 'yes'` | Gutter always present so it does not jump |
+| `ignorecase` + `smartcase` | Case-insensitive search unless the pattern has uppercase |
+| `iskeyword += '-'` | Hyphenated words count as one word (`ciw` on `<some-component>`); prose buffers (markdown/text) treat `-` as a word boundary instead |
+| Whitespace | Trailing spaces shown as `+` |
 
-### Which-Key
-
-Press any prefix key and **wait** - a popup shows all available continuations. Instant discovery of keymaps you forgot.
-
-| Key | What it shows |
-|---|---|
-| `<leader>` then wait | All leader keymaps grouped by category |
-| `<leader>s` | All **[S]earch** commands |
-| `<leader>t` | All **[T]oggle** commands |
-| `<leader>h` | All **Git [H]unk** commands |
-
-### Telescope (Fuzzy Finder)
+### Neovim 0.12 built-ins
 
 | Key | Action |
 |---|---|
-| `<leader>sf` | Find files |
-| `<leader>sg` | Live grep (fixed-string) |
-| `<leader>sG` | Live grep (regex) |
-| `<leader>sa` | Live grep with raw rg args |
-| `<leader>sw` | Grep current word under cursor |
-| `<leader>sh` | Search help tags |
-| `<leader>sk` | Search all keymaps |
-| `<leader>ss` | Search Telescope builtins themselves |
-| `<leader>sd` | Search diagnostics |
-| `<leader>sr` | Resume last search |
-| `<leader>s.` | Recent files |
-| `<leader>sn` | Search Neovim config files |
-| `<leader>s/` | Grep only in open files |
-| `<leader>/` | Fuzzy find in current buffer |
-| `<leader><leader>` | Switch between open buffers |
-
-**Inside any Telescope picker:**
-
-| Key | Action |
-|---|---|
-| `C-/` (insert mode) | Show picker keymaps help |
-| `?` (normal mode) | Show picker keymaps help |
-| `C-n` / `C-p` | Next / previous result |
-| `<Esc>` | Close picker |
-
-### LSP (Kickstart defaults)
-
-These are set when an LSP attaches to a buffer:
-
-| Key | Action |
-|---|---|
-| `grn` | Rename symbol |
-| `gra` | Code action (normal + visual) |
-| `grr` | Find references (Telescope) |
-| `gri` | Go to implementation (Telescope) |
-| `grd` | Go to definition (Telescope) |
-| `grD` | Go to declaration |
-| `grt` | Go to type definition |
-| `gO` | Document symbols (Telescope) |
-| `gW` | Workspace symbols (Telescope) |
-| `<leader>th` | Toggle inlay hints |
-| `<leader>q` | Open diagnostic quickfix list |
-
-LSP also auto-highlights all references of the symbol under your cursor after a short pause.
-
-### Autoformat (Conform)
-
-| Key | Action |
-|---|---|
-| `<leader>f` | Format buffer manually |
-| (on save) | Auto-formats on save (Lua: stylua, JS/TS/JSX/TSX: prettier) |
-
-In markdown note vaults, formatting currently normalizes nested bullet indentation so a child list item is at most one indent level deeper than its parent list item.
-
-Disable auto-format temporarily with `ZW` (custom) or set `vim.g.disable_autoformat = true`.
-
-### Autocompletion (Blink.cmp)
-
-Preset: **enter** to accept.
-
-| Key | Action |
-|---|---|
-| `<Enter>` | Accept completion |
-| `<C-space>` | Open completion menu / toggle docs |
-| `<C-n>` / `<C-p>` | Next / previous suggestion |
-| `<C-e>` | Dismiss menu |
-| `<C-k>` | Toggle signature help |
-| `<Tab>` / `<S-Tab>` | Jump to next/prev snippet placeholder |
-
-Signature help auto-shows while typing function arguments.
-
-### Mini.nvim
-
-**Surround** (`sa` / `sd` / `sr`)
-
-| Key | Action | Example |
-|---|---|---|
-| `saiw)` | Surround word with parens | `hello` -> `(hello)` |
-| `sa2w"` | Surround 2 words with quotes | `hello world` -> `"hello world"` |
-| `sd"` | Delete surrounding quotes | `"hello"` -> `hello` |
-| `sr)"` | Replace `()` with `""` | `(hello)` -> `"hello"` |
-| `sf)` | Find next `)` surround | |
-| `sF)` | Find previous `)` surround | |
-
-**AI textobjects** (better around/inside)
-
-Works with any operator (`d`, `c`, `y`, `v`, etc.):
-
-| Key | Selects |
-|---|---|
-| `va)` / `vi)` | Around/inside parentheses |
-| `va"` / `vi"` | Around/inside quotes |
-| `vaf` / `vif` | Around/inside function call |
-| `vaa` / `via` | Around/inside argument |
-| `vab` / `vib` | Around/inside brackets |
-| `vat` / `vit` | Around/inside tags |
-
-### Todo Comments
-
-Highlights `TODO`, `FIXME`, `HACK`, `WARN`, `NOTE`, `PERF` in comments. Search them with `:TodoTelescope`.
-
-### Other Built-in Keymaps
-
-| Key | Action |
-|---|---|
-| `<Esc>` | Clear search highlights |
-| `<Esc><Esc>` (terminal) | Exit terminal mode |
-| `<C-h/j/k/l>` | Navigate between splits |
-| `yap` | Yank a paragraph (highlights on yank) |
-
-### Plugin Management (Lazy.nvim)
-
-| Command | Action |
-|---|---|
-| `:Lazy` | Open plugin manager UI |
-| `:Lazy update` | Update all plugins |
-| `:Mason` | Open LSP/tool installer UI |
+| `v_an` | Select the parent Treesitter node (expand outward) |
+| `v_in` | Select the child Treesitter node (move inward) |
+| `<C-x><C-o>` | Omni completion (used for `[[note]]` / `#tag` in vaults) |

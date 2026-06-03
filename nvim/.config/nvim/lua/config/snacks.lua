@@ -264,12 +264,27 @@ local function workspace_symbols()
   }
 end
 
+-- The reference list truncates long paths in the left pane, so surface the full
+-- (cwd/home-relative) path as the preview pane title instead of just the filename.
+local function set_preview_title_to_path(item)
+  if item.file then
+    item.preview_title = vim.fn.fnamemodify(item.file, ':~:.')
+  end
+end
+
 function M.setup()
   local Snacks = require 'snacks'
 
   Snacks.setup {
     picker = {
       enabled = true,
+      -- Default is 5000ms: a slow picker (LSP refs in a big monorepo, large grep)
+      -- shows nothing until results arrive. Lower it so the picker opens quickly
+      -- with its built-in spinner + count acting as a loading indicator.
+      show_delay = 100,
+      sources = {
+        lsp_references = { transform = set_preview_title_to_path },
+      },
     },
   }
 

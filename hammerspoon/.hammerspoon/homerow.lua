@@ -4,6 +4,10 @@
 -- (buttons, links, text fields, list rows, tabs, etc.) in the focused
 -- window. Type the hint characters to activate the target element.
 --
+-- RIGHT-CLICK MODE (Ctrl+/) - Identical to hint mode, but activating a
+-- label right-clicks the element (opens its context menu) instead of
+-- left-clicking. Labels are tinted blue to signal the different verb.
+--
 -- SCROLL MODE (Ctrl+.) — Scroll the focused window with the keyboard.
 -- If the focused window has multiple scrollable panes (e.g. a sidebar +
 -- content list in a database app or IDE), a numbered picker appears
@@ -42,6 +46,7 @@ local HINT_CHARS = "asdfjklgh"
 local TRIGGER_MODS = { "ctrl" }
 local TRIGGER_KEY = ","
 local SCROLL_TRIGGER_KEY = "."
+local RIGHT_CLICK_TRIGGER_KEY = "/"
 local DISMISS_TIMEOUT = 15
 local MAX_DEPTH = 30
 local WALK_DEADLINE_SECS = 1.5
@@ -70,10 +75,33 @@ local MATCHED_BG = { red = 0.2, green = 0.8, blue = 0.3, alpha = 0.95 }
 local MATCHED_BORDER = { red = 0.1, green = 0.6, blue = 0.2, alpha = 0.8 }
 local MATCHED_TEXT_COLOR = { white = 1, alpha = 1 }
 
+-- Right-click mode reuses the hint pipeline; blue badges signal the
+-- different verb (context menu vs left click).
+local RCLICK_BADGE_BG = { red = 0.42, green = 0.6, blue = 1.0, alpha = 0.95 }
+local RCLICK_BADGE_BORDER = { red = 0.2, green = 0.4, blue = 0.85, alpha = 0.85 }
+
+-- Hint mode is "select a target, then run a verb on it". The verb is a
+-- parameter: each entry pairs the click to post with the badge palette
+-- that signals it. A future double-click etc. is just another entry.
+local HINT_ACTIONS = {
+  click = {
+    perform = function(point) eventtap.leftClick(point) end,
+    badgeBg = BADGE_BG,
+    badgeBorder = BADGE_BORDER,
+  },
+  rightClick = {
+    perform = function(point) eventtap.rightClick(point) end,
+    badgeBg = RCLICK_BADGE_BG,
+    badgeBorder = RCLICK_BADGE_BORDER,
+  },
+}
+
 -- State
 local hintCanvas = nil
 local keyTap = nil
 local hotkey = nil
+local rightClickHotkey = nil
+local hintAction = HINT_ACTIONS.click
 local inputBuffer = ""
 local activeHints = {}
 local isActive = false
@@ -766,8 +794,8 @@ local function showHints(hints, frame)
     local bx = badgeFrame.x
     local by = badgeFrame.y
 
-    local bgColor = isMatched and MATCHED_BG or BADGE_BG
-    local borderColor = isMatched and MATCHED_BORDER or BADGE_BORDER
+    local bgColor = isMatched and MATCHED_BG or hintAction.badgeBg
+    local borderColor = isMatched and MATCHED_BORDER or hintAction.badgeBorder
     local textColor = isMatched and MATCHED_TEXT_COLOR or BADGE_TEXT_COLOR
 
     local arrowFill, arrowBorder = buildArrowGeometry(hint, frame, badgeFrame)
@@ -864,9 +892,10 @@ end
 -- AXPress looks appealing but silently fails on many controls (terminal
 -- tabs, browser elements, some buttons) — pcall returns true but nothing
 -- happens, with no way to detect the failure.
-local function activateElement(hint)
+local function activateElement(hint, action)
   local elem = hint.element
   local role = hint.role or ""
+  action = action or hintAction
 
   -- Focus text inputs before clicking to place cursor
   if role == "AXTextField" or role == "AXTextArea" or role == "AXComboBox"
@@ -880,7 +909,7 @@ local function activateElement(hint)
   local point = hs.geometry.point(hint.center.x, hint.center.y)
   hs.mouse.absolutePosition(point)
   hs.timer.usleep(30000) -- 30ms settle (neru uses similar post-move delay)
-  eventtap.leftClick(hint.center)
+  action.perform(hint.center)
 end
 
 -- Show a subtle scan indicator at the top-right corner
@@ -894,7 +923,7 @@ local function showScanIndicator(frame)
   scanCanvas = canvas.new({ x = x, y = y, w = w, h = h })
   scanCanvas:insertElement({
     type = "circle",
-    fillColor = BADGE_BG,
+    fillColor = hintAction.badgeBg,
     strokeColor = { alpha = 0 },
     center = { x = w / 2, y = h / 2 },
     radius = w / 2 - 1,
@@ -977,7 +1006,8 @@ local function startKeyTap()
     local flags = event:getFlags()
     if flags.cmd or flags.ctrl or flags.alt then
       exitHintMode()
-      if flags.ctrl and not flags.cmd and not flags.alt and char == TRIGGER_KEY then
+      if flags.ctrl and not flags.cmd and not flags.alt
+        and (char == TRIGGER_KEY or char == RIGHT_CLICK_TRIGGER_KEY) then
         return true
       end
       return false
@@ -1020,11 +1050,12 @@ local function startKeyTap()
     -- Exact single match: activate
     if #matches == 1 and matches[1].label == inputBuffer then
       local target = matches[1]
+      local action = hintAction
       exitHintMode()
       -- Brief delay so the window server fully removes the overlay
       -- before the synthetic click lands on the target app
       hs.timer.doAfter(0.05, function()
-        activateElement(target)
+        activateElement(target, action)
       end)
       return true
     end
@@ -1135,11 +1166,13 @@ end
 
 -- Enter hint mode: show indicator, then defer the tree walk so the
 -- indicator canvas renders before the synchronous work blocks Lua
-local function enterHintMode()
+local function enterHintMode(action)
   if isActive then
     exitHintMode()
     return
   end
+
+  hintAction = action or HINT_ACTIONS.click
 
   local app = hs.application.frontmostApplication()
   if not app then return end
@@ -1569,7 +1602,12 @@ local function enterScrollMode()
 end
 
 function M.start()
-  hotkey = hs.hotkey.bind(TRIGGER_MODS, TRIGGER_KEY, enterHintMode)
+  hotkey = hs.hotkey.bind(TRIGGER_MODS, TRIGGER_KEY, function()
+    enterHintMode(HINT_ACTIONS.click)
+  end)
+  rightClickHotkey = hs.hotkey.bind(TRIGGER_MODS, RIGHT_CLICK_TRIGGER_KEY, function()
+    enterHintMode(HINT_ACTIONS.rightClick)
+  end)
   scrollHotkey = hs.hotkey.bind(TRIGGER_MODS, SCROLL_TRIGGER_KEY, enterScrollMode)
 
   -- Pre-warm renderer accessibility on every app activation. The
@@ -1597,6 +1635,10 @@ function M.stop()
   if hotkey then
     hotkey:delete()
     hotkey = nil
+  end
+  if rightClickHotkey then
+    rightClickHotkey:delete()
+    rightClickHotkey = nil
   end
   if scrollHotkey then
     scrollHotkey:delete()

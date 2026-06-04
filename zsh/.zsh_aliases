@@ -16,6 +16,118 @@ lg() {
   vi . -c "lua vim.defer_fn(require('config.lazygit').open_quit_all, 50)"
 }
 alias ld="lazydocker"
+
+# lazysql launcher with docker auto-discovery.
+#   lq             in a repo -> find its dockerized DBs, pick one, connect
+#   lq -r          same, read-only
+#   lq <url|flags> pass straight through to lazysql
+# host:port come from each container's live published binding, so non-default
+# hosts (e.g. a sandbox IP override in some .env) resolve right - nothing hardcoded.
+lq() {
+  local -a pre
+  if [[ "$1" == "-r" || "$1" == "--read-only" ]]; then
+    pre+=(--read-only)
+    shift
+  fi
+  if (( $# > 0 )); then
+    lazysql "${pre[@]}" "$@"
+    return
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "lq: docker not found" >&2
+    return 1
+  fi
+  local ids_raw
+  if ! ids_raw="$(docker ps -q 2>/dev/null)"; then
+    echo "lq: cannot talk to docker (is the daemon running?)" >&2
+    return 1
+  fi
+
+  local repo
+  repo="$(git rev-parse --show-toplevel 2>/dev/null)" || repo="$PWD"
+
+  # image -> driver, live binding -> host:port, env -> creds; emit "label<TAB>url"
+  local prog='def val($env; $k): ($env | map(select(startswith($k + "="))) | (.[0] // "") | sub("^[^=]+=";""));
+.[]
+| ((.Config.Image // "") | ascii_downcase) as $img
+| (if   ($img|test("postgres|postgis"))          then {drv:"postgres",port:5432}
+   elif ($img|test("mysql|mariadb|percona"))     then {drv:"mysql",port:3306}
+   elif ($img|test("mssql|sqlserver|azure-sql")) then {drv:"mssql",port:1433}
+   else null end) as $d
+| select($d != null)
+| { env:   (.Config.Env // []),
+    ports: (.NetworkSettings.Ports // {}),
+    svc:   ((.Config.Labels["com.docker.compose.service"]) // ((.Name // "") | ltrimstr("/"))),
+    wd:    (.Config.Labels["com.docker.compose.project.working_dir"] // "") } as $c0
+| select($c0.wd == $repo or ($c0.wd | startswith($repo + "/")))
+| (($d.port|tostring) + "/tcp") as $pkey
+| (($c0.ports[$pkey]) // []) as $primary
+| (if ($primary|length) > 0 then $primary
+   else ($c0.ports | to_entries | map(select(.key | endswith("/tcp")) | .value) | map(select(. != null)) | add // [])
+   end) as $binds
+| ($binds | map(select(.HostPort != null and .HostPort != ""))) as $valid
+| select(($valid|length) > 0)
+| (($valid | map(select((.HostIp // "") | test(":") | not))) as $v4
+   | (if ($v4|length) > 0 then $v4[0] else $valid[0] end)) as $b
+| ($b.HostPort) as $port
+| (($b.HostIp // "")) as $hip
+| (if $hip == "" or $hip == "0.0.0.0" or $hip == "::" then "127.0.0.1" else $hip end) as $host
+| (if $d.drv == "postgres" then
+     (val($c0.env;"POSTGRES_USER") | if . == "" then "postgres" else . end) as $u
+     | {u:$u, p: val($c0.env;"POSTGRES_PASSWORD"), db: (val($c0.env;"POSTGRES_DB") | if . == "" then $u else . end)}
+   elif $d.drv == "mysql" then
+     (if val($c0.env;"MYSQL_USER") != "" then {u: val($c0.env;"MYSQL_USER"), p: val($c0.env;"MYSQL_PASSWORD")}
+      else {u:"root", p: val($c0.env;"MYSQL_ROOT_PASSWORD")} end) + {db: val($c0.env;"MYSQL_DATABASE")}
+   else
+     {u:"sa", db:"", p: (val($c0.env;"MSSQL_SA_PASSWORD") | if . == "" then val($c0.env;"SA_PASSWORD") else . end)}
+   end) as $c
+| ($c.u|@uri) as $eu | ($c.p|@uri) as $ep
+| (if $d.drv == "postgres" then "postgres://\($eu):\($ep)@\($host):\($port)/\($c.db)?sslmode=disable"
+   elif $d.drv == "mysql"  then "mysql://\($eu):\($ep)@\($host):\($port)/\($c.db)"
+   else "sqlserver://\($eu):\($ep)@\($host):\($port)/\($c.db)" end) as $url
+| "\($c0.svc) | \($d.drv) | \($c.db) | \($host):\($port)\t\($url)"'
+
+  local rows=""
+  if [[ -n "$ids_raw" ]]; then
+    rows="$(docker inspect "${(@f)ids_raw}" 2>/dev/null | jq -r --arg repo "$repo" "$prog" 2>/dev/null | sort)"
+  fi
+
+  if [[ -z "$rows" ]]; then
+    local -a composes
+    composes=(${(f)"$(find "$repo" -maxdepth 4 \( -name node_modules -o -name .git \) -prune -o \
+      \( -iname 'docker-compose*.yml' -o -iname 'docker-compose*.yaml' \
+         -o -iname 'compose*.yml' -o -iname 'compose*.yaml' \) -print 2>/dev/null)"})
+    if (( ${#composes} > 0 )); then
+      echo "lq: compose file(s) found but no DB container running for this repo." >&2
+      echo "    start the stack first (e.g. docker compose up -d), then rerun lq." >&2
+      return 1
+    fi
+    echo "lq: no dockerized DB for this repo - opening lazysql picker" >&2
+    lazysql "${pre[@]}"
+    return
+  fi
+
+  local line
+  if (( $(printf '%s\n' "$rows" | grep -c .) > 1 )); then
+    if command -v fzf >/dev/null 2>&1; then
+      line="$(printf '%s\n' "$rows" | fzf --delimiter=$'\t' --with-nth=1 --height=40% --reverse \
+        --prompt='db> ' --header='lazysql: pick a database')" || return
+    else
+      local -a disp; disp=("${(@f)rows}")
+      local pick PS3="db> "
+      select pick in "${disp[@]%%$'\t'*}"; do
+        [[ -n "$pick" ]] && { line="${disp[$REPLY]}"; break; }
+      done
+    fi
+  else
+    line="$rows"
+  fi
+
+  [[ -z "$line" ]] && { echo "lq: nothing selected" >&2; return 1; }
+  lazysql "${pre[@]}" "${line##*$'\t'}"
+}
+
 alias dropbox="maestral"
 
 zip() {

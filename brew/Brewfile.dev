@@ -7,9 +7,9 @@ brew "git-delta"
 brew "gnupg"
 brew "lazydocker" unless in_vm
 brew "lazygit"
+brew "lazysql"
 brew "mise"
 
 cask "codex"
 cask "ghostty"
 cask "orbstack" unless in_vm
-cask "tableplus"

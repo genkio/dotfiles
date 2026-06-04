@@ -1,8 +1,10 @@
 macos_major = `/usr/bin/sw_vers -productVersion`.to_i
 in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
         `/usr/sbin/sysctl -n hw.model 2>/dev/null`.strip.match?(/VirtualMac|VMware|Parallels|QEMU/i)
+on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 
 # macOS 26 (Tahoe) ships a native battery charge limit in Settings -> Battery.
 # Only install AlDente on older releases that lack it.
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
 cask "hammerspoon"
+cask "utm" if on_silicon && !in_vm

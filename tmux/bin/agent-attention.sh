@@ -25,4 +25,7 @@ window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}' 2>/dev/null)
 tmux set-window-option -q -t "$window_id" @agent_attention 1
 tmux set-window-option -q -t "$window_id" @agent_busy 0
 tmux set-window-option -q -t "$window_id" @agent_awaiting 0
+
+# per-pane border: this pane is the one waiting on the user -> red
+"$HOME/dotfiles/tmux/bin/agent-pane-state.sh" attention
 exit 0

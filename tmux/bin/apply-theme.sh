@@ -44,7 +44,19 @@ fi
 # isn't treated as the field separator. Build the agent-state prefix once.
 agent_prefix='#{?@agent_attention,#[fg='"$attention"'#,bold],#{?@agent_busy,#[fg='"$busy"'#,bold],#{?@agent_awaiting,#[fg='"$awaiting"'#,bold],}}}'
 
-tmux set-option -g pane-border-style "fg=$border"
+# Inactive panes show their agent state via @agent_pane_state (set by the
+# agent-{busy,attention,idle}.sh hooks on the agent's own pane): red when
+# that pane needs approval, orange while it works, otherwise the theme
+# default. tmux expands the style per pane, so each background pane's
+# border reflects its own agent independently. attention outranks busy.
+#
+# The active pane always keeps the plain active-border colour and ignores
+# @agent_pane_state: the focused pane should read as "here", and you can
+# already see what its agent is doing. Agent state is the signal for the
+# panes you are NOT watching. Leaving a busy/awaiting pane reveals its
+# colour as it goes inactive; focusing one resets it to the active border.
+pane_state_inactive='#{?#{==:#{@agent_pane_state},attention},fg='"$attention"',#{?#{==:#{@agent_pane_state},busy},fg='"$busy"',fg='"$border"'}}'
+tmux set-option -g pane-border-style "$pane_state_inactive"
 tmux set-option -g pane-active-border-style "fg=$active_border"
 
 tmux set-option -g status-style "bg=$bg,fg=$fg"

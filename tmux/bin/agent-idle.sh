@@ -29,6 +29,12 @@ window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}' 2>/dev/null)
 tmux set-window-option -q -t "$window_id" @agent_busy 0
 tmux set-window-option -q -t "$window_id" @agent_attention 0
 
+# per-pane border clears unconditionally: the agent in this pane stopped,
+# so the border drops back to its theme default. The "finished, come
+# back" (green) signal is window-level only -- see the watching logic
+# below, which still drives @agent_awaiting for the status bar overlay.
+"$HOME/dotfiles/tmux/bin/agent-pane-state.sh" ""
+
 terminal_is_frontmost() {
   [ "$(uname)" = "Darwin" ] || return 0
   command -v osascript >/dev/null 2>&1 || return 0

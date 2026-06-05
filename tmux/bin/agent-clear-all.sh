@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Clear @agent_busy / @agent_awaiting / @agent_attention on every
-# window across every session on the running tmux server.
+# window, and @agent_pane_state on every pane, across every session on
+# the running tmux server.
 #
 # Intended uses:
 #   - One-time sweep at tmux server start, in case any prior server
@@ -18,5 +19,15 @@ tmux list-windows -a -F '#{window_id}' 2>/dev/null | while read -r wid; do
   tmux set-window-option -q -t "$wid" @agent_busy 0
   tmux set-window-option -q -t "$wid" @agent_awaiting 0
   tmux set-window-option -q -t "$wid" @agent_attention 0
+done
+
+tmux list-panes -a -F '#{pane_id}' 2>/dev/null | while read -r pid; do
+  [ -n "$pid" ] || continue
+  tmux set-option -p -q -u -t "$pid" @agent_pane_state
+done
+
+# repaint borders so any cleared pane colour disappears immediately
+tmux list-clients -F '#{client_name}' 2>/dev/null | while read -r c; do
+  [ -n "$c" ] && tmux refresh-client -t "$c"
 done
 exit 0

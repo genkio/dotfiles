@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Fired by Claude Code and Codex on UserPromptSubmit and PreToolUse.
-# Marks the window containing the agent's tmux pane as actively
-# working, so the status-format overlay turns it orange.
+# Fired by Claude Code on UserPromptSubmit, PreToolUse and PostToolUse
+# (and Codex equivalents). Marks the agent's window (status overlay)
+# and pane (border, via agent-pane-state.sh) as actively working: orange.
 #
-# PreToolUse coverage is what transitions the window out of the red
-# "needs approval" state once the user has approved a permission
-# prompt and the tool actually starts running — without it, red would
-# stay until the entire turn ended.
+# PostToolUse is load-bearing for clearing the red "needs approval"
+# state. PreToolUse fires BEFORE the permission/elicitation prompt, so
+# it cannot clear the red that the prompt then sets. PostToolUse fires
+# after the approved tool finishes (and right after an elicitation such
+# as AskUserQuestion is answered), flipping red back to orange promptly.
+# Without it, red lingered until the next tool's PreToolUse or Stop.
 
 set -u
 
@@ -19,4 +21,7 @@ window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}' 2>/dev/null)
 tmux set-window-option -q -t "$window_id" @agent_busy 1
 tmux set-window-option -q -t "$window_id" @agent_awaiting 0
 tmux set-window-option -q -t "$window_id" @agent_attention 0
+
+# per-pane border: this pane is the one actually working -> orange
+"$HOME/dotfiles/tmux/bin/agent-pane-state.sh" busy
 exit 0

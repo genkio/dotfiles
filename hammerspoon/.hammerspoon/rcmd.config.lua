@@ -8,7 +8,7 @@ return {
   ["1"] = { action = "window_left" },
   ["2"] = { action = "window_right" },
   ["`"] = { action = "window_next_screen" },
-  a = "Alacritty",
+  a = { app = "Alacritty", fullscreen = true },
   b = { app = "Brave Browser", fullscreen = true },
   c = "Calendar",
   f = "Finder",

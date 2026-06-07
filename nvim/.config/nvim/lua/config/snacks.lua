@@ -282,6 +282,12 @@ function M.setup()
       -- shows nothing until results arrive. Lower it so the picker opens quickly
       -- with its built-in spinner + count acting as a loading indicator.
       show_delay = 100,
+      -- No Nerd Font installed, so the default file-type glyphs render as tofu
+      -- boxes. Drop the per-row file/dir icons and use a plain-text prompt.
+      icons = {
+        files = { enabled = false },
+      },
+      prompt = '> ',
       sources = {
         lsp_references = { transform = set_preview_title_to_path },
       },

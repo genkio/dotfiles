@@ -23,6 +23,9 @@ local launcherHotkeysEnabled = false
 local rightCommandHeld = false
 local launcherTap = nil
 local launcherKeyTap = nil
+local spacesWatcher = nil
+local windowWatcher = nil
+local reconcileTimer = nil
 local activeAppPicker = nil
 local appPickerDrawings = {}
 local appPickerTap = nil
@@ -464,12 +467,264 @@ local function firstWindow(app)
   return app:mainWindow() or pickWindow(app:visibleWindows()) or pickWindow(app:allWindows())
 end
 
+local function standardWindowsForApp(app)
+  local windows = {}
+
+  for _, window in ipairs(app:allWindows()) do
+    if window:isStandard() then
+      windows[#windows + 1] = window
+    end
+  end
+
+  -- Stable order so repeated presses cycle predictably; allWindows() order is not.
+  table.sort(windows, function(left, right)
+    return left:id() < right:id()
+  end)
+
+  return windows
+end
+
+local function windowAfter(windows, currentWindow)
+  if not currentWindow then
+    return windows[1]
+  end
+
+  for index, window in ipairs(windows) do
+    if window:id() == currentWindow:id() then
+      return windows[(index % #windows) + 1]
+    end
+  end
+
+  return windows[1]
+end
+
+-- A window in another Space is invisible to the Accessibility API, so an app's
+-- windows can't be enumerated across Spaces directly. Instead we learn which
+-- Spaces each app has a window on: while a Space is focused its windows are
+-- visible, so we reconcile that Space's membership from the windows present.
+-- This covers fullscreen windows (own Space) and tiled/desktop windows alike,
+-- letting rcmd cycle an app across all of them.
+local appSpaces = {}
+local appSpacesSettingsKey = "rcmd.appSpaces"
+
+-- Persist across config reloads; Space ids and pids survive a reload.
+local function persistAppSpaces()
+  local serialized = {}
+
+  for pid, spaceSet in pairs(appSpaces) do
+    local spaceList = {}
+
+    for spaceId in pairs(spaceSet) do
+      spaceList[#spaceList + 1] = spaceId
+    end
+
+    if #spaceList > 0 then
+      serialized[tostring(pid)] = spaceList
+    end
+  end
+
+  hs.settings.set(appSpacesSettingsKey, serialized)
+end
+
+local function loadAppSpaces()
+  local stored = hs.settings.get(appSpacesSettingsKey)
+
+  if type(stored) ~= "table" then
+    return
+  end
+
+  for pidText, spaceList in pairs(stored) do
+    local pid = tonumber(pidText)
+
+    if pid and type(spaceList) == "table" then
+      local spaceSet = {}
+
+      for _, spaceId in ipairs(spaceList) do
+        spaceSet[spaceId] = true
+      end
+
+      appSpaces[pid] = spaceSet
+    end
+  end
+end
+
+local function existingSpaces()
+  local existing = {}
+  local ok, spacesByScreen = pcall(hs.spaces.allSpaces)
+
+  if ok and type(spacesByScreen) == "table" then
+    for _, spaceIds in pairs(spacesByScreen) do
+      if type(spaceIds) == "table" then
+        for _, spaceId in ipairs(spaceIds) do
+          existing[spaceId] = true
+        end
+      end
+    end
+  end
+
+  return existing
+end
+
+local function pidsOnFocusedSpace()
+  local pids = {}
+
+  for _, window in ipairs(hs.window.allWindows()) do
+    if window:isStandard() then
+      local app = window:application()
+
+      if app then
+        pids[app:pid()] = true
+      end
+    end
+  end
+
+  return pids
+end
+
+-- Make the focused Space's membership exact: add apps present, drop apps gone.
+local function reconcileFocusedSpace()
+  if not hs.spaces then
+    return
+  end
+
+  local ok, spaceId = pcall(hs.spaces.focusedSpace)
+
+  if not ok or not spaceId then
+    return
+  end
+
+  local present = pidsOnFocusedSpace()
+  local changed = false
+
+  for pid in pairs(present) do
+    appSpaces[pid] = appSpaces[pid] or {}
+
+    if not appSpaces[pid][spaceId] then
+      appSpaces[pid][spaceId] = true
+      changed = true
+    end
+  end
+
+  for pid, spaceSet in pairs(appSpaces) do
+    if spaceSet[spaceId] and not present[pid] then
+      spaceSet[spaceId] = nil
+      changed = true
+    end
+  end
+
+  if changed then
+    persistAppSpaces()
+  end
+end
+
+-- Coalesce bursts of window/Space events into a single reconcile.
+local function scheduleReconcile()
+  if reconcileTimer then
+    reconcileTimer:stop()
+  end
+
+  reconcileTimer = hs.timer.doAfter(0.25, function()
+    reconcileTimer = nil
+    reconcileFocusedSpace()
+  end)
+end
+
+local function appSpaceList(app)
+  if not hs.spaces then
+    return {}
+  end
+
+  local spaceSet = appSpaces[app:pid()]
+
+  if not spaceSet then
+    return {}
+  end
+
+  local existing = existingSpaces()
+  local spaces = {}
+  local pruned = false
+
+  for spaceId in pairs(spaceSet) do
+    if existing[spaceId] then
+      spaces[#spaces + 1] = spaceId
+    else
+      spaceSet[spaceId] = nil
+      pruned = true
+    end
+  end
+
+  if pruned then
+    persistAppSpaces()
+  end
+
+  table.sort(spaces)
+  return spaces
+end
+
 local function focusWindow(window)
   if window:isMinimized() then
     window:unminimize()
   end
 
   window:focus()
+end
+
+local function focusAppWindowOnCurrentSpace(app, retriesRemaining)
+  app:activate(true)
+
+  -- allWindows is the current Space only, so this picks the window living here
+  -- rather than the app's main window (which may be on the Space we just left).
+  local windows = standardWindowsForApp(app)
+
+  if #windows > 0 then
+    focusWindow(windows[1])
+    return
+  end
+
+  if retriesRemaining > 0 then
+    hs.timer.doAfter(0.15, function()
+      focusAppWindowOnCurrentSpace(app, retriesRemaining - 1)
+    end)
+  end
+end
+
+-- Cycle an app across every Space it has a window on. Returns true if handled.
+-- Focuses the first window on each Space; extra windows sharing one Space
+-- aren't individually reachable while the app spans multiple Spaces.
+local function cycleAppSpaces(app)
+  reconcileFocusedSpace()
+
+  local spaces = appSpaceList(app)
+
+  if #spaces < 2 then
+    return false
+  end
+
+  local currentSpace = hs.spaces.focusedSpace()
+  local nextSpace = spaces[1]
+
+  for index, spaceId in ipairs(spaces) do
+    if spaceId == currentSpace then
+      nextSpace = spaces[(index % #spaces) + 1]
+      break
+    end
+  end
+
+  if nextSpace == currentSpace then
+    return false
+  end
+
+  hs.spaces.gotoSpace(nextSpace)
+
+  -- A fullscreen Space focuses its sole window on arrival; a desktop Space
+  -- needs the app's window there focused explicitly.
+  if hs.spaces.spaceType(nextSpace) ~= "fullscreen" then
+    hs.timer.doAfter(0.25, function()
+      focusAppWindowOnCurrentSpace(app, 5)
+    end)
+  end
+
+  return true
 end
 
 local function frameWithinTolerance(frame, expectedFrame, tolerance)
@@ -513,11 +768,31 @@ local function fullscreenWindow(window)
 end
 
 local function focusApp(app, shouldFullscreen, retriesRemaining)
+  local frontmostApp = hs.application.frontmostApplication()
+  local appWasFrontmost = frontmostApp ~= nil and frontmostApp:pid() == app:pid()
+
+  -- Re-pressing the binding for the already-focused app cycles its windows.
+  -- Windows can live in separate Spaces (fullscreen or another desktop), so
+  -- cycle across the Spaces the app has windows on.
+  if appWasFrontmost and cycleAppSpaces(app) then
+    return
+  end
+
+  local previouslyFocusedWindow = hs.window.focusedWindow()
   local window = nil
 
   app:unhide()
   app:activate(true)
-  window = firstWindow(app)
+
+  if appWasFrontmost then
+    local windows = standardWindowsForApp(app)
+
+    if #windows > 1 then
+      window = windowAfter(windows, previouslyFocusedWindow)
+    end
+  end
+
+  window = window or firstWindow(app)
 
   if window then
     if shouldFullscreen and not windowIsHalfScreen(window) then
@@ -978,6 +1253,26 @@ function M.start()
 
   launcherTap:start()
   launcherKeyTap:start()
+
+  if hs.spaces and hs.spaces.watcher then
+    loadAppSpaces()
+
+    spacesWatcher = hs.spaces.watcher.new(scheduleReconcile)
+    spacesWatcher:start()
+
+    -- A window created or tiled on the current Space fires no Space change, so
+    -- also relearn on window lifecycle events to keep memberships current.
+    windowWatcher = hs.window.filter.new(true):subscribe({
+      hs.window.filter.windowCreated,
+      hs.window.filter.windowDestroyed,
+      hs.window.filter.windowMoved,
+      hs.window.filter.windowFullscreened,
+      hs.window.filter.windowUnfullscreened,
+    }, scheduleReconcile)
+
+    reconcileFocusedSpace()
+  end
+
   setLauncherHotkeysEnabled(false)
   return true
 end

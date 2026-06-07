@@ -4,7 +4,7 @@
 # (Flexoki Light light / TokyoNight Storm dark). Alacritty can't detect macOS
 # light/dark itself, so this is run by scripts/theme-toggle.sh (manual toggle)
 # and by Hammerspoon's theme_watcher.lua (on AppleInterfaceThemeChangedNotification
-# and at startup) to give Alacritty the same auto-switch behavior as Ghostty.
+# and at startup) so Alacritty's colors track macOS light/dark appearance.
 #
 # alacritty.toml imports the destination file; live_config_reload picks up the
 # rewrite. Atomic mv so a running Alacritty never reads a half-written file.

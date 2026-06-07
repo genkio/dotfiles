@@ -10,8 +10,8 @@ local function detect_macos_background()
 end
 
 -- Light mode uses Flexoki (its `dawn` variant); dark mode uses TokyoNight
--- Storm. Each matches the corresponding Ghostty theme so the editor surface
--- stays seamless with the terminal.
+-- Storm, matching the terminal's Flexoki Light / TokyoNight Storm so the
+-- editor surface stays seamless with the terminal.
 local function pick_scheme()
   return vim.o.background == 'light' and 'flexoki' or 'tokyonight-storm'
 end
@@ -44,7 +44,7 @@ function M.setup()
   end
 
   -- `flexoki` (nuvic/flexoki-nvim) follows `vim.o.background`; in light mode it
-  -- renders the `dawn` variant matching Ghostty's `Flexoki Light`.
+  -- renders the `dawn` variant matching the terminal's `Flexoki Light`.
   -- `enable.terminal` is left off on purpose: the plugin's terminal_color
   -- export mislabels green/blue/cyan, so `:terminal` buffers (e.g. the LazyGit
   -- launcher) use Nvim's default ANSI palette instead.
@@ -52,7 +52,7 @@ function M.setup()
     variant = 'auto',
   })
   -- `tokyonight-storm` (folke/tokyonight.nvim) is the dark scheme, matching
-  -- Ghostty's `TokyoNight Storm`.
+  -- the terminal's `TokyoNight Storm`.
   require('tokyonight').setup({
     style = 'storm',
   })

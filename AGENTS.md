@@ -19,7 +19,7 @@ cd ~/dotfiles && mkdir -p ~/.config/mpv && stow brew git mpv nvim tmux vim yazi 
 cd ~/dotfiles && stow hammerspoon
 
 # Apply optional dev packages
-cd ~/dotfiles && stow alacritty ghostty && bash scripts/apply-alacritty-theme.sh
+cd ~/dotfiles && stow alacritty && bash scripts/apply-alacritty-theme.sh
 cd ~/dotfiles && bash scripts/restore-claude-settings.sh
 cd ~/dotfiles && bash scripts/restore-codex-config.sh
 
@@ -32,12 +32,12 @@ cd ~/dotfiles && stow -D zsh
 - `brew/Brewfile` - meta file that sources both base and apps
 - `brew/Brewfile.base` - CLI tools (always installed)
 - `brew/Brewfile.apps` - GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` - dev tools (ghostty, gh, mise, codex, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`
+- `brew/Brewfile.dev` - dev tools (gh, mise, codex, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (alacritty, ghostty, mise, codex, etc.), stow `alacritty`, `ghostty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (alacritty, mise, codex, etc.), stow `alacritty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
 
 ## Stow Packages
 
@@ -51,8 +51,7 @@ cd ~/dotfiles && stow -D zsh
 | `yazi` | `~/.config/yazi/` + `~/.config/yazi-mobile/` | Shell `yazi` config with a secondary compact profile |
 | `mpv` | `~/.config/mpv/` | Media player; pre-create `~/.config/mpv` before stowing to avoid folding (runtime `watch_later/` writes back to its config dir) |
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
-| `ghostty` | `~/.config/ghostty/` | Terminal emulator config |
-| `alacritty` | `~/.config/alacritty/` | Terminal emulator mirroring Ghostty (JetBrainsMono Nerd Font 13, Flexoki Light / TokyoNight Storm). Run `scripts/apply-alacritty-theme.sh` after stow to seed the active theme; Alacritty can't follow macOS appearance natively, so the toggle + Hammerspoon watcher drive its light/dark switch |
+| `alacritty` | `~/.config/alacritty/` | Terminal emulator (Flexoki Light / TokyoNight Storm). Run `scripts/apply-alacritty-theme.sh` after stow to seed the active theme; Alacritty can't follow macOS appearance natively, so the toggle + Hammerspoon watcher drive its light/dark switch |
 | `mise` | `~/.config/mise/` | Polyglot version manager (node/python/go/uv + global npm CLIs) |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; the whole package is linked (`settings.json`, `statusline-command.sh`, `keybindings.json`, plus the `rules/` and `hooks/` dirs) |
 | `vim` | `~/.vimrc` | Config for the OS-shipped `/usr/bin/vim`; `vi` is shadowed to nvim via `zsh/.zsh_aliases` |
@@ -67,8 +66,7 @@ Yazi config is stowed separately under `yazi/.config/` for shell `yazi`, with `y
 
 A recurring pattern across tools: clipboard integration uses OSC52 escape sequences so copy works over SSH and inside tmux.
 - `tmux/bin/osc52-copy.sh` - tmux copy helper
-- Ghostty config enables `clipboard-read = allow` / `clipboard-write = allow`
-- Alacritty config sets `[terminal] osc52 = "CopyPaste"` (the equivalent read+write allow)
+- Alacritty config sets `[terminal] osc52 = "CopyPaste"` (read+write clipboard allow)
 
 ## Commit Message Convention
 

@@ -17,11 +17,6 @@ export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()
 
-# Keep Ghostty shell integration active in shells launched by tmux or `exec zsh`.
-if [[ -n "$GHOSTTY_RESOURCES_DIR" && -r "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration" ]]; then
-  source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty-integration"
-fi
-
 # Auto-attach interactive SSH logins to the default tmux session.
 # Set NO_AUTO_TMUX=1 before starting the shell to bypass this.
 if [[ -o interactive && -n "$SSH_CONNECTION" && -z "$TMUX" && -z "$NO_AUTO_TMUX" ]] && command -v tmux >/dev/null 2>&1; then

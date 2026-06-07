@@ -1,4 +1,4 @@
--- Hotkey-driven manual theme toggle for tmux, Ghostty, and nvim.
+-- Hotkey-driven manual theme toggle for tmux, Alacritty, and nvim.
 -- Runs scripts/theme-toggle.sh which flips an override file and pokes
 -- each consumer to re-apply.
 

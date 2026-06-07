@@ -28,7 +28,7 @@ mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
 mkdir -p "$HOME/.codex" "$HOME/.codex/skills"
 
 # Packages that stow straight to $HOME with no guards.
-HOME_PKGS=(brew mpv nvim tmux yazi zsh hammerspoon ghostty mise claude codex vim)
+HOME_PKGS=(brew mpv nvim tmux yazi zsh hammerspoon mise claude codex vim)
 
 echo "Restowing into ~: ${HOME_PKGS[*]}"
 stow -R -t "$HOME" "${HOME_PKGS[@]}"

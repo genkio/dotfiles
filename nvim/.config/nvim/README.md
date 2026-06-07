@@ -93,7 +93,7 @@ nvim
 ## Colors
 
 - `background` is detected via `scripts/current-theme.sh` (manual override if set, else macOS appearance) at startup and on `FocusGained`
-- `background=light` renders Flexoki's `dawn` variant (paper `#fffcf0`); `background=dark` renders TokyoNight Storm (`#24283b`). Both match Ghostty's bundled `Flexoki Light` / `TokyoNight Storm` themes so the editor surface is seamless with the terminal
+- `background=light` renders Flexoki's `dawn` variant (paper `#fffcf0`); `background=dark` renders TokyoNight Storm (`#24283b`). Both match the terminal's `Flexoki Light` / `TokyoNight Storm` themes so the editor surface is seamless with the terminal
 - An `OptionSet background` autocmd re-picks the colorscheme whenever `background` changes
 
 ## Statusline

@@ -26,7 +26,7 @@ brew_bundle_install() {
 
 # Install dev tools via Homebrew
 brew_bundle_install brew/Brewfile.dev
-stow -t "$HOME" alacritty ghostty mise
+stow -t "$HOME" alacritty mise
 # Seed Alacritty's active theme file so its first launch has colors before the
 # Hammerspoon watcher / theme toggle ever runs. Pass the resolved repo root so it
 # works when cloned outside ~/dotfiles; non-fatal so a cosmetic seed failure can't

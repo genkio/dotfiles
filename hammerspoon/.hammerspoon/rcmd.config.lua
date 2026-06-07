@@ -12,7 +12,6 @@ return {
   b = { app = "Brave Browser", fullscreen = true },
   c = "Calendar",
   f = "Finder",
-  g = { app = "Ghostty", fullscreen = true },
   i = "iPhone Mirroring",
   m = "Mail",
   n = { action = "notification_center" },

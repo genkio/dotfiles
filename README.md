@@ -31,7 +31,7 @@ Install stow:
 - Core packages: `mkdir -p ~/.ssh ~/.config/mpv && chmod 700 ~/.ssh && stow brew git mpv nvim tmux vim yazi zsh ssh`
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
 - Optional app packages: `stow hammerspoon`
-- Optional dev packages: `stow alacritty ghostty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
+- Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
   - Both restore scripts also stow the shared `skills/` package into `~/.claude/skills/` and `~/.codex/skills/` so coding-agent skills are kept in one place.
 - Yazi: `stow yazi`
 

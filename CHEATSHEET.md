@@ -126,29 +126,16 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by defau
 
 ---
 
-## Ghostty
-
-| Key | Action |
-|---|---|
-| `Cmd+k` | Next split |
-| `Cmd+j` | Previous split |
-| `Cmd+Shift+[` | Previous tmux window (sends `C-p`) |
-| `Cmd+Shift+]` | Next tmux window (sends `C-n`) |
-| `Shift+Enter` | Insert newline (multi-line prompt) |
-
-Theme follows macOS appearance: `Flexoki Light` (light) / `TokyoNight Storm` (dark). `theme-toggle.sh` can force one regardless of appearance. Shell integration enables `sudo`, `ssh-terminfo`, and `ssh-env` so SSH prefers `xterm-ghostty` when the remote supports it.
-
----
-
 ## Alacritty
 
-Drop-in alternative to Ghostty with the same look: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
+Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
 
 | Key | Action |
 |---|---|
 | `Shift+Enter` | Insert newline (multi-line prompt) |
+| `Cmd+Shift+Space` | Toggle vi mode |
 
-Same `Flexoki Light` / `TokyoNight Storm` palettes as Ghostty. Alacritty can't read macOS appearance itself, so the light/dark switch is driven by the Hammerspoon appearance watcher and `theme-toggle.sh`, which rewrite `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live). No splits/tabs - use tmux.
+Theme: `Flexoki Light` / `TokyoNight Storm` palettes. Alacritty can't read macOS appearance itself, so the light/dark switch is driven by the Hammerspoon appearance watcher and `theme-toggle.sh`, which rewrite `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live). No splits/tabs - use tmux.
 
 ---
 

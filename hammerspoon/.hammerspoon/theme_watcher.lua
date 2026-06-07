@@ -1,6 +1,6 @@
 -- Re-apply the tmux and Alacritty themes whenever macOS toggles light/dark
--- appearance. Ghostty handles its own auto-switch; tmux and Alacritty can't,
--- so this watcher keeps them in sync.
+-- appearance. Neither follows macOS appearance natively, so this watcher
+-- keeps them in sync.
 
 local M = {}
 

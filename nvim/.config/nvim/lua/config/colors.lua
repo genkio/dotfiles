@@ -69,17 +69,46 @@ function M.setup()
     end,
   })
 
+  -- Re-detect and apply the effective theme. Cheap + idempotent: the OptionSet
+  -- autocmd only re-picks the colorscheme when `background` actually flips.
+  local function refresh()
+    local desired = detect_macos_background()
+    if vim.o.background ~= desired then
+      vim.o.background = desired
+    end
+  end
+
   -- Re-check macOS appearance on refocus. Nvim has no native hook for
-  -- system appearance changes, so this catches toggles that happened
-  -- while another app held focus.
-  vim.api.nvim_create_autocmd('FocusGained', {
-    callback = function()
-      local desired = detect_macos_background()
-      if vim.o.background ~= desired then
-        vim.o.background = desired
+  -- system appearance changes, so this catches real light/dark toggles that
+  -- happened while another app held focus.
+  vim.api.nvim_create_autocmd('FocusGained', { callback = refresh })
+
+  -- The ctrl+alt+cmd+t hotkey flips ~/.cache/dotfiles/theme-override without
+  -- touching macOS appearance, so neither AppleInterfaceThemeChangedNotification
+  -- nor FocusGained fires while nvim keeps focus. Watch the cache dir so the
+  -- colorscheme follows the override the instant theme-toggle.sh rewrites it.
+  -- Dir-level (not file-level) watch keeps firing across delete-on-revert.
+  local uv = vim.uv or vim.loop
+  local cache_dir = (vim.env.XDG_CACHE_HOME or (vim.env.HOME .. '/.cache')) .. '/dotfiles'
+  vim.fn.mkdir(cache_dir, 'p')
+  local watcher = uv.new_fs_event()
+  if watcher then
+    watcher:start(cache_dir, {}, function(err, filename)
+      if err then
+        return
       end
-    end,
-  })
+      if filename == nil or filename == 'theme-override' then
+        vim.schedule(refresh)
+      end
+    end)
+    vim.api.nvim_create_autocmd('VimLeavePre', {
+      callback = function()
+        pcall(function()
+          watcher:stop()
+        end)
+      end,
+    })
+  end
 end
 
 return M

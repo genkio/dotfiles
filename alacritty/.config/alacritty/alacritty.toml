@@ -1,0 +1,34 @@
+[general]
+# Baseline first so colors exist before the active file is ever written. The
+# active file (rewritten by scripts/apply-alacritty-theme.sh on each theme
+# switch) is LAST so it wins: Flexoki in light, TokyoNight in dark.
+# live_config_reload applies the rewrite without restarting Alacritty.
+import = [
+  "~/.config/alacritty/themes/flexoki-light.toml",
+  "~/.cache/dotfiles/alacritty-theme-active.toml",
+]
+live_config_reload = true
+
+[font]
+size = 14.0
+
+[scrolling]
+history = 10000
+
+[window]
+option_as_alt = "Both"
+decorations = "Buttonless"
+padding = { x = 2, y = 2 }
+
+[terminal]
+osc52 = "CopyPaste"
+
+[keyboard]
+bindings = [
+  { key = "Enter", mods = "Shift", chars = "\u001B\r" },
+  # Default ViMode toggle is ctrl+shift+space, but the CJK input method eats
+  # that chord before Alacritty sees it. Cmd chords bypass the IME and never
+  # reach tmux/nvim, so this can't be shadowed.
+  { key = "Space", mods = "Command|Shift", action = "ToggleViMode" },
+]
+

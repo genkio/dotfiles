@@ -344,6 +344,7 @@ local function actionTargetLabel(actionTarget)
     window_maximize = "Action: Enter Full Screen",
     window_next_screen = "Action: Move Window to Next Screen",
     finder_in_ghostty = "Action: Open Finder Path in Ghostty",
+    finder_in_alacritty = "Action: Open Finder Path in Alacritty",
   }
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
@@ -859,6 +860,54 @@ return {true, finderPath}
   end
 end
 
+local function openFinderPathInAlacritty()
+  local frontmostApp = hs.application.frontmostApplication()
+
+  if not frontmostApp or frontmostApp:bundleID() ~= "com.apple.finder" then
+    hs.alert.show("Finder is not focused")
+    return
+  end
+
+  local script = [[
+tell application "Finder"
+  if not (exists Finder window 1) then
+    return {false, "No Finder window is open"}
+  end if
+
+  try
+    set finderPath to POSIX path of (target of front Finder window as alias)
+    return {true, finderPath}
+  on error errMsg
+    return {false, errMsg}
+  end try
+end tell
+]]
+
+  local ok, result = hs.osascript.applescript(script)
+
+  if not ok or type(result) ~= "table" then
+    hs.alert.show("Could not read Finder path")
+    return
+  end
+
+  if result[1] == false then
+    hs.alert.show(result[2] or "Could not read Finder path")
+    return
+  end
+
+  local path = result[2]
+  -- Alacritty has no AppleScript window API like Ghostty, so spawn via CLI.
+  -- `open -n` opens a new window (its own process) at the path; works whether
+  -- or not Alacritty is already running and needs no IPC socket.
+  local quoted = "'" .. tostring(path):gsub("'", "'\\''") .. "'"
+  local output, status = hs.execute("open -na Alacritty --args --working-directory " .. quoted)
+
+  if not status then
+    hs.alert.show("Could not open Alacritty")
+    print("-- rcmd: failed to open Alacritty at " .. tostring(path) .. ": " .. tostring(output))
+  end
+end
+
 local function runAction(actionTarget)
   local actionHandlers = {
     notification_center = function()
@@ -883,6 +932,7 @@ local function runAction(actionTarget)
       moveFocusedWindowToNextScreen("No focused window to move")
     end,
     finder_in_ghostty = openFinderPathInGhostty,
+    finder_in_alacritty = openFinderPathInAlacritty,
   }
 
   local handler = actionHandlers[actionTarget]

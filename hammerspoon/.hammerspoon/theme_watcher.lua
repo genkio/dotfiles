@@ -1,12 +1,15 @@
--- Re-apply the tmux theme whenever macOS toggles light/dark appearance.
--- Ghostty handles its own auto-switch; this keeps tmux in sync.
+-- Re-apply the tmux and Alacritty themes whenever macOS toggles light/dark
+-- appearance. Ghostty handles its own auto-switch; tmux and Alacritty can't,
+-- so this watcher keeps them in sync.
 
 local M = {}
 
-local script = os.getenv("HOME") .. "/dotfiles/tmux/bin/apply-theme.sh"
+local tmux_theme = os.getenv("HOME") .. "/dotfiles/tmux/bin/apply-theme.sh"
+local alacritty_theme = os.getenv("HOME") .. "/dotfiles/scripts/apply-alacritty-theme.sh"
 
 local function apply()
-  hs.execute(script, true)
+  hs.execute(tmux_theme, true)
+  hs.execute(alacritty_theme, true)
 end
 
 function M.start()

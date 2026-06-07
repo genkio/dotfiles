@@ -5,9 +5,12 @@
 # theme across tmux and Ghostty. Nvim picks up the change on its next
 # FocusGained (see lua/config/colors.lua).
 #
-# To revert to following macOS appearance, delete both:
+# To revert to following macOS appearance, delete all three:
 #   $XDG_CACHE_HOME/dotfiles/theme-override
 #   $XDG_CACHE_HOME/dotfiles/ghostty-theme-active.conf
+#   $XDG_CACHE_HOME/dotfiles/alacritty-theme-active.toml
+# (Alacritty drops back to its baseline flexoki-light import until the next
+# appearance change regenerates the active file via theme_watcher.lua.)
 
 set -euo pipefail
 
@@ -28,6 +31,11 @@ printf '%s\n' "$next" > "$override"
 
 # Tmux: idempotent; no-ops if no tmux server is running.
 "$dotfiles/tmux/bin/apply-theme.sh"
+
+# Alacritty: rewrite its active colors file; live_config_reload picks it up.
+# Non-fatal like the tmux/Ghostty steps, so a cosmetic seed failure can't block
+# the Ghostty poke below.
+"$dotfiles/scripts/apply-alacritty-theme.sh" || true
 
 # Ghostty: write the include fragment that overrides the main `theme = light:..,dark:..`
 # auto-switch line, then SIGUSR2 to make Ghostty reload its config.

@@ -140,6 +140,18 @@ Theme follows macOS appearance: `Flexoki Light` (light) / `TokyoNight Storm` (da
 
 ---
 
+## Alacritty
+
+Drop-in alternative to Ghostty with the same look: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
+
+| Key | Action |
+|---|---|
+| `Shift+Enter` | Insert newline (multi-line prompt) |
+
+Same `Flexoki Light` / `TokyoNight Storm` palettes as Ghostty. Alacritty can't read macOS appearance itself, so the light/dark switch is driven by the Hammerspoon appearance watcher and `theme-toggle.sh`, which rewrite `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live). No splits/tabs - use tmux.
+
+---
+
 ## Neovim
 
 Neovim 0.12, launched with `nvim`. Plugins (via native `vim.pack`): `flexoki-nvim`, `tokyonight.nvim`, `flash.nvim`, `snacks.nvim`, `which-key.nvim`, `gitsigns.nvim`. LSP is core `vim.lsp` (`ts_ls`), no plugin manager UI. The file explorer is netrw; pickers and grep are Snacks.

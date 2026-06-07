@@ -78,16 +78,12 @@ function M.setup()
     end
   end
 
-  -- Re-check macOS appearance on refocus. Nvim has no native hook for
-  -- system appearance changes, so this catches real light/dark toggles that
-  -- happened while another app held focus.
+  -- Re-sync on refocus: catches a flip that landed while nvim was unfocused.
   vim.api.nvim_create_autocmd('FocusGained', { callback = refresh })
 
-  -- The ctrl+alt+cmd+t hotkey flips ~/.cache/dotfiles/theme-override without
-  -- touching macOS appearance, so neither AppleInterfaceThemeChangedNotification
-  -- nor FocusGained fires while nvim keeps focus. Watch the cache dir so the
-  -- colorscheme follows the override the instant theme-toggle.sh rewrites it.
-  -- Dir-level (not file-level) watch keeps firing across delete-on-revert.
+  -- theme-toggle.sh (prefix+t) rewrites the override without touching nvim, and
+  -- nvim may keep focus, so watch the cache dir and re-pick the instant it
+  -- changes. Dir-level (not file) watch survives delete-on-revert.
   local uv = vim.uv or vim.loop
   local cache_dir = (vim.env.XDG_CACHE_HOME or (vim.env.HOME .. '/.cache')) .. '/dotfiles'
   vim.fn.mkdir(cache_dir, 'p')

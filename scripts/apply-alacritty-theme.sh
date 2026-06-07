@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 #
-# Write the active Alacritty colors file from the current effective theme
-# (Flexoki Light light / TokyoNight Storm dark). Alacritty can't detect macOS
-# light/dark itself, so this is run by scripts/theme-toggle.sh (manual toggle)
-# and by Hammerspoon's theme_watcher.lua (on AppleInterfaceThemeChangedNotification
-# and at startup) so Alacritty's colors track macOS light/dark appearance.
-#
-# alacritty.toml imports the destination file; live_config_reload picks up the
-# rewrite. Atomic mv so a running Alacritty never reads a half-written file.
+# Write the active Alacritty colors file for the current theme (Flexoki Light /
+# TokyoNight Storm, per current-theme.sh). Run by theme-toggle.sh on a flip and
+# seeded once by setup-dev.sh. alacritty.toml imports it; live_config_reload
+# picks up the rewrite. Atomic mv so Alacritty never reads a half-written file.
 
 set -euo pipefail
 

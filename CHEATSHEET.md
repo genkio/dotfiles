@@ -135,7 +135,7 @@ Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
 | `Shift+Enter` | Insert newline (multi-line prompt) |
 | `Cmd+Shift+Space` | Toggle vi mode |
 
-Theme: `Flexoki Light` / `TokyoNight Storm` palettes. Alacritty can't read macOS appearance itself, so the light/dark switch is driven by the Hammerspoon appearance watcher and `theme-toggle.sh`, which rewrite `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live). No splits/tabs - use tmux.
+Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t` (or `scripts/theme-toggle.sh` outside tmux): it rewrites `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live) and repaints the running terminal via OSC. No splits/tabs - use tmux.
 
 ---
 

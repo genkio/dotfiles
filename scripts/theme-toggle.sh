@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 #
-# Flip the effective theme (light <-> dark) without touching macOS appearance.
-# Writes an override file that current-theme.sh reads, then re-applies the
-# theme across tmux and Alacritty. Nvim picks up the change instantly via its
-# fs_event watcher on the override file (see lua/config/colors.lua).
-#
-# To revert to following macOS appearance, delete both:
-#   $XDG_CACHE_HOME/dotfiles/theme-override
-#   $XDG_CACHE_HOME/dotfiles/alacritty-theme-active.toml
-# (Alacritty drops back to its baseline flexoki-light import until the next
-# appearance change regenerates the active file via theme_watcher.lua.)
+# Flip the effective theme (light <-> dark). Writes the override file
+# (current-theme.sh reads it), then re-applies across nvim (fs_event watcher),
+# tmux, Alacritty's config, and the live terminal via OSC. Bound to tmux
+# prefix+t: one manual flip, local or SSH, so macOS-appearance watching is moot.
+# Revert to macOS appearance: rm the override + alacritty-theme-active.toml under
+# $XDG_CACHE_HOME/dotfiles.
 
 set -euo pipefail
 
@@ -33,3 +29,7 @@ printf '%s\n' "$next" > "$override"
 # Alacritty: rewrite its active colors file; live_config_reload picks it up.
 # Non-fatal like the tmux step so a cosmetic seed failure can't abort the toggle.
 "$dotfiles/scripts/apply-alacritty-theme.sh" || true
+
+# Repaint the live terminal too (bg/fg/palette) so shell panes + padding follow,
+# not just apps that paint themselves. Over SSH this is what reaches the client.
+"$dotfiles/scripts/apply-terminal-colors.sh" || true

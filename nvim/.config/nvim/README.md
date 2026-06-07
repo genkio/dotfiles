@@ -33,7 +33,7 @@ nvim
 - `updatetime` is set to `250ms` so `CursorHold`-based reloads feel responsive in tmux.
 - `nvim .` reopens the last real file you had focused in that directory.
 - TypeScript LSP is enabled through core Neovim 0.12 `vim.lsp` using `ts_ls`.
-- The colorscheme follows macOS appearance: Flexoki Light (the `dawn` variant) in light mode, TokyoNight Storm in dark mode.
+- The colorscheme follows the theme override set by `theme-toggle.sh` (tmux `prefix + t`), falling back to macOS appearance: Flexoki Light (the `dawn` variant) in light, TokyoNight Storm in dark.
 - In JSON and JSONC buffers, `zc` and `zo` on a `{` or `[` manage a manual fold for that exact block under the cursor instead of relying on line-based indent folding.
 - Search defaults to the current working directory, not the git root.
 - `<leader>lg` opens LazyGit in a new tab terminal with the default layout, but hides the command log pane.

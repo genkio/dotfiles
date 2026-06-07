@@ -249,6 +249,15 @@ function M.setup()
 
   vim.keymap.set('n', '<leader>lg', M.open_default, { desc = 'LazyGit default layout' })
   vim.keymap.set('n', '<leader>lf', M.open_folded, { desc = 'LazyGit folded layout' })
+
+  -- Theme flip moves vim.o.background; regen delta's config so an open LazyGit
+  -- picks up new diff colours on next render (else +/- bg stays baked at launch).
+  vim.api.nvim_create_autocmd('OptionSet', {
+    pattern = 'background',
+    callback = function()
+      pcall(ensure_delta_config)
+    end,
+  })
 end
 
 return M

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #
-# Apply Flexoki Light (light) or TokyoNight Storm (dark) palette to tmux based
-# on the current macOS appearance. Sourced from .tmux.conf at startup/reload,
-# and re-run by Hammerspoon when AppleInterfaceThemeChangedNotification
-# fires so the status bar tracks system appearance live.
+# Apply the Flexoki Light / TokyoNight Storm palette to tmux for the current
+# theme (current-theme.sh). Sourced from .tmux.conf at startup/reload and re-run
+# by theme-toggle.sh on a flip.
 
 set -euo pipefail
 

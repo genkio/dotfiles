@@ -16,6 +16,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `y` | `yazi` |
 | `cc` | `claude`; `cc <text>` starts Claude with that prompt; `cc -<flag>` passes flags through |
 | `ccx` | `claude --dangerously-skip-permissions` |
+| `ccm` | Claude at max effort; current pane by default, `-nh` / `-nv` opens a new horizontal / vertical tmux pane; trailing text is prefilled into the prompt, left unsent for you to edit and send |
 | `cx` | `codex` |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |

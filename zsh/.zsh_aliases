@@ -10,6 +10,54 @@ cc() {
   fi
 }
 alias ccx="claude --dangerously-skip-permissions"
+# claude at max effort. no flag -> current pane; -nh / -nv -> new horizontal / vertical tmux pane.
+# a trailing prompt is typed into claude's box but left unsent, so you can edit then hit enter yourself.
+#   ccm        ccm 'review this'        ccm -nh        ccm -nv 'review this'
+_ccm_fill() {
+  local pane="$1" msg="$2" i
+  # wait for claude's box (its /effort indicator) before typing, else boot eats the keys
+  for (( i = 0; i < 60; i++ )); do
+    tmux capture-pane -t "$pane" -p 2>/dev/null | grep -q -- '/effort' && break
+    sleep 0.25
+  done
+  sleep 0.3
+  tmux send-keys -t "$pane" -l -- "$msg"   # no Enter: leave it for the user to send
+}
+ccm() {
+  local split=
+  case "$1" in
+    -nh) split=-h; shift ;;
+    -nv) split=-v; shift ;;
+  esac
+
+  local msg=
+  (( $# )) && msg="${(j: :)@}"
+
+  if [[ -z "$split" && -z "$msg" ]]; then
+    cc --effort max
+    return
+  fi
+
+  if [[ -z "$TMUX" ]]; then
+    echo "ccm: needs tmux for a new pane or to prefill a prompt" >&2
+    return 1
+  fi
+
+  if [[ -n "$split" ]]; then
+    local new
+    new=$(tmux split-window "$split" -t "$TMUX_PANE" -c "#{pane_current_path}" -P -F '#{pane_id}') || return
+    ( sleep 1   # fresh pane's line editor isn't up yet; keys sent too early get dropped
+      tmux send-keys -t "$new" -l 'cc --effort max'
+      tmux send-keys -t "$new" Enter
+      [[ -n "$msg" ]] && _ccm_fill "$new" "$msg"
+    ) &!
+    return
+  fi
+
+  # current pane + prefill: fill from a detached job, then take this pane over with claude
+  ( _ccm_fill "$TMUX_PANE" "$msg" ) &!
+  cc --effort max
+}
 alias cx="codex"
 
 lg() {

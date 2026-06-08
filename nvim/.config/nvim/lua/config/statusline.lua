@@ -1,9 +1,9 @@
 local M = {}
 
 function M.setup()
-  vim.o.laststatus = 3
+  -- no statusline; path/line/total/progress on demand via Ctrl-G
+  vim.o.laststatus = 0
   vim.o.cmdheight = 0
-  vim.o.statusline = '%<%f%=%l:%c'
 end
 
 return M

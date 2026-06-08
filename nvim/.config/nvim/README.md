@@ -45,7 +45,7 @@ nvim
 - `<leader>er` runs `:Rex` to return to netrw explorer.
 - `<leader>yr` copies the current line or visual line range as `path:start-end`, with the path shown relative to `$HOME` (e.g. `~/dotfiles/...`). Single-line selections drop the `:start-end` suffix.
 - Inside Markdown files in Obsidian/Logseq-style vaults, `gd` and `gr` switch to note/tag navigation and search, and typing `[[` or `#` triggers built-in omni completion for vault notes or tags.
-- The statusline is a built-in custom one that shows file path and cursor position.
+- There is no statusline; press `Ctrl-G` to show the file path, total lines, and cursor progress on demand.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.
@@ -98,11 +98,9 @@ nvim
 
 ## Statusline
 
-- Uses Neovim's built-in `statusline` option, not a plugin
-- Left side shows the file path
-- Right side shows `line:column`
-- The old `All` text came from Neovim's default `'ruler'` display and is gone because the custom statusline replaces it
-- Buffer flag labels like `[RO]` and `[-]` are intentionally omitted
+- Removed entirely (`laststatus=0`); combined with `cmdheight=0` the bottom rows stay clean
+- Press `Ctrl-G` to print the file path, total line count, and cursor progress in the message area (still works with `cmdheight=0`)
+- The file path also lives in the surrounding tmux status bar, so a permanent nvim statusline would just duplicate it
 
 ## Gitsigns.nvim
 

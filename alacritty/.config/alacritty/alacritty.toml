@@ -30,5 +30,9 @@ bindings = [
   # that chord before Alacritty sees it. Cmd chords bypass the IME and never
   # reach tmux/nvim, so this can't be shadowed.
   { key = "Space", mods = "Command|Shift", action = "ToggleViMode" },
+  # Cmd+Shift+n/p -> tmux session next/prev. tmux bind has no Cmd modifier, so
+  # emit a private escape here and let tmux user-keys catch these exact bytes.
+  { key = "N", mods = "Command|Shift", chars = "\u001B[120~" },
+  { key = "P", mods = "Command|Shift", chars = "\u001B[121~" },
 ]
 

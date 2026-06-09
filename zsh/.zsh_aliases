@@ -14,10 +14,14 @@ alias ccx="claude --dangerously-skip-permissions"
 # a trailing prompt is typed into claude's box but left unsent, so you can edit then hit enter yourself.
 #   ccm        ccm 'review this'        ccm -nh        ccm -nv 'review this'
 _ccm_fill() {
-  local pane="$1" msg="$2" i
-  # wait for claude's box (its /effort indicator) before typing, else boot eats the keys
-  for (( i = 0; i < 60; i++ )); do
-    tmux capture-pane -t "$pane" -p 2>/dev/null | grep -q -- '/effort' && break
+  local pane="$1" msg="$2" i cap
+  # wait for claude's input box, else boot eats the keys. match the /effort hint
+  # OR the status meter ("12k/1m") so it still fires after the transient hint
+  # clears. bail on a trust prompt - typing there dumps the msg into the dialog.
+  for (( i = 0; i < 80; i++ )); do
+    cap=$(tmux capture-pane -t "$pane" -p 2>/dev/null)
+    [[ "$cap" == *"trust this folder"* ]] && return 1
+    print -r -- "$cap" | grep -qE '/effort|[0-9]+k/[0-9]' && break
     sleep 0.25
   done
   sleep 0.3

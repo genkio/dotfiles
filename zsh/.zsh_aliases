@@ -62,6 +62,65 @@ ccm() {
   ( _ccm_fill "$TMUX_PANE" "$msg" ) &!
   cc --effort max
 }
+# no --force, so a dirty worktree is kept (don't destroy uncommitted work) and
+# its window held open to finish up.
+_cct_cleanup() {
+  local wt branch top main
+  wt=$(git rev-parse --show-toplevel) || return
+  branch=$(git rev-parse --abbrev-ref HEAD)
+  top=$(git rev-parse --git-common-dir) || return
+  main=${top:A:h}
+  builtin cd "$main" 2>/dev/null
+  if git worktree remove "$wt" 2>/dev/null; then
+    git branch -d "$branch" 2>/dev/null
+    return
+  fi
+  print -P "%F{yellow}cct: worktree kept (uncommitted changes):%f $wt"
+  print "git -C ${(q)main} worktree remove --force ${(q)wt} && git -C ${(q)main} branch -d ${(q)branch}"
+  builtin cd "$wt" 2>/dev/null
+  exec zsh
+}
+# claude --tmux hangs inside tmux and its worktree cleanup never runs, so drive
+# the worktree ourselves and reclaim it when claude exits (see _cct_cleanup).
+#   cct my-tree
+cct() {
+  [[ -n "$TMUX" ]] || { print -u2 "cct: needs tmux"; return 1; }
+  local name="$1" top main wt pr= made_wt= made_branch=
+  [[ -n "$name" ]] || { print -u2 "cct: usage: cct <name> | cct '#<pr>' | cct <pr-url>"; return 1; }
+  top=$(git rev-parse --git-common-dir 2>/dev/null) || { print -u2 "cct: not in a git repo"; return 1; }
+  main=${top:A:h}
+
+  if [[ "$name" =~ '^#([0-9]+)$' ]]; then
+    pr=$match[1]; name="pr-$pr"
+  elif [[ "$name" =~ 'github.*/pull/([0-9]+)' ]]; then
+    pr=$match[1]; name="pr-$pr"
+  fi
+  wt="$main/.claude/worktrees/$name"
+
+  if [[ ! -d "$wt" ]]; then
+    if git -C "$main" show-ref --quiet --verify "refs/heads/$name"; then
+      # branch outlived its worktree (clean exit kept committed work), so re-attach it
+      git -C "$main" worktree add "$wt" "$name" || return
+      made_wt=1
+    elif [[ -n "$pr" ]]; then
+      # github serves PR heads at the pull/<n>/head ref
+      git -C "$main" fetch origin "pull/$pr/head" || return
+      git -C "$main" worktree add "$wt" -b "$name" FETCH_HEAD || return
+      made_wt=1; made_branch=1
+    else
+      git -C "$main" worktree add "$wt" -b "$name" || return
+      made_wt=1; made_branch=1
+    fi
+  fi
+
+  # plain claude, not --continue: with nothing to resume (e.g. after :kill-window)
+  # --continue exits at once and the chained cleanup would then nuke the worktree.
+  tmux new-window -c "$wt" -n "cct:$name" "zsh -ic 'claude --effort max; _cct_cleanup'" || {
+    [[ -n "$made_wt" ]] && git -C "$main" worktree remove --force "$wt"
+    [[ -n "$made_branch" ]] && git -C "$main" branch -D "$name"
+    return 1
+  }
+}
 alias cx="codex"
 
 lg() {

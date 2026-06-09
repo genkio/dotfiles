@@ -224,6 +224,7 @@ Inside Markdown files in an Obsidian/Logseq-style vault (detected by `.obsidian/
 | Key | Action |
 |---|---|
 | `<leader>yr` | Copy file path + line range to clipboard, `$HOME`-relative (normal & visual) |
+| `<C-g>` | Show current file info (path, line count, position) on the command line |
 | `Q` | Quit all windows (prompts to save/discard on unsaved changes) |
 | `<Esc>` | Clear search highlight and the automatic cursor-word highlight |
 | `zc` / `zo` (JSON/JSONC) | Close / open the `{`...`}` or `[`...`]` block under the cursor |

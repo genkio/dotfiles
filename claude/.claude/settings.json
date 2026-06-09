@@ -52,6 +52,10 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/no-emdash.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/comments.sh"
           }
         ]
       }
@@ -83,6 +87,14 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/comments-review.sh"
           }
         ]
       }

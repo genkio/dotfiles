@@ -62,6 +62,7 @@ tmux set-option -g status-style "bg=$bg,fg=$fg"
 tmux set-option -g status-left-style "bg=$bg,fg=$fg"
 tmux set-option -g status-right-style "bg=$bg,fg=$fg"
 tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh)#[default]"
+# usage call inlined here for theme color; plugin auto-inject left off (@tmux_open_usage_enabled) else dupe
 tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default] [%H:%M]"
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"

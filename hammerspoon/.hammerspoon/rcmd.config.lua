@@ -9,7 +9,6 @@ return {
   ["2"] = { action = "window_right" },
   ["`"] = { action = "window_next_screen" },
   a = { app = "Alacritty", fullscreen = true },
-  b = { app = "Brave Browser", fullscreen = true },
   c = "Calendar",
   f = "Finder",
   i = "iPhone Mirroring",
@@ -18,5 +17,6 @@ return {
   o = { action = "finder_in_alacritty" },
   t = "TablePlus",
   s = "Safari",
-  u = "UTM"
+  u = "UTM",
+  z = { app = "Brave Browser", fullscreen = true },
 }

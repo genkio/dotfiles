@@ -5,10 +5,10 @@
     {
       "context": "Scroll",
       "bindings": {
-        "shift+j": "scroll:bottom",
-        "shift+k": "scroll:top",
-        "shift+u": "scroll:halfPageUp",
-        "shift+d": "scroll:halfPageDown"
+        "alt+shift+j": "scroll:bottom",
+        "alt+shift+k": "scroll:top",
+        "alt+shift+u": "scroll:halfPageUp",
+        "alt+shift+d": "scroll:halfPageDown"
       }
     },
     {
@@ -17,7 +17,11 @@
         "shift+j": "scroll:bottom",
         "shift+k": "scroll:top",
         "shift+u": "scroll:halfPageUp",
-        "shift+d": "scroll:halfPageDown"
+        "shift+d": "scroll:halfPageDown",
+        "alt+shift+j": "scroll:bottom",
+        "alt+shift+k": "scroll:top",
+        "alt+shift+u": "scroll:halfPageUp",
+        "alt+shift+d": "scroll:halfPageDown"
       }
     }
   ]

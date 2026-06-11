@@ -45,5 +45,12 @@ bindings = [
   { key = "7", mods = "Command", chars = "\u001B[128~" },
   { key = "8", mods = "Command", chars = "\u001B[129~" },
   { key = "9", mods = "Command", chars = "\u001B[130~" },
+  # Cmd+Shift+u/d/j/k -> Claude Code transcript scroll. Cmd never reaches the
+  # pty and tmux has extended-keys off, so emit the alt+shift encoding
+  # (ESC + letter): tmux forwards it untouched, Claude binds alt+shift+*.
+  { key = "U", mods = "Command|Shift", chars = "\u001BU" },
+  { key = "D", mods = "Command|Shift", chars = "\u001BD" },
+  { key = "J", mods = "Command|Shift", chars = "\u001BJ" },
+  { key = "K", mods = "Command|Shift", chars = "\u001BK" },
 ]
 

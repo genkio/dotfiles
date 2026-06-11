@@ -72,6 +72,15 @@ bindkey -M emacs '^[d' remove-history-space
 bindkey -M viins '^a' beginning-of-line
 bindkey -M viins '^e' end-of-line
 
+# Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (Alacritty emits
+# ESC+letter). Unbound they split into ESC -> vicmd, where D kills to eol.
+# Swallow so a fat-finger at the prompt does nothing.
+for k in U D J K; do
+  bindkey -M viins -s "^[$k" ''
+  bindkey -M emacs -s "^[$k" ''
+done
+unset k
+
 # Machine-specific env / config (not tracked by git)
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

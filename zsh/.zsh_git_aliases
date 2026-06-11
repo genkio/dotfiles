@@ -95,21 +95,30 @@ gtreen() {
   cd "$target_dir"
 }
 
-# git worktree remove -f ../<project>-<branch> && git branch -d <branch>
+# git worktree remove -f <path> && git branch -D <branch>
 gtreer() {
-  local branch="$1"
+  local sel branch target_dir main_worktree
 
-  if [[ -z "$branch" ]]; then
-    branch=$(git worktree list --porcelain \
-      | awk '/^branch /{sub(/^.*refs\/heads\//, ""); print}' \
+  main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}') || return
+
+  # ask git for paths, rebuilding from gtreen naming misses cct/manual worktrees
+  sel=$(git worktree list --porcelain | awk -v main="$main_worktree" '
+    /^worktree /{wt=substr($0, 10)}
+    /^branch /{br=$0; sub(/^branch refs\/heads\//, "", br); if (wt != main) print br "\t" wt}')
+
+  if [[ -n "$1" ]]; then
+    sel=$(print -r -- "$sel" | awk -F'\t' -v b="$1" '$1 == b {print; exit}')
+    if [[ -z "$sel" ]]; then
+      echo "gtreer: no worktree for branch $1" >&2
+      return 1
+    fi
+  else
+    sel=$(print -r -- "$sel" \
       | fzf --prompt="remove worktree> " --header="Select a worktree to remove" --no-multi) || return
   fi
-  local main_worktree project_name parent_dir target_dir
 
-  main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}') || return
-  project_name=$(basename "$main_worktree") || return
-  parent_dir=$(dirname "$main_worktree") || return
-  target_dir="$parent_dir/$project_name-${branch//\//-}"
+  branch=${sel%%$'\t'*}
+  target_dir=${sel#*$'\t'}
 
   if ! read -q "REPLY?Remove worktree $target_dir and delete branch $branch? [y/N] "; then
     echo
@@ -118,13 +127,14 @@ gtreer() {
   fi
   echo
 
-  # if we're inside the worktree being removed, cd to the main repo first
-  if [[ "$PWD" = "$target_dir"* ]]; then
+  # can't remove worktree we're standing in; :A for symlink-safe compare
+  if [[ "${PWD:A}/" == "${target_dir:A}/"* ]]; then
     cd "$main_worktree" || return
   fi
 
   git worktree remove -f "$target_dir" || return
-  git branch -d "$branch"
+  # -D: delete already confirmed above, -d would strand unmerged branches
+  git branch -D "$branch"
 }
 
 # git commit -m "<message>"

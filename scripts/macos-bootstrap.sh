@@ -309,10 +309,25 @@ optional sudo_pw pmset -a powernap 0
 
 echo "Desktop: Set solid black background"
 BLACK_PNG="/System/Library/Desktop Pictures/Solid Colors/Black.png"
+# System Events wallpaper scripting broke on Tahoe (26.x) after the wallpaper
+# config moved under WallpaperAgent. NSWorkspace via the JS-ObjC bridge still
+# works (same API desktoppr uses) and needs no Apple-events TCC grant.
+set_wallpaper() {
+  osascript -l JavaScript -e '
+    ObjC.import("AppKit");
+    function run(argv) {
+      const url = $.NSURL.fileURLWithPath(argv[0]);
+      const ws = $.NSWorkspace.sharedWorkspace;
+      const screens = $.NSScreen.screens;
+      for (let i = 0; i < screens.count; i++) {
+        if (!ws.setDesktopImageURLForScreenOptionsError(url, screens.objectAtIndex(i), $.NSDictionary.dictionary, null)) {
+          throw new Error("setDesktopImageURL failed for screen " + i);
+        }
+      }
+    }' "$1"
+}
 if [[ -f "$BLACK_PNG" ]]; then
-  # The wallpaper subsystem has been unreliable on Tahoe (26.x); tolerate failure
-  # so the rest of bootstrap still completes — set it manually if it skips.
-  optional osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$BLACK_PNG\""
+  optional set_wallpaper "$BLACK_PNG"
 else
   echo "  Skipping: $BLACK_PNG not found"
 fi

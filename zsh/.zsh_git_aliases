@@ -45,9 +45,18 @@ grb() {
   git rebase "$target"
 }
 
+# ../<project>-<branch> anchored to the main worktree, so it works from inside
+# any worktree (show-toplevel would nest paths)
+_gtree_target_dir() {
+  local main
+  main=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}')
+  [[ -n "$main" ]] || return 1
+  print -r -- "${main:h}/${main:t}-${1//\//-}"
+}
+
 # git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
 gtreea() {
-  local branch="$1"
+  local branch="$1" target_dir
 
   if [[ -z "$branch" ]]; then
     git fetch --prune origin || return
@@ -58,21 +67,22 @@ gtreea() {
       | fzf --prompt="worktree> " --header="Select a remote branch" --no-multi) || return
     branch=${branch%% *}
   fi
-  local repo_root project_name parent_dir target_dir
 
-  repo_root=$(git rev-parse --show-toplevel) || return
-  project_name=$(basename "$repo_root") || return
-  parent_dir=$(dirname "$repo_root") || return
-  target_dir="$parent_dir/$project_name-${branch//\//-}"
+  target_dir=$(_gtree_target_dir "$branch") || return
 
   git fetch origin "$branch" || return
-  git worktree add --track -b "$branch" "$target_dir" "origin/$branch" || return
+  if git show-ref --quiet --verify "refs/heads/$branch"; then
+    # branch outlived its worktree (e.g. removal kept it), re-attach instead of failing on -b
+    git worktree add "$target_dir" "$branch" || return
+  else
+    git worktree add --track -b "$branch" "$target_dir" "origin/$branch" || return
+  fi
   cd "$target_dir"
 }
 
 # git worktree add -b <branch> ../<project>-<branch> <default-branch>
 gtreen() {
-  local branch="$1" base
+  local branch="$1" base target_dir
 
   if [[ -z "$branch" ]]; then
     read "branch?new branch name: " || return
@@ -84,13 +94,10 @@ gtreen() {
     return 1
   }
 
-  local main_worktree project_name parent_dir target_dir
+  target_dir=$(_gtree_target_dir "$branch") || return
 
-  main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}') || return
-  project_name=$(basename "$main_worktree") || return
-  parent_dir=$(dirname "$main_worktree") || return
-  target_dir="$parent_dir/$project_name-${branch//\//-}"
-
+  # branching from stale origin/HEAD invites avoidable rebases
+  git fetch origin "${base#origin/}" || return
   git worktree add --no-track -b "$branch" "$target_dir" "$base" || return
   cd "$target_dir"
 }

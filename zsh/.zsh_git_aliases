@@ -25,19 +25,19 @@ alias gcof="git checkout -f && git clean -df"
 gcom() {
   local target
 
-  target=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || {
+  target=$(git symbolic-ref --quiet refs/remotes/origin/HEAD) || {
     echo "gcom: origin/HEAD is not set for this repo" >&2
     return 1
   }
 
-  git checkout "${target#origin/}"
+  git checkout "${target#refs/remotes/origin/}"
 }
 
 # git rebase <default-branch>
 grb() {
   local target
 
-  target=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || {
+  target=$(git symbolic-ref --quiet refs/remotes/origin/HEAD) || {
     echo "grb: origin/HEAD is not set for this repo" >&2
     return 1
   }
@@ -60,10 +60,14 @@ gtreea() {
 
   if [[ -z "$branch" ]]; then
     git fetch --prune origin || return
+    # %(if)%(symref): origin/HEAD shortens to bare "origin", a grep on HEAD misses it.
+    # awk drops branches already checked out somewhere, worktree add refuses those
     branch=$(git for-each-ref --sort=-committerdate --count=20 \
-      --format='%(refname:short) %(committerdate:relative)' refs/remotes/origin \
-      | sed 's|^origin/||' \
-      | grep -v '^HEAD ' \
+      --format='%(if)%(symref)%(then)%(else)%(refname:short) %(committerdate:relative)%(end)' \
+      refs/remotes/origin \
+      | sed -e '/^$/d' -e 's|^origin/||' \
+      | awk 'NR==FNR {if (/^branch refs\/heads\//) skip[substr($0, 19)]=1; next} !skip[$1]' \
+          <(git worktree list --porcelain) - \
       | fzf --prompt="worktree> " --header="Select a remote branch" --no-multi) || return
     branch=${branch%% *}
   fi
@@ -89,7 +93,9 @@ gtreen() {
     [[ -z "$branch" ]] && return 1
   fi
 
-  base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || {
+  # full ref, not --short: a stray local branch named origin/<x> makes the
+  # short name ambiguous and git returns remotes/origin/<x> instead
+  base=$(git symbolic-ref --quiet refs/remotes/origin/HEAD) || {
     echo "gtreen: origin/HEAD is not set for this repo" >&2
     return 1
   }
@@ -97,14 +103,14 @@ gtreen() {
   target_dir=$(_gtree_target_dir "$branch") || return
 
   # branching from stale origin/HEAD invites avoidable rebases
-  git fetch origin "${base#origin/}" || return
+  git fetch origin "${base#refs/remotes/origin/}" || return
   git worktree add --no-track -b "$branch" "$target_dir" "$base" || return
   cd "$target_dir"
 }
 
 # git worktree remove -f <path> && git branch -D <branch>
 gtreer() {
-  local sel branch target_dir main_worktree
+  local sel branch target_dir main_worktree cur
 
   main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}') || return
 
@@ -113,10 +119,19 @@ gtreer() {
     /^worktree /{wt=substr($0, 10)}
     /^branch /{br=$0; sub(/^branch refs\/heads\//, "", br); if (wt != main) print br "\t" wt}')
 
+  cur=$(git rev-parse --show-toplevel 2>/dev/null)
+
   if [[ -n "$1" ]]; then
     sel=$(print -r -- "$sel" | awk -F'\t' -v b="$1" '$1 == b {print; exit}')
     if [[ -z "$sel" ]]; then
       echo "gtreer: no worktree for branch $1" >&2
+      return 1
+    fi
+  elif [[ -n "$cur" && "${cur:A}" != "${main_worktree:A}" ]]; then
+    # standing in a side worktree: that's the one to remove, skip the picker
+    sel=$(print -r -- "$sel" | awk -F'\t' -v p="$cur" '$2 == p {print; exit}')
+    if [[ -z "$sel" ]]; then
+      echo "gtreer: current worktree has no branch (detached?)" >&2
       return 1
     fi
   else

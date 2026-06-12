@@ -211,6 +211,7 @@ local function normalizeBindings(config)
         bindings[normalizedKey] = {
           kind = "action",
           target = target.action,
+          options = target,
         }
       else
         local appTargets, appTargetError = normalizeAppTargets(target.apps or target)
@@ -337,7 +338,7 @@ local function appTargetLabel(appTarget)
   return appTarget
 end
 
-local function actionTargetLabel(actionTarget)
+local function actionTargetLabel(actionTarget, actionOptions)
   local labels = {
     notification_center = "Action: Notification Center",
     notifications = "Action: Notification Center",
@@ -348,6 +349,10 @@ local function actionTargetLabel(actionTarget)
     window_next_screen = "Action: Move Window to Next Screen",
     finder_in_alacritty = "Action: Open Finder Path in Alacritty",
   }
+
+  if actionTarget == "run_in_alacritty" and actionOptions and type(actionOptions.command) == "string" then
+    return ('Action: Run "%s" in Alacritty'):format(actionOptions.command)
+  end
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
 end
@@ -368,7 +373,7 @@ local function bindingDisplayLabel(binding)
   end
 
   if binding.kind == "action" then
-    return actionTargetLabel(binding.target)
+    return actionTargetLabel(binding.target, binding.options)
   end
 
   return "Unknown binding"
@@ -1090,6 +1095,28 @@ local function moveFocusedWindowToNextScreen(missingWindowMessage)
   window:focus()
 end
 
+-- Spawn windows inside the running Alacritty instance so they all live in one
+-- process and rcmd+a can cycle them; `open -n` would create a separate process
+-- whose windows the cycler can't enumerate. Fall back to a new instance when
+-- no IPC socket answers (Alacritty not running).
+local function openAlacrittyWindow(alacrittyArgs)
+  local _, msgStatus = hs.execute("/Applications/Alacritty.app/Contents/MacOS/alacritty msg create-window " .. alacrittyArgs)
+
+  if msgStatus then
+    -- msg create-window doesn't raise the app
+    local app = hs.application.get("Alacritty")
+
+    if app then
+      app:activate(true)
+    end
+
+    return true
+  end
+
+  local output, status = hs.execute("open -na Alacritty --args " .. alacrittyArgs)
+  return status, output
+end
+
 local function openFinderPathInAlacritty()
   local frontmostApp = hs.application.frontmostApplication()
 
@@ -1126,11 +1153,9 @@ end tell
   end
 
   local path = result[2]
-  -- Alacritty has no AppleScript window API, so spawn a window via CLI.
-  -- `open -n` opens a new window (its own process) at the path; works whether
-  -- or not Alacritty is already running and needs no IPC socket.
+  -- Alacritty has no AppleScript window API, so spawn the window via CLI.
   local quoted = "'" .. tostring(path):gsub("'", "'\\''") .. "'"
-  local output, status = hs.execute("open -na Alacritty --args --working-directory " .. quoted)
+  local status, output = openAlacrittyWindow("--working-directory " .. quoted)
 
   if not status then
     hs.alert.show("Could not open Alacritty")
@@ -1138,7 +1163,25 @@ end tell
   end
 end
 
-local function runAction(actionTarget)
+local function runCommandInAlacritty(command)
+  if type(command) ~= "string" or command == "" then
+    hs.alert.show("run_in_alacritty binding needs a command")
+    return
+  end
+
+  -- Fresh window every press. Run via login+interactive zsh so the command
+  -- resolves like in a terminal (aliases, functions, PATH, ~ expansion); the
+  -- window closes when the command exits.
+  local quoted = "'" .. command:gsub("'", "'\\''") .. "'"
+  local status, output = openAlacrittyWindow("-e /bin/zsh -ilc " .. quoted)
+
+  if not status then
+    hs.alert.show("Could not open Alacritty")
+    print("-- rcmd: failed to run in Alacritty: " .. command .. ": " .. tostring(output))
+  end
+end
+
+local function runAction(actionTarget, actionOptions)
   local actionHandlers = {
     notification_center = function()
       hs.eventtap.keyStroke({ "fn" }, "n")
@@ -1162,6 +1205,9 @@ local function runAction(actionTarget)
       moveFocusedWindowToNextScreen("No focused window to move")
     end,
     finder_in_alacritty = openFinderPathInAlacritty,
+    run_in_alacritty = function()
+      runCommandInAlacritty(actionOptions and actionOptions.command)
+    end,
   }
 
   local handler = actionHandlers[actionTarget]
@@ -1189,7 +1235,7 @@ local function triggerBinding(triggerKey, binding)
   end
 
   if binding.kind == "action" then
-    runAction(binding.target)
+    runAction(binding.target, binding.options)
   end
 end
 

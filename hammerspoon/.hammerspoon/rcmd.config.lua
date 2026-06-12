@@ -15,6 +15,7 @@ return {
   m = "Mail",
   n = { action = "notification_center" },
   o = { action = "finder_in_alacritty" },
+  q = { action = "run_in_alacritty", command = "vi ~/box/notes.txt" },
   t = "TablePlus",
   s = "Safari",
   u = "UTM",

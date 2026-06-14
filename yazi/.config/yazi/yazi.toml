@@ -7,3 +7,9 @@ ratio = [0, 2, 3]
 prepend_previewers = [
   { mime = "image/*", run = "viu" },
 ]
+
+# macOS default `play` opener = system `open`; override to mpv (Enter on audio/video plays in mpv).
+[opener]
+play = [
+  { run = 'mpv %s', orphan = true, desc = "mpv", for = "unix" },
+]

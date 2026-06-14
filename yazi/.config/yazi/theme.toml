@@ -1,0 +1,7 @@
+# No Nerd Font installed -> empty icon rules kill glyphs (avoid tofu boxes).
+[icon]
+globs = []
+dirs = []
+files = []
+exts = []
+conds = []

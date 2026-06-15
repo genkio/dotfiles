@@ -72,7 +72,7 @@ bindkey -M emacs '^[d' remove-history-space
 bindkey -M viins '^a' beginning-of-line
 bindkey -M viins '^e' end-of-line
 
-# Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (Alacritty emits
+# Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (kitty emits
 # ESC+letter). Unbound they split into ESC -> vicmd, where D kills to eol.
 # Swallow so a fat-finger at the prompt does nothing.
 for k in U D J K; do

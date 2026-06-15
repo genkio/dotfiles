@@ -126,16 +126,15 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by defau
 
 ---
 
-## Alacritty
+## kitty
 
-Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
+Primary terminal: titlebar hidden, OSC52 clipboard, `option`-as-`alt`.
 
 | Key | Action |
 |---|---|
 | `Shift+Enter` | Insert newline (multi-line prompt) |
-| `Cmd+Shift+Space` | Toggle vi mode |
 
-Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t` (or `scripts/theme-toggle.sh` outside tmux): it rewrites `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live) and repaints the running terminal via OSC. No splits/tabs - use tmux.
+Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t` (or `scripts/theme-toggle.sh` outside tmux): it rewrites `~/.cache/dotfiles/kitty-theme-active.conf` (kitty reloads it live via SIGUSR1) and repaints the running terminal via OSC. No splits/tabs - use tmux.
 
 ---
 

@@ -26,12 +26,14 @@ brew_bundle_install() {
 
 # Install dev tools via Homebrew
 brew_bundle_install brew/Brewfile.dev
-stow -t "$HOME" alacritty mise
-# Seed Alacritty's active theme file so its first launch has colors. Resolved
+stow -t "$HOME" kitty mise
+# Seed kitty's active theme file so its first launch has colors. Resolved
 # repo root so it works cloned outside ~/dotfiles; non-fatal so a cosmetic seed
 # failure can't abort provisioning (theme-toggle.sh re-seeds on the next flip).
-DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-alacritty-theme.sh \
-  || echo "Warning: Alacritty theme seed failed; theme-toggle.sh re-seeds on the next flip." >&2
+DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-kitty-theme.sh \
+  || echo "Warning: kitty theme seed failed; theme-toggle.sh re-seeds on the next flip." >&2
+DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-kitty-icon.sh \
+  || echo "Warning: kitty icon install failed (cosmetic)." >&2
 
 # mise: node, python, java, go, uv + global npm tools (versions declared in mise/.config/mise/config.toml)
 # Install node first so `npm` exists when activate resolves `npm:*@latest` versions.

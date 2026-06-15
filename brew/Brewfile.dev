@@ -10,6 +10,6 @@ brew "lazygit"
 brew "lazysql"
 brew "mise"
 
-cask "alacritty"
+cask "kitty"
 cask "codex"
 cask "orbstack" unless in_vm

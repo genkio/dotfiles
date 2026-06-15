@@ -143,6 +143,13 @@ if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
   bash scripts/macos-bootstrap.sh
 fi
 
+# carbonyl ships from third-party genkio/tap. Newer Homebrew refuses to load
+# non-official tap formulae until trusted (HOMEBREW_REQUIRE_TAP_TRUST, slated to
+# become default) -> `brew bundle` aborts without this. Guarded: older brew
+# lacks `trust`, re-runs are no-ops.
+brew tap genkio/tap >/dev/null 2>&1 || true
+brew trust genkio/tap || true
+
 brew_bundle_install brew/Brewfile.base
 # sudo: run as root LaunchDaemon for always-on server (no user login required).
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.

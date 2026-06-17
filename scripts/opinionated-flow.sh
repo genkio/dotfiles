@@ -154,7 +154,9 @@ brew_bundle_install brew/Brewfile.base
 # sudo: run as root LaunchDaemon for always-on server (no user login required).
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 sudo_pw brew services start tailscale
-# After bootstrap: `sudo tailscale up --ssh --advertise-exit-node` (prints login URL, auth in browser)
+# After bootstrap, run separately (bundling exit-node into `up` can silently drop it):
+#   sudo tailscale up --ssh                  # prints login URL, auth in browser
+#   sudo tailscale set --advertise-exit-node # then approve in admin console
 # echo "net.inet.ip.forwarding=1" | sudo tee -a /etc/sysctl.conf
 # echo "net.inet6.ip6.forwarding=1" | sudo tee -a /etc/sysctl.conf
 mkdir -p "$HOME/.config/mpv"

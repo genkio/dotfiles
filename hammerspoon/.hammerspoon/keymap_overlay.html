@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  :root { --accent: #7aa2f7; --macro: #bb9af7; }
+  html, body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+    -webkit-user-select: none; cursor: default;
+    font-family: -apple-system, "SF Pro Text", Helvetica, Arial, sans-serif;
+  }
+  body { display: flex; justify-content: flex-end; align-items: flex-start; }
+  #card {
+    margin: 8px; padding: 11px 13px; border-radius: 15px;
+    background: rgba(20, 22, 30, 0.93);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+    color: #e6e6ea;
+  }
+  #bar { display: flex; justify-content: flex-end; margin-bottom: 9px; }
+  #loadBtn {
+    font-family: inherit; font-size: 11px; color: #cfd2db;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px; padding: 3px 10px; cursor: pointer;
+  }
+  #loadBtn:hover {
+    background: rgba(122, 162, 247, 0.22);
+    border-color: rgba(122, 162, 247, 0.5); color: #fff;
+  }
+  #loadBtn:active { background: rgba(122, 162, 247, 0.4); }
+  .layer { display: flex; flex-direction: column; gap: 4px; }
+  .layer + .layer {
+    margin-top: 11px; padding-top: 11px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .board { display: flex; gap: 18px; justify-content: center; }
+  .half { display: flex; flex-direction: column; gap: 3px; }
+  .row { display: grid; grid-template-columns: repeat(6, 32px); gap: 3px; }
+  .row.thumb { margin-top: 5px; }
+  .cap {
+    height: 30px; border-radius: 6px; padding: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 11px; line-height: 1.05; text-align: center; overflow: hidden;
+  }
+  .cap .sub { font-size: 7px; color: #9aa0b4; margin-top: 1px; letter-spacing: 0.3px; }
+  .cap.blank { background: transparent; border-color: transparent; }
+  .cap.trns { color: #565b6b; }
+  .cap.mod { color: #b9bdcb; }
+  .cap.layer {
+    background: rgba(122, 162, 247, 0.18);
+    border-color: rgba(122, 162, 247, 0.5); color: #d3deff; font-weight: 600;
+  }
+  .cap.layer .sub { color: #9db4ff; }
+  .cap.macro {
+    background: rgba(187, 154, 247, 0.16);
+    border-color: rgba(187, 154, 247, 0.45); color: #e4d7ff;
+  }
+</style>
+</head>
+<body>
+  <div id="card">
+    <div id="bar"><button id="loadBtn" type="button">Load .vil…</button></div>
+    <div id="stack"></div>
+  </div>
+<script>
+/*__DATA__*/
+(function () {
+  const D = window.KEYMAP_DATA;
+  const O = window.KEYMAP_OPTS || {};
+  const HIDE = new Set(O.hideKeys || []);
+  if (O.accent) document.documentElement.style.setProperty("--accent", O.accent);
+
+  const KC = {
+    ESCAPE: "Esc", ESC: "Esc", ENTER: "⏎", ENT: "⏎", RETURN: "⏎",
+    TAB: "⇥", SPACE: "␣", SPC: "␣", BSPACE: "⌫", BSPC: "⌫",
+    DELETE: "⌦", DEL: "⌦", INSERT: "Ins", INS: "Ins",
+    LSHIFT: "⇧", LSFT: "⇧", RSHIFT: "⇧", RSFT: "⇧",
+    LCTRL: "⌃", LCTL: "⌃", RCTRL: "⌃", RCTL: "⌃",
+    LALT: "⌥", LOPT: "⌥", RALT: "⌥", ROPT: "⌥",
+    LGUI: "⌘", LCMD: "⌘", RGUI: "⌘", RCMD: "⌘",
+    MINUS: "-", EQUAL: "=", LBRACKET: "[", RBRACKET: "]", BSLASH: "\\",
+    SCOLON: ";", QUOTE: "'", GRAVE: "`", COMMA: ",", DOT: ".", SLASH: "/",
+    UP: "↑", DOWN: "↓", LEFT: "←", RIGHT: "→",
+    HOME: "Home", END: "End", PGUP: "PgUp", PGDOWN: "PgDn", PGDN: "PgDn",
+    CAPS: "Caps", CAPSLOCK: "Caps", APP: "Menu", PSCR: "PrtSc",
+    MUTE: "🔇", VOLU: "🔊", VOLD: "🔉",
+    MPLY: "⏯", MNXT: "⏭", MPRV: "⏮",
+    BTN1: "M1", BTN2: "M2", BTN3: "M3",
+    WH_U: "Wh↑", WH_D: "Wh↓", WH_L: "Wh←", WH_R: "Wh→",
+    KP_MINUS: "-", KP_PLUS: "+", KP_EQUAL: "=", KP_SLASH: "/", KP_ASTERISK: "*",
+    KP_DOT: ".", KP_COMMA: ",", KP_ENTER: "⏎",
+    KP_0: "0", KP_1: "1", KP_2: "2", KP_3: "3", KP_4: "4",
+    KP_5: "5", KP_6: "6", KP_7: "7", KP_8: "8", KP_9: "9",
+  };
+  for (let i = 1; i <= 24; i++) KC["F" + i] = "F" + i;
+
+  const SHIFTED = {
+    "1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
+    "6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
+    MINUS: "_", EQUAL: "+", LBRACKET: "{", RBRACKET: "}", BSLASH: "|",
+    SCOLON: ":", QUOTE: '"', GRAVE: "~", COMMA: "<", DOT: ">", SLASH: "?",
+  };
+  const MODS = {
+    LSHIFT: 1, RSHIFT: 1, LSFT: 1, RSFT: 1, LCTRL: 1, RCTRL: 1, LCTL: 1, RCTL: 1,
+    LALT: 1, RALT: 1, LOPT: 1, ROPT: 1, LGUI: 1, RGUI: 1, LCMD: 1, RCMD: 1,
+  };
+
+  const base = (s) => (s.indexOf("KC_") === 0 ? s.slice(3) : s);
+  function lblKC(s) {
+    const b = base(s);
+    if (b in KC) return KC[b];
+    if (b.length === 1) return b;
+    return b.replace(/_/g, " ");
+  }
+
+  function label(kc) {
+    if (kc === -1 || kc == null) return null;
+    if (HIDE.has(kc)) return { main: "", cls: "blank" };
+    if (typeof kc !== "string") return { main: String(kc) };
+    let m;
+    if ((m = kc.match(/^(MO|TG|TO|TT|OSL|DF|MOMENTARY)\((\d+)\)$/)))
+      return { main: "L" + m[2], sub: m[1] === "MOMENTARY" ? "MO" : m[1], cls: "layer" };
+    if ((m = kc.match(/^LT(\d+)\((KC_\w+|\w+)\)$/)))
+      return { main: lblKC(m[2]), sub: "L" + m[1], cls: "layer" };
+    if ((m = kc.match(/^LT\((\d+),\s*(KC_\w+|\w+)\)$/)))
+      return { main: lblKC(m[2]), sub: "L" + m[1], cls: "layer" };
+    if ((m = kc.match(/^(?:LSFT|RSFT|S)\((KC_\w+)\)$/))) {
+      const b = base(m[1]);
+      if (b in SHIFTED) return { main: SHIFTED[b] };
+      return { main: "⇧" + lblKC(m[1]) };
+    }
+    if ((m = kc.match(/^(LCTL|RCTL|LALT|RALT|LGUI|RGUI|C|A|G)\((KC_\w+)\)$/)))
+      return { main: lblKC(m[2]), sub: m[1] };
+    if ((m = kc.match(/^USER(\d+)$/))) {
+      const nm = (O.macroNames && O.macroNames[kc]) || "M" + parseInt(m[1], 10);
+      return { main: nm, cls: "macro" };
+    }
+    if ((m = kc.match(/^MACRO?(\d+)$/))) return { main: "M" + m[1], cls: "macro" };
+    if (kc.indexOf("KC_") === 0) {
+      const b = base(kc);
+      if (b === "NO") return { main: "", cls: "blank" };
+      if (b === "TRNS" || b === "TRANSPARENT") return { main: "▽", cls: "trns" };
+      return { main: lblKC(kc), cls: b in MODS ? "mod" : "" };
+    }
+    return { main: kc };
+  }
+
+  function cell(kc) {
+    const d = document.createElement("div");
+    const L = label(kc);
+    if (!L) { d.className = "cap blank"; return d; }
+    d.className = "cap" + (L.cls ? " " + L.cls : "");
+    const main = document.createElement("div");
+    main.textContent = L.main;
+    d.appendChild(main);
+    if (L.sub) {
+      const s = document.createElement("div");
+      s.className = "sub";
+      s.textContent = L.sub;
+      d.appendChild(s);
+    }
+    return d;
+  }
+
+  function isBlank(kc) {
+    return kc === -1 || kc == null || kc === "KC_NO" || HIDE.has(kc);
+  }
+
+  function rowHasContent(layerData, vrow) {
+    for (let c = 0; c < 6; c++) {
+      if (!isBlank(layerData[vrow][c]) || !isBlank(layerData[vrow + 4][c])) return true;
+    }
+    return false;
+  }
+
+  function makeRow(layerData, vrow, reversed) {
+    const row = document.createElement("div");
+    row.className = "row" + (vrow === 3 ? " thumb" : "");
+    let cols = [0, 1, 2, 3, 4, 5];
+    if (reversed) cols = cols.slice().reverse();
+    const baseRow = reversed ? vrow + 4 : vrow;
+    cols.forEach((c) => row.appendChild(cell(layerData[baseRow][c])));
+    return row;
+  }
+
+  function layerBlock(n) {
+    const layerData = D.layout[n];
+    if (!layerData) return null;
+
+    // Drop trailing all-blank rows (e.g. an unused thumb row) so short layers
+    // don't carry empty space at the bottom.
+    let last = 3;
+    while (last > 0 && !rowHasContent(layerData, last)) last--;
+
+    const blk = document.createElement("div");
+    blk.className = "layer";
+
+    const board = document.createElement("div");
+    board.className = "board";
+    const left = document.createElement("div");
+    left.className = "half";
+    const right = document.createElement("div");
+    right.className = "half";
+    for (let v = 0; v <= last; v++) {
+      left.appendChild(makeRow(layerData, v, false));
+      right.appendChild(makeRow(layerData, v, true));
+    }
+    board.appendChild(left);
+    board.appendChild(right);
+    blk.appendChild(board);
+    return blk;
+  }
+
+  function post(msg) {
+    try {
+      window.webkit.messageHandlers.keymap.postMessage(msg);
+    } catch (e) {}
+  }
+
+  // Report the rendered size so Hammerspoon can fit the window to the stack.
+  function postSize() {
+    const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (f) => f();
+    raf(function () {
+      raf(function () {
+        const r = document.getElementById("card").getBoundingClientRect();
+        post({ type: "size", w: Math.ceil(r.width) + 20, h: Math.ceil(r.height) + 20 });
+      });
+    });
+  }
+
+  function render() {
+    const stack = document.getElementById("stack");
+    stack.innerHTML = "";
+    const layers = O.populated && O.populated.length ? O.populated : [0];
+    layers.forEach((n) => {
+      const blk = layerBlock(n);
+      if (blk) stack.appendChild(blk);
+    });
+    const btn = document.getElementById("loadBtn");
+    if (btn) btn.onclick = () => post({ type: "pick" });
+    postSize();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

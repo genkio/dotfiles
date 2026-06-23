@@ -19,5 +19,6 @@ return {
   t = "TablePlus",
   s = "Safari",
   u = "UTM",
+  x = { action = "keymap_toggle" },
   z = { app = "Brave Browser", fullscreen = true },
 }

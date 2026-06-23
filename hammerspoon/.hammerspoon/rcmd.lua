@@ -348,6 +348,7 @@ local function actionTargetLabel(actionTarget, actionOptions)
     window_maximize = "Action: Enter Full Screen",
     window_next_screen = "Action: Move Window to Next Screen",
     finder_in_alacritty = "Action: Open Finder Path in Alacritty",
+    keymap_toggle = "Action: Toggle keymap overlay",
   }
 
   if actionTarget == "run_in_alacritty" and actionOptions and type(actionOptions.command) == "string" then
@@ -1207,6 +1208,9 @@ local function runAction(actionTarget, actionOptions)
     finder_in_alacritty = openFinderPathInAlacritty,
     run_in_alacritty = function()
       runCommandInAlacritty(actionOptions and actionOptions.command)
+    end,
+    keymap_toggle = function()
+      require("keymap_overlay").toggle()
     end,
   }
 

@@ -131,7 +131,7 @@ end
 vim.env.NVIM_SHELL_ALIASES = '1'
 vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
 
--- Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (Alacritty emits
+-- Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (kitty emits
 -- ESC+letter). Unmapped meta falls back to ESC+key (D kills to eol, J joins),
 -- so swallow them.
 for _, key in ipairs { 'U', 'D', 'J', 'K' } do

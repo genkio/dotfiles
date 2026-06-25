@@ -1,4 +1,5 @@
--- Alacritty has no graphics protocol -> render images as ANSI half-blocks via viu.
+-- Fallback for terminals with no graphics protocol: render images as ANSI
+-- half-blocks via viu. kitty uses its native graphics protocol instead.
 local M = {}
 
 function M:peek(job)

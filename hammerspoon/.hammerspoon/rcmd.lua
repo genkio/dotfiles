@@ -347,11 +347,11 @@ local function actionTargetLabel(actionTarget, actionOptions)
     window_right = "Action: Move Window Right",
     window_maximize = "Action: Enter Full Screen",
     window_next_screen = "Action: Move Window to Next Screen",
-    finder_in_alacritty = "Action: Open Finder Path in Alacritty",
+    finder_in_kitty = "Action: Open Finder Path in kitty",
   }
 
-  if actionTarget == "run_in_alacritty" and actionOptions and type(actionOptions.command) == "string" then
-    return ('Action: Run "%s" in Alacritty'):format(actionOptions.command)
+  if actionTarget == "run_in_kitty" and actionOptions and type(actionOptions.command) == "string" then
+    return ('Action: Run "%s" in kitty'):format(actionOptions.command)
   end
 
   return labels[actionTarget] or ("Action: %s"):format(actionTarget)
@@ -1016,6 +1016,24 @@ openBoundApp = function(appBinding)
   end)
 end
 
+-- kitty (and some apps) ignore the first AX resize and snap back to their
+-- initial window size, centered. Re-applying once the window has settled lands
+-- it, so verify against the target unit rect and retry a few times.
+local function snapWindowToUnit(window, unitRect, attempts)
+  window:moveToUnit(unitRect, 0)
+  window:focus()
+
+  if attempts <= 0 or windowMatchesUnitRect(window, unitRect) then
+    return
+  end
+
+  hs.timer.doAfter(0.12, function()
+    if window:id() and not windowMatchesUnitRect(window, unitRect) then
+      snapWindowToUnit(window, unitRect, attempts - 1)
+    end
+  end)
+end
+
 local function moveFocusedWindow(unitRect, missingWindowMessage)
   local window = hs.window.focusedWindow()
 
@@ -1028,15 +1046,13 @@ local function moveFocusedWindow(unitRect, missingWindowMessage)
     window:setFullScreen(false)
     hs.timer.doAfter(0.4, function()
       if window:id() then
-        window:moveToUnit(unitRect, 0)
-        window:focus()
+        snapWindowToUnit(window, unitRect, 3)
       end
     end)
     return
   end
 
-  window:moveToUnit(unitRect, 0)
-  window:focus()
+  snapWindowToUnit(window, unitRect, 3)
 end
 
 local function fullscreenFocusedWindow(missingWindowMessage)
@@ -1095,29 +1111,32 @@ local function moveFocusedWindowToNextScreen(missingWindowMessage)
   window:focus()
 end
 
--- Spawn windows inside the running Alacritty instance so they all live in one
--- process and rcmd+a can cycle them; `open -n` would create a separate process
--- whose windows the cycler can't enumerate. Fall back to a new instance when
--- no IPC socket answers (Alacritty not running).
-local function openAlacrittyWindow(alacrittyArgs)
-  local _, msgStatus = hs.execute("/Applications/Alacritty.app/Contents/MacOS/alacritty msg create-window " .. alacrittyArgs)
+-- Open new windows inside the *running* kitty instance so every kitty window
+-- lives in one process and rcmd's app-cycler can enumerate them; `open -n` would
+-- spawn a separate process whose windows the cycler can't see. kitty's listen_on
+-- appends the PID to the socket (/tmp/kitty -> /tmp/kitty-<pid>), so target the
+-- instance's own socket via remote control. No instance running -> open a fresh
+-- one (it comes up with its own socket for next time).
+local KITTEN = "/Applications/kitty.app/Contents/MacOS/kitten"
 
-  if msgStatus then
-    -- msg create-window doesn't raise the app
-    local app = hs.application.get("Alacritty")
+local function openKittyWindow(rcArgs, cliArgs)
+  local app = hs.application.get("kitty")
 
-    if app then
+  if app then
+    local socket = "unix:/tmp/kitty-" .. app:pid()
+    local _, rcOk = hs.execute(KITTEN .. " @ --to " .. socket .. " launch --type=os-window " .. rcArgs)
+
+    if rcOk then
       app:activate(true)
+      return true
     end
-
-    return true
   end
 
-  local output, status = hs.execute("open -na Alacritty --args " .. alacrittyArgs)
+  local output, status = hs.execute("open -na kitty --args " .. cliArgs)
   return status, output
 end
 
-local function openFinderPathInAlacritty()
+local function openFinderPathInKitty()
   local frontmostApp = hs.application.frontmostApplication()
 
   if not frontmostApp or frontmostApp:bundleID() ~= "com.apple.finder" then
@@ -1153,31 +1172,32 @@ end tell
   end
 
   local path = result[2]
-  -- Alacritty has no AppleScript window API, so spawn the window via CLI.
+  -- kitty has no AppleScript window API, so spawn the window via remote control.
   local quoted = "'" .. tostring(path):gsub("'", "'\\''") .. "'"
-  local status, output = openAlacrittyWindow("--working-directory " .. quoted)
+  local status, output = openKittyWindow("--cwd " .. quoted, "--directory " .. quoted)
 
   if not status then
-    hs.alert.show("Could not open Alacritty")
-    print("-- rcmd: failed to open Alacritty at " .. tostring(path) .. ": " .. tostring(output))
+    hs.alert.show("Could not open kitty")
+    print("-- rcmd: failed to open kitty at " .. tostring(path) .. ": " .. tostring(output))
   end
 end
 
-local function runCommandInAlacritty(command)
+local function runCommandInKitty(command)
   if type(command) ~= "string" or command == "" then
-    hs.alert.show("run_in_alacritty binding needs a command")
+    hs.alert.show("run_in_kitty binding needs a command")
     return
   end
 
   -- Fresh window every press. Run via login+interactive zsh so the command
   -- resolves like in a terminal (aliases, functions, PATH, ~ expansion); the
-  -- window closes when the command exits.
+  -- window closes when the command exits. `--` stops launch/kitty option
+  -- parsing so the leading -ilc reaches zsh.
   local quoted = "'" .. command:gsub("'", "'\\''") .. "'"
-  local status, output = openAlacrittyWindow("-e /bin/zsh -ilc " .. quoted)
+  local status, output = openKittyWindow("-- /bin/zsh -ilc " .. quoted, "-- /bin/zsh -ilc " .. quoted)
 
   if not status then
-    hs.alert.show("Could not open Alacritty")
-    print("-- rcmd: failed to run in Alacritty: " .. command .. ": " .. tostring(output))
+    hs.alert.show("Could not open kitty")
+    print("-- rcmd: failed to run in kitty: " .. command .. ": " .. tostring(output))
   end
 end
 
@@ -1204,9 +1224,9 @@ local function runAction(actionTarget, actionOptions)
     window_next_screen = function()
       moveFocusedWindowToNextScreen("No focused window to move")
     end,
-    finder_in_alacritty = openFinderPathInAlacritty,
-    run_in_alacritty = function()
-      runCommandInAlacritty(actionOptions and actionOptions.command)
+    finder_in_kitty = openFinderPathInKitty,
+    run_in_kitty = function()
+      runCommandInKitty(actionOptions and actionOptions.command)
     end,
   }
 

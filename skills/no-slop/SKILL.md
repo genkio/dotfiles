@@ -1,6 +1,6 @@
 ---
 name: no-slop
-description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, surface assumptions, define verifiable success criteria, prevent shortcuts that create technical debt, and respect the type system in typed languages.
+description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, reach for existing/stdlib/native solutions before writing new code, make surgical changes, surface assumptions, define verifiable success criteria, prevent shortcuts that create technical debt, and respect the type system in typed languages.
 license: MIT
 ---
 
@@ -31,6 +31,20 @@ Before implementing:
 - If you write 200 lines and it could be 50, rewrite it.
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### The ladder
+
+Before writing new code, climb until a rung holds, then stop:
+
+1. **Needs to exist?** Speculative need: skip it, say so. (YAGNI)
+2. **Already in this codebase?** Reuse the helper, util, type, or pattern that already lives here. Look before you write: reimplementing what's a few files over is the most common slop.
+3. **Stdlib does it?** Use it.
+4. **Native platform feature covers it?** `<input type="date">` over a picker lib, CSS over JS, a DB constraint over app code.
+5. **Already-installed dependency solves it?** Use it. Never add a new dependency for what a few lines do.
+6. **One line?** One line.
+7. **Only then:** the minimum code that works.
+
+The ladder runs *after* you understand the problem, not instead of it. Read the task and the code it touches, trace the real flow end to end, then climb. Two rungs work: take the higher one and move on.
 
 ## 3. Surgical Changes
 
@@ -71,7 +85,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **Think deeply. Take the time. No shortcuts that mortgage the future.**
 
 Before reaching for a fix:
-- Understand the root cause before patching the symptom.
+- Understand the root cause before patching the symptom. Grep the callers of what you're about to change: one guard in the shared function beats a patch at every call site, and fixing only the reported path leaves sibling callers broken.
 - Don't optimize for finishing fast. Optimize for finishing right.
 - If a clean solution takes longer, take longer. Time is not the constraint — correctness is.
 

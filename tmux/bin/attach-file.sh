@@ -21,20 +21,22 @@ start_dir="${ATTACH_ROOT:-$HOME/box}"
 # everything a file manager would, minus the obvious noise. Per-file stat (not
 # xargs) so an empty dir can't trip pipefail and abort under set -e.
 browse() {
-  local d=$1 t p
+  local d=$1 p base
   printf '../\n'
-  for t in d f; do
-    fd --hidden --no-ignore --min-depth 1 --max-depth 1 --type "$t" \
-       --exclude .git --exclude node_modules . "$d" 2>/dev/null \
-    | while IFS= read -r p; do
-        printf '%s\t%s\n' "$(/usr/bin/stat -f '%B' "$p" 2>/dev/null || echo 0)" "$p"
-      done \
-    | sort -rn | cut -f2- \
-    | while IFS= read -r p; do
-        p=${p%/}  # fd suffixes dirs with /, which would empty the basename
-        if [ "$t" = d ]; then printf '%s/\n' "${p##*/}"; else printf '%s\n' "${p##*/}"; fi
-      done
-  done
+  fd --hidden --no-ignore --min-depth 1 --max-depth 1 \
+     --exclude .git --exclude node_modules . "$d" 2>/dev/null \
+  | while IFS= read -r p; do
+      printf '%s\t%s\n' "$(/usr/bin/stat -f '%B' "${p%/}" 2>/dev/null || echo 0)" "$p"
+    done \
+  | sort -rn | cut -f2- \
+  | while IFS= read -r p; do
+      # fd suffixes dirs with /; that slash flags a dir for nav, but must be
+      # stripped or the basename comes out empty.
+      case $p in
+        */) base=${p%/}; printf '%s/\n' "${base##*/}" ;;
+        *)  printf '%s\n' "${p##*/}" ;;
+      esac
+    done
 }
 
 # clear-query so the old filter doesn't hide the new listing after navigating.

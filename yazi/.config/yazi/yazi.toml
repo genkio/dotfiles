@@ -3,13 +3,14 @@
 show_hidden = true
 ratio = [0, 2, 3]
 
-[plugin]
-prepend_previewers = [
-  { mime = "image/*", run = "viu" },
-]
+# Kitty has a built-in graphics protocol -> yazi previews images natively (KGP). No viu needed.
+# Non-kitty fallback: install chafa, yazi auto-uses it for ASCII-art preview.
 
-# macOS default `play` opener = system `open`; override to mpv (Enter on audio/video plays in mpv).
+# macOS default `play` opener = system `open`; override to mpv.
+# --vo=kitty -> render video/audio inline in the kitty window via its graphics protocol.
+# block=true so mpv owns the terminal (q returns to yazi); 2nd entry = GUI window via interactive open.
 [opener]
 play = [
-  { run = 'mpv %s', orphan = true, desc = "mpv", for = "unix" },
+  { run = 'mpv --vo=kitty --vo-kitty-use-shm=yes %s', block = true, desc = "mpv (kitty inline)", for = "unix" },
+  { run = 'mpv %s', orphan = true, desc = "mpv (window)", for = "unix" },
 ]

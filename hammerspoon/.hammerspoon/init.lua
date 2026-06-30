@@ -37,6 +37,9 @@ for _, directory in ipairs(initDirectories()) do
   addLuaSearchPath(directory)
 end
 
+-- side-effect require: opens the message port for the `hs` CLI (hs -c ...)
+require("hs.ipc")
+
 require("rcmd").start()
 require("raycast").start()
 require("selection_ocr").start()

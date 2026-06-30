@@ -3,6 +3,15 @@
   "$docs": "https://code.claude.com/docs/en/keybindings",
   "bindings": [
     {
+      "context": "Scroll",
+      "bindings": {
+        "alt+shift+j": "scroll:bottom",
+        "alt+shift+k": "scroll:top",
+        "alt+shift+u": "scroll:halfPageUp",
+        "alt+shift+d": "scroll:halfPageDown"
+      }
+    },
+    {
       "context": "Transcript",
       "bindings": {
         "shift+j": "scroll:bottom",

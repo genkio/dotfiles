@@ -131,13 +131,6 @@ end
 vim.env.NVIM_SHELL_ALIASES = '1'
 vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
 
--- Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (Alacritty emits
--- ESC+letter). Unmapped meta falls back to ESC+key (D kills to eol, J joins),
--- so swallow them.
-for _, key in ipairs { 'U', 'D', 'J', 'K' } do
-  vim.keymap.set({ 'n', 'i', 'x' }, '<M-' .. key .. '>', '<Nop>')
-end
-
 -- Plugins
 vim.pack.add({
   { src = 'https://github.com/nuvic/flexoki-nvim', version = 'main' },

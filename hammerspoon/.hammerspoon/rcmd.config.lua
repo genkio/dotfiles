@@ -18,6 +18,6 @@ return {
   q = { action = "run_in_alacritty", command = "vi ~/box/notes.txt" },
   t = "TablePlus",
   s = "Safari",
-  u = "UTM",
+  u = "com.netease.uuremote",
   z = { app = "Brave Browser", fullscreen = true },
 }

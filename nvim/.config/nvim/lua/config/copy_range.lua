@@ -25,14 +25,14 @@ local function resolve_range()
   return current_range()
 end
 
-local function tilde_path(bufnr)
+local function tilde_path(bufnr, mods)
   local path = vim.api.nvim_buf_get_name(bufnr)
   if path == '' then
     return '[No Name]'
   end
 
   local absolute = vim.fs.normalize(path)
-  return vim.fn.fnamemodify(absolute, ':~')
+  return vim.fn.fnamemodify(absolute, ':~' .. (mods or ''))
 end
 
 function M.build(bufnr)
@@ -47,24 +47,36 @@ function M.build(bufnr)
   end
 
   if start_line == end_line then
+    if start_line == 1 then
+      return path
+    end
     return string.format('%s:%d', path, start_line)
   end
 
   return string.format('%s:%d-%d', path, start_line, end_line)
 end
 
-function M.copy()
-  local text = M.build(0)
-
+local function copy_text(text)
   vim.fn.setreg('"', text)
   vim.fn.setreg('+', text)
 
   vim.notify('Copied: ' .. text)
 end
 
+function M.copy()
+  copy_text(M.build(0))
+end
+
+function M.copy_dir()
+  copy_text(tilde_path(0, ':h'))
+end
+
 function M.setup()
   vim.keymap.set({ 'n', 'v' }, '<leader>yr', M.copy, {
     desc = 'Copy selection range to clipboard',
+  })
+  vim.keymap.set({ 'n', 'v' }, '<leader>yR', M.copy_dir, {
+    desc = 'Copy directory path to clipboard',
   })
 end
 

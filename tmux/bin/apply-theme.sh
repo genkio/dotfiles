@@ -63,10 +63,11 @@ tmux set-option -g status-left-style "bg=$bg,fg=$fg"
 tmux set-option -g status-right-style "bg=$bg,fg=$fg"
 tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh)#[default]"
 # usage call inlined here for theme color; plugin auto-inject left off (@tmux_open_usage_enabled) else dupe
-# strip the leading # from the theme red so it can't start a shell comment
-# inside the #() argument below.
+# strip the leading # from the theme colors so they can't start a shell
+# comment inside the #() argument below.
 attention_hex="${attention#\#}"
-tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default] #(\$HOME/dotfiles/tmux/bin/maestral-time-color.sh $attention_hex)[%H:%M]#[default]"
+busy_hex="${busy#\#}"
+tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default] #(\$HOME/dotfiles/tmux/bin/maestral-time-color.sh $attention_hex $busy_hex)[%H:%M]#[default]"
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"

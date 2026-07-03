@@ -76,7 +76,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `gdc <commit>` | Copy a commit's diff to the clipboard |
 | `gtreea [branch]` | Add a worktree tracking a remote branch (fzf-picks one if omitted), then `cd` in |
 | `gtreen [branch]` | Add a worktree on a new branch off the default branch, then `cd` in |
-| `gtreer [branch]` | Remove a worktree (fzf-picks one if omitted) and delete its branch, after confirmation |
+| `gtreer [branch]` | Remove a worktree (fzf-picks one if omitted), tear down its Docker containers/volumes/networks, and delete its branch, after confirmation |
 
 ---
 

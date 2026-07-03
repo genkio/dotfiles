@@ -54,6 +54,75 @@ _gtree_target_dir() {
   print -r -- "${main:h}/${main:t}-${1//\//-}"
 }
 
+_gtree_path_is_within() {
+  local child="$1" parent="$2"
+
+  [[ -n "$child" && -n "$parent" && "$child" != "<no value>" ]] || return 1
+  child=${child:A}
+  parent=${parent:A}
+  [[ "$child" == "$parent" || "$child" == "$parent"/* ]]
+}
+
+# one inspect per container (not per-field): -aq scans every container, so
+# separate inspects per field would be too chatty
+_gtree_docker_containers() {
+  local target="$1" target_abs id working_dir config_files project state name source match
+  local -a ids lines mounts
+
+  command -v docker >/dev/null 2>&1 || return 0
+  target_abs=${target:A}
+  ids=("${(@f)$(docker ps -aq 2>/dev/null)}")
+  [[ -n "${ids[1]}" ]] || return 0
+
+  # name last of the fixed fields: it is always non-empty, so trailing-newline
+  # stripping in $() can't drop it and shift the field offsets
+  local fmt='{{index .Config.Labels "com.docker.compose.project.working_dir"}}
+{{index .Config.Labels "com.docker.compose.project.config_files"}}
+{{index .Config.Labels "com.docker.compose.project"}}
+{{.State.Status}}
+{{.Name}}
+{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}
+{{end}}{{end}}'
+
+  for id in "${ids[@]}"; do
+    lines=("${(@f)$(docker inspect --format "$fmt" "$id" 2>/dev/null)}")
+    (( ${#lines} >= 5 )) || continue
+    working_dir=${lines[1]}
+    config_files=${lines[2]}
+    project=${lines[3]}
+    state=${lines[4]}
+    name=${lines[5]#/}
+    mounts=("${(@)lines[6,-1]}")
+
+    match=0
+    if _gtree_path_is_within "$working_dir" "$target_abs"; then
+      match=1
+    fi
+
+    if (( ! match )); then
+      for source in "${(s:,:)config_files}"; do
+        if _gtree_path_is_within "$source" "$target_abs"; then
+          match=1
+          break
+        fi
+      done
+    fi
+
+    if (( ! match )); then
+      for source in "${mounts[@]}"; do
+        if _gtree_path_is_within "$source" "$target_abs"; then
+          match=1
+          break
+        fi
+      done
+    fi
+
+    if (( match )); then
+      print -r -- "$id"$'\t'"$state"$'\t'"$name"$'\t'"$project"
+    fi
+  done
+}
+
 # git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
 gtreea() {
   local branch="$1" target_dir
@@ -108,9 +177,10 @@ gtreen() {
   cd "$target_dir"
 }
 
-# git worktree remove -f <path> && git branch -D <branch>
+# tear down matching Docker containers/volumes/networks, then git worktree remove -f <path> && git branch -D <branch>
 gtreer() {
-  local sel branch target_dir main_worktree cur
+  local sel branch target_dir main_worktree cur prompt line rest container_id container_name container_state container_project proj
+  local -a docker_containers docker_container_ids docker_projects docker_volumes docker_networks vols nets
 
   main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}') || return
 
@@ -142,7 +212,46 @@ gtreer() {
   branch=${sel%%$'\t'*}
   target_dir=${sel#*$'\t'}
 
-  if ! read -q "REPLY?Remove worktree $target_dir and delete branch $branch? [y/N] "; then
+  docker_containers=("${(@f)$(_gtree_docker_containers "$target_dir")}")
+  [[ -n "${docker_containers[1]}" ]] || docker_containers=()
+  if ((${#docker_containers})); then
+    echo "gtreer: warning: Docker resources found for $target_dir:" >&2
+    for line in "${docker_containers[@]}"; do
+      container_id=${line%%$'\t'*}
+      rest=${line#*$'\t'}
+      container_state=${rest%%$'\t'*}
+      rest=${rest#*$'\t'}
+      container_name=${rest%%$'\t'*}
+      container_project=${rest##*$'\t'}
+      docker_container_ids+=("$container_id")
+      [[ -n "$container_project" ]] && docker_projects+=("$container_project")
+      echo "  $container_name (${container_id[1,12]}) [$container_state]" >&2
+    done
+    # named volumes/networks aren't bound to a path; reach them via the compose
+    # project of the matched containers
+    docker_projects=("${(@u)docker_projects}")
+    for proj in "${docker_projects[@]}"; do
+      vols=("${(@f)$(docker volume ls -q --filter "label=com.docker.compose.project=$proj" 2>/dev/null)}")
+      [[ -n "${vols[1]}" ]] && docker_volumes+=("${vols[@]}")
+      nets=("${(@f)$(docker network ls -q --filter "label=com.docker.compose.project=$proj" 2>/dev/null)}")
+      [[ -n "${nets[1]}" ]] && docker_networks+=("${nets[@]}")
+    done
+    docker_volumes=("${(@u)docker_volumes}")
+    docker_networks=("${(@u)docker_networks}")
+    (( ${#docker_volumes} + ${#docker_networks} )) \
+      && echo "  + ${#docker_volumes} volume(s), ${#docker_networks} network(s)" >&2
+  fi
+
+  if ((${#docker_container_ids})); then
+    prompt="Remove ${#docker_container_ids} container(s)"
+    ((${#docker_volumes})) && prompt+=" + ${#docker_volumes} volume(s) [DATA LOSS]"
+    ((${#docker_networks})) && prompt+=" + ${#docker_networks} network(s)"
+    prompt+=", remove worktree $target_dir, and delete branch $branch? [y/N] "
+  else
+    prompt="Remove worktree $target_dir and delete branch $branch? [y/N] "
+  fi
+
+  if ! read -q "REPLY?$prompt"; then
     echo
     echo "Cancelled."
     return 1
@@ -152,6 +261,13 @@ gtreer() {
   # can't remove worktree we're standing in; :A for symlink-safe compare
   if [[ "${PWD:A}/" == "${target_dir:A}/"* ]]; then
     cd "$main_worktree" || return
+  fi
+
+  if ((${#docker_container_ids})); then
+    docker rm -fv "${docker_container_ids[@]}" || return
+    # best-effort: volume/network rm fails non-fatally if still used elsewhere
+    ((${#docker_volumes})) && docker volume rm "${docker_volumes[@]}" 2>/dev/null
+    ((${#docker_networks})) && docker network rm "${docker_networks[@]}" 2>/dev/null
   fi
 
   git worktree remove -f "$target_dir" || return

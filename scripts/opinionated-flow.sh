@@ -155,8 +155,10 @@ brew_bundle_install brew/Brewfile.base
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 sudo_pw brew services start tailscale
 # After bootstrap, run separately (bundling exit-node into `up` can silently drop it):
-#   sudo tailscale up --ssh                  # prints login URL, auth in browser
+#   sudo tailscale up --ssh --operator=$USER # prints login URL, auth in browser
 #   sudo tailscale set --advertise-exit-node # then approve in admin console
+# To USE a remote exit node from this mac: scripts/tailscale-exit.sh on|off|status
+# (tailscaled on macOS never programs the v4 default route; the script adds it)
 # echo "net.inet.ip.forwarding=1" | sudo tee -a /etc/sysctl.conf
 # echo "net.inet6.ip6.forwarding=1" | sudo tee -a /etc/sysctl.conf
 mkdir -p "$HOME/.config/mpv"

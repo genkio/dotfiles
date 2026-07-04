@@ -61,13 +61,17 @@ tmux set-option -g pane-active-border-style "fg=$active_border"
 tmux set-option -g status-style "bg=$bg,fg=$fg"
 tmux set-option -g status-left-style "bg=$bg,fg=$fg"
 tmux set-option -g status-right-style "bg=$bg,fg=$fg"
-tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh)#[default]"
-# usage call inlined here for theme color; plugin auto-inject left off (@tmux_open_usage_enabled) else dupe
 # strip the leading # from the theme colors so they can't start a shell
-# comment inside the #() argument below.
+# comment inside the #() arguments below.
+muted_hex="${muted#\#}"
 attention_hex="${attention#\#}"
 busy_hex="${busy#\#}"
-tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default] #(\$HOME/dotfiles/tmux/bin/maestral-time-color.sh $attention_hex $busy_hex)[%H:%M]#[default]"
+# status-usage.sh owns every conditional color in the left block (cpu offline,
+# ram maestral/dropbox state, low battery); pass the palette so tints track the theme.
+tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh $muted_hex $attention_hex $busy_hex)#[default]"
+# open_usage_status.sh inlined, not the plugin's auto-inject (@tmux_open_usage_enabled
+# off), so it takes the theme color instead of the plugin's fixed gray and never dupes.
+tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default] [%H:%M]"
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"

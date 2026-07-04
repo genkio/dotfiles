@@ -8,7 +8,7 @@ return {
 
   -- Keys are app names from Hammerspoon. Bundle IDs also work when needed.
   apps = {
-    Alacritty = "us",
+    kitty = "us",
     Terminal = "us",
     WeChat = "cn",
   },

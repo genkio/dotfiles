@@ -2,3 +2,10 @@
 on   = "z"
 run  = "plugin project-fzf"
 desc = "Fuzzy find from Git root"
+
+# Enter still uses the [opener] play rule (inline kitty vo); mpv's graphics can't
+# cross tmux, so this opens a real mpv GUI window instead - full video, detached.
+[[mgr.prepend_keymap]]
+on   = "o"
+run  = '''shell 'mpv "$@"' --orphan'''
+desc = "Play in mpv window (GUI)"

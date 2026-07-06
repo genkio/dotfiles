@@ -6,19 +6,27 @@ red="${2:-af3029}"
 yellow="${3:-ad8301}"
 bin_dir="${0%/*}"
 
-cpu=$(top -l 1 -n 0 2>/dev/null | awk '
+# top -l 2: first sample is a since-boot average, only the second is instantaneous.
+cpu=$(top -l 2 -n 0 2>/dev/null | awk '
 /CPU usage/ {
   gsub("%", "", $3)
   gsub("%", "", $5)
-  printf "%02.0f", $3 + $5
-  exit
-}')
+  used = $3 + $5
+}
+END { printf "%02.0f", used }')
 
-ram=$(memory_pressure 2>/dev/null | awk -F': ' '
-/System-wide memory free percentage/ {
-  gsub("%", "", $2)
-  printf "%02.0f", 100 - $2
-  exit
+# memory_pressure's "free %" counts reclaimable pages as free, reading ~half of
+# real usage; compute from vm_stat to match Activity Monitor / htop.
+ram=$(vm_stat 2>/dev/null | awk -v total_bytes="$(sysctl -n hw.memsize 2>/dev/null)" '
+/page size of/      { ps = $8 }
+/Pages free/        { gsub("\\.", "", $3); free  = $3 }
+/Pages inactive/    { gsub("\\.", "", $3); inact = $3 }
+/Pages speculative/ { gsub("\\.", "", $3); spec  = $3 }
+/Pages purgeable/   { gsub("\\.", "", $3); purg  = $3 }
+END {
+  if (ps == 0 || total_bytes == "") exit
+  avail = (free + inact + spec + purg) * ps
+  printf "%02.0f", 100 - (100 * avail / total_bytes)
 }')
 
 battery=$(pmset -g batt 2>/dev/null | awk -v muted="$muted" '

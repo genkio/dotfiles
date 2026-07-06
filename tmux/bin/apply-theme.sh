@@ -77,3 +77,12 @@ tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"
 tmux set-option -g window-status-format "${agent_prefix} #I:#W#F "
 tmux set-option -g window-status-current-format "${agent_prefix} #[bold]#I:#W#F "
+
+# choose-tree (prefix+w / C-Down) window rows reuse the same agent colours.
+# -F replaces the whole row, so this is tmux's stock tree format (copied from
+# 3.7b; may need a refresh if a tmux upgrade changes the default) with
+# agent_prefix injected at the head of the window branch. Published as an
+# option and read by the bindings via #{E:@tree_format} so colours track the
+# theme without rebinding keys here.
+tree_format='#{?pane_format,#{?pane_marked,#[reverse],}#{?pane_floating_flag,#[italics],}#{pane_current_command}#{pane_flags}#{?#{&&:#{pane_title},#{!=:#{pane_title},#{host_short}}},: "#{pane_title}",},window_format,'"${agent_prefix}"'#{?window_marked_flag,#[reverse],}#{window_name}#{window_flags}#{?#{&&:#{==:#{window_panes},1},#{&&:#{pane_title},#{!=:#{pane_title},#{host_short}}}},: "#{pane_title}",},#{session_windows} windows#{?session_grouped, (group #{session_group}: #{session_group_list}),}#{?session_attached, (attached),}}'
+tmux set-option -g @tree_format "$tree_format"

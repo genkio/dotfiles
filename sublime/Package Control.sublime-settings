@@ -1,0 +1,10 @@
+{
+	// Source of truth for the auto-installed package set. Package Control
+	// installs any package listed here that's missing on launch. Edit this
+	// list, then re-run `make sublime` (or scripts/setup-sublime.sh) to apply.
+	"installed_packages":
+	[
+		"DiffTabs",
+		"rainbow_csv"
+	]
+}

@@ -30,7 +30,7 @@ Install stow:
 - `stow vim` or `stow git`
 - Core packages: `mkdir -p ~/.ssh ~/.config/mpv && chmod 700 ~/.ssh && stow brew git mpv nvim tmux vim yazi zsh ssh`
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
-- Optional app packages: `stow hammerspoon`
+- Optional app packages: `stow hammerspoon`, then `make sublime` to enable Sublime's Package Control and auto-install packages
 - Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
   - Both restore scripts also stow the shared `skills/` package into `~/.claude/skills/` and `~/.codex/skills/` so coding-agent skills are kept in one place.
 - Yazi: `stow yazi`
@@ -57,16 +57,27 @@ Only dev tools:
 
 - `brew bundle --file brew/Brewfile.dev`
 
+## Sublime Text
+
+Installed as a cask via `brew/Brewfile.apps`. `scripts/setup-sublime.sh` (run by `make apps` / `--include-apps`, or standalone via `make sublime`) enables Package Control headlessly and auto-installs a curated package set:
+
+- Bootstraps Package Control by dropping `Package Control.sublime-package` into `~/Library/Application Support/Sublime Text/Installed Packages/`.
+- Seeds (or merges) `installed_packages` into that app's User settings from `sublime/Package Control.sublime-settings`; Package Control installs any listed-but-missing package on launch.
+- First launch on a new machine bootstraps Package Control (one-time dependency migration; it may prompt to restart Sublime). Quit and reopen once and the listed packages install. This is Package Control's own bootstrap, unavoidable with any install method.
+- To add a package: install it once (`Package Control: Install Package`), add its name to `sublime/Package Control.sublime-settings`, commit, and re-run `make sublime` on other machines.
+
+The live settings file is seeded, not stowed: Package Control rewrites it at runtime, so a symlink into the repo would churn.
+
 ## Opinionated flow
 
 Run the automated script:
 
 - `make` (equivalent to `./scripts/opinionated-flow.sh --bootstrap-macos --include-all`)
-- Other targets: `make bootstrap`, `make apps`, `make dev`, `make ssh`, `make gpg`
+- Other targets: `make bootstrap`, `make apps`, `make dev`, `make ssh`, `make gpg`, `make sublime`
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - The core stow step installs `nvim`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue.
 - `--include-all` to install both GUI apps and dev tools.
-- `--include-apps` to install GUI apps and stow `hammerspoon`.
+- `--include-apps` to install GUI apps, stow `hammerspoon`, and set up Sublime Text (Package Control + auto-installed packages).
 - `--include-dev` to install dev tools (mise, codex, claude-code, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.

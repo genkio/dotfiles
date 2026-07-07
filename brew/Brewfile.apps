@@ -7,4 +7,5 @@ on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 # Only install AlDente on older releases that lack it.
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
 cask "hammerspoon"
+cask "sublime-text"
 cask "utm" if on_silicon && !in_vm

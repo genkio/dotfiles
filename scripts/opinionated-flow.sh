@@ -202,6 +202,9 @@ fi
 if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   brew_bundle_install brew/Brewfile.apps
   stow -t "$HOME" hammerspoon
+  # Non-fatal: a failed Package Control download shouldn't abort provisioning.
+  bash scripts/setup-sublime.sh \
+    || echo "Warning: Sublime Package Control setup failed; run 'make sublime' later." >&2
 fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then

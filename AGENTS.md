@@ -37,7 +37,18 @@ cd ~/dotfiles && stow -D zsh
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps and stow `hammerspoon`. Pass `--include-dev` to install dev tools (alacritty, mise, codex, etc.), stow `alacritty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps, stow `hammerspoon`, and run `scripts/setup-sublime.sh` (Package Control + auto-installed packages, see below). Pass `--include-dev` to install dev tools (alacritty, mise, codex, etc.), stow `alacritty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together.
+
+## Sublime Text
+
+Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-sublime.sh` (run by `--include-apps`; standalone via `make sublime`) provisions it headlessly:
+
+- Bootstraps Package Control by downloading `Package Control.sublime-package` into `~/Library/Application Support/Sublime Text/Installed Packages/` when missing (non-fatal on network failure).
+- Seeds the User `Package Control.sublime-settings` from `sublime/Package Control.sublime-settings` when absent, else merges the curated `installed_packages` into the existing file (union, preserving Package Control's runtime keys and GUI-added packages). Package Control installs listed-but-missing packages on launch.
+- The merge tolerates Sublime's JSON-with-comments + trailing commas via a string-aware pre-parse in `python3` (`/usr/bin/python3` from Xcode CLT is always present once Homebrew is).
+- First launch on a fresh machine bootstraps Package Control (dependency→library migration, prompts to restart); seeded packages install after one quit/reopen. Deliberately not automated: launching the GUI mid-`make` and quitting on a timer risks quitting mid-install (half-migrated syntax errors), worse than a clean manual restart. `setup-sublime.sh` prints this expectation instead.
+
+`sublime/Package Control.sublime-settings` is the source of truth for the package list; it is **seeded, not stowed** (same reason as `~/.codex/config.toml`: Package Control rewrites the live file at runtime). `sublime/.stow-local-ignore` keeps `stow sublime` a no-op. To add a package: install it via `Package Control: Install Package`, add the name to the tracked file, and re-run `make sublime` elsewhere.
 
 ## Stow Packages
 

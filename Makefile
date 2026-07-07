@@ -1,4 +1,4 @@
-.PHONY: all bootstrap apps dev stow ssh gpg
+.PHONY: all bootstrap apps dev stow ssh gpg sublime
 
 all:
 	./scripts/opinionated-flow.sh --bootstrap-macos --include-all
@@ -20,3 +20,6 @@ ssh:
 
 gpg:
 	./scripts/generate-gpg-key.sh
+
+sublime:
+	./scripts/setup-sublime.sh

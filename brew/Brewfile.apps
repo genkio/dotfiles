@@ -8,4 +8,6 @@ on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
 cask "hammerspoon"
 cask "sublime-text"
+# setup-sublime.sh uses duti to make sublime the default text/code opener
+brew "duti"
 cask "utm" if on_silicon && !in_vm

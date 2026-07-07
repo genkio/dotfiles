@@ -1,0 +1,109 @@
+# Types opened by default in Sublime Text. scripts/setup-sublime.sh feeds each
+# non-comment line to `duti -s <bundle> <line> all`. A line is a UTI or a bare
+# file extension (no dot). Edit + re-run `make sublime` to apply.
+
+# Broad categories. public.text is wide (also catches .rtf etc.); drop it if you
+# want only plain text + code.
+public.plain-text
+public.text
+public.source-code
+
+# Types with their own UTI that the broad categories above can miss.
+public.json
+public.xml
+public.shell-script
+public.python-script
+net.daringfireball.markdown
+
+# Extensions (belt-and-suspenders for anything the UTIs miss).
+txt
+text
+log
+md
+markdown
+mdown
+mkd
+rst
+json
+json5
+jsonc
+yaml
+yml
+toml
+xml
+ini
+cfg
+conf
+properties
+env
+html
+htm
+css
+scss
+sass
+less
+js
+jsx
+mjs
+cjs
+ts
+tsx
+vue
+svelte
+sh
+bash
+zsh
+fish
+ps1
+py
+rb
+go
+rs
+c
+h
+cc
+cpp
+cxx
+hpp
+swift
+java
+kt
+kts
+scala
+clj
+cljs
+lua
+pl
+pm
+php
+r
+jl
+dart
+groovy
+gradle
+ex
+exs
+erl
+hs
+m
+mm
+sql
+graphql
+gql
+proto
+diff
+patch
+tf
+tfvars
+hcl
+nix
+cmake
+mk
+editorconfig
+gitignore
+gitattributes
+
+# Spreadsheet-ish text; uncomment to open these in Sublime too.
+# csv
+# tsv
+# plist

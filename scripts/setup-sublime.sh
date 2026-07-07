@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bootstrap Sublime Text's Package Control and seed the auto-installed package
-# set, headlessly (no GUI console). Two moving parts:
+# Provision Sublime Text headlessly (no GUI console):
 #   1. Drop `Package Control.sublime-package` into Installed Packages/ so
 #      "Package Control: Install Package" works on first launch.
 #   2. Seed/merge `installed_packages` into User settings; Package Control
 #      installs any listed-but-missing package on launch.
-# Seeded, not stowed (like ~/.codex/config.toml): Package Control rewrites this
-# file at runtime (bootstrapped flag, in_process_packages, GUI-added packages),
-# so a symlink into the repo would churn. Re-run to push newly-curated packages.
+#   3. Set Sublime as the default opener for text + code files (via duti).
+# The settings file is seeded, not stowed (like ~/.codex/config.toml): Package
+# Control rewrites it at runtime (bootstrapped flag, in_process_packages,
+# GUI-added packages), so a symlink into the repo would churn. Re-run to push
+# newly-curated packages or file associations.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
@@ -22,6 +23,8 @@ USER_DIR="$DATA_DIR/Packages/User"
 TARGET_FILE="$USER_DIR/Package Control.sublime-settings"
 PC_PACKAGE="$INSTALLED_PACKAGES_DIR/Package Control.sublime-package"
 PC_URL="https://packagecontrol.io/Package%20Control.sublime-package"
+ASSOC_FILE="$REPO_ROOT/sublime/file-associations.txt"
+BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist" 2>/dev/null || echo com.sublimetext.4)"
 
 if [[ ! -f "$SOURCE_FILE" ]]; then
   echo "Sublime settings baseline not found at $SOURCE_FILE" >&2
@@ -48,6 +51,31 @@ else
   else
     rm -f "$tmp"
     echo "Warning: could not download Package Control from $PC_URL; skipping bootstrap." >&2
+  fi
+fi
+
+# Layered on purpose: broad parent UTIs plus an explicit extension list, because
+# the UTI hierarchy alone misses types that register their own UTI (.json, .md,
+# ...). Per-entry failures (a type not registered on this macOS) are skipped,
+# not fatal.
+if [[ -f "$ASSOC_FILE" ]]; then
+  if command -v duti >/dev/null 2>&1; then
+    assoc_set=0
+    assoc_skip=0
+    while IFS= read -r token || [[ -n "$token" ]]; do
+      token="${token%%#*}"
+      token="${token//[[:space:]]/}"
+      [[ -z "$token" ]] && continue
+      if duti -s "$BUNDLE_ID" "$token" all 2>/dev/null; then
+        assoc_set=$((assoc_set + 1))
+      else
+        assoc_skip=$((assoc_skip + 1))
+      fi
+    done < "$ASSOC_FILE"
+    echo "Default opener: set $BUNDLE_ID for $assoc_set type(s), $assoc_skip skipped."
+  else
+    echo "duti not found; skipping default-opener setup (it's in brew/Brewfile.apps)." >&2
+    echo "Install it, then re-run 'make sublime'." >&2
   fi
 fi
 

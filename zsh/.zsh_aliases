@@ -28,6 +28,7 @@ alias ld="lazydocker"
 #   lq <url|flags> pass straight through to lazysql
 # host:port come from each container's live published binding, so non-default
 # hosts (e.g. a sandbox IP override in some .env) resolve right - nothing hardcoded.
+# No DB container for the repo? fall back to a sqlite file found in the tree.
 lq() {
   local -a pre
   if [[ "$1" == "-r" || "$1" == "--read-only" ]]; then
@@ -99,18 +100,32 @@ lq() {
   fi
 
   if [[ -z "$rows" ]]; then
-    local -a composes
-    composes=(${(f)"$(find "$repo" -maxdepth 4 \( -name node_modules -o -name .git \) -prune -o \
-      \( -iname 'docker-compose*.yml' -o -iname 'docker-compose*.yaml' \
-         -o -iname 'compose*.yml' -o -iname 'compose*.yaml' \) -print 2>/dev/null)"})
-    if (( ${#composes} > 0 )); then
-      echo "lq: compose file(s) found but no DB container running for this repo." >&2
-      echo "    start the stack first (e.g. docker compose up -d), then rerun lq." >&2
-      return 1
+    local -a sqlite_files
+    sqlite_files=(${(f)"$(find "$repo" -maxdepth 4 \( -name node_modules -o -name .git \) -prune -o \
+      -type f \( -iname '*.sqlite' -o -iname '*.sqlite3' -o -iname '*.db' -o -iname '*.db3' \) -print 2>/dev/null)"})
+    local f
+    for f in "${sqlite_files[@]}"; do
+      # magic header - rejects non-sqlite files that just share a .db extension
+      [[ "$(head -c 15 "$f" 2>/dev/null)" == "SQLite format 3" ]] || continue
+      rows+="${f#$repo/} | sqlite | $(du -h "$f" 2>/dev/null | cut -f1)"$'\t'"$f"$'\n'
+    done
+    rows="${rows%$'\n'}"
+
+    if [[ -z "$rows" ]]; then
+      local -a composes
+      composes=(${(f)"$(find "$repo" -maxdepth 4 \( -name node_modules -o -name .git \) -prune -o \
+        \( -iname 'docker-compose*.yml' -o -iname 'docker-compose*.yaml' \
+           -o -iname 'compose*.yml' -o -iname 'compose*.yaml' \) -print 2>/dev/null)"})
+      if (( ${#composes} > 0 )); then
+        echo "lq: compose file(s) found but no DB container running for this repo." >&2
+        echo "    start the stack first (e.g. docker compose up -d), then rerun lq." >&2
+        return 1
+      fi
+      echo "lq: no dockerized DB for this repo - opening lazysql picker" >&2
+      lazysql "${pre[@]}"
+      return
     fi
-    echo "lq: no dockerized DB for this repo - opening lazysql picker" >&2
-    lazysql "${pre[@]}"
-    return
+    echo "lq: no dockerized DB - loading sqlite file(s) from repo" >&2
   fi
 
   local line

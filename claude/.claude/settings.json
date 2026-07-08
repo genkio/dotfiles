@@ -103,7 +103,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/speak-reply.sh"
+            "command": "command -v cc-imessage >/dev/null 2>&1 && cc-imessage notify || true"
           }
         ]
       }

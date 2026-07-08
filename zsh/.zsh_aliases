@@ -376,16 +376,12 @@ ltail() {
   lnav "$@"
 }
 
-# Claude reply speech (speak-reply.sh Stop hook). Bare `tts` mutes just the
-# current reply but leaves the feature on; `tts off`/`on` are the persistent
-# kill switch.
-tts() {
-  local off="$HOME/.claude/tts-off"
-  local pid; pid="$(cat "${TMPDIR:-/tmp}/claude-tts.pid" 2>/dev/null)"
-  case "${1:-}" in
-    off) touch "$off"; kill "$pid" 2>/dev/null; echo "tts off" ;;
-    on)  rm -f "$off"; echo "tts on" ;;
-    "")  kill "$pid" 2>/dev/null || true ;;
-    *)   echo "usage: tts [on|off]" >&2; return 1 ;;
-  esac
+# Raise the macOS "control Messages" popover after a cc-imessage upgrade so it can
+# be approved, else the first notification silently drops. Via the daemon outbox,
+# not `cc-imessage send` (that binds the grant to the terminal, not the daemon).
+ccim-ping() {
+  local pane="${TMUX_PANE:-%0}"
+  python3 -c 'import json,os,sys,time; open(os.path.expanduser("~/.cc-imessage/outbox/%d-ping.json"%time.time_ns()),"w").write(json.dumps({"target":sys.argv[1],"label":"ping","text":"cc-imessage test ping. Reply to confirm inbound routing."})); print("queued for daemon")' "$pane"
+  echo "approve the 'control Messages' popover if it appears"
+  echo "watch: tail -f /opt/homebrew/var/log/cc-imessage.log   (expect: sent outbox)"
 }

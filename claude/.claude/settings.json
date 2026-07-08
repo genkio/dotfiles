@@ -98,6 +98,14 @@
             "command": "$HOME/.claude/hooks/comments-review.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/speak-reply.sh"
+          }
+        ]
       }
     ]
   },

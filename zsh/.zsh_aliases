@@ -375,3 +375,17 @@ ltail() {
   fi
   lnav "$@"
 }
+
+# Claude reply speech (speak-reply.sh Stop hook). Bare `tts` mutes just the
+# current reply but leaves the feature on; `tts off`/`on` are the persistent
+# kill switch.
+tts() {
+  local off="$HOME/.claude/tts-off"
+  local pid; pid="$(cat "${TMPDIR:-/tmp}/claude-tts.pid" 2>/dev/null)"
+  case "${1:-}" in
+    off) touch "$off"; kill "$pid" 2>/dev/null; echo "tts off" ;;
+    on)  rm -f "$off"; echo "tts on" ;;
+    "")  kill "$pid" 2>/dev/null || true ;;
+    *)   echo "usage: tts [on|off]" >&2; return 1 ;;
+  esac
+}

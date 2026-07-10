@@ -74,19 +74,6 @@
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/no-emdash.sh"
-          },
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/comments.sh"
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -128,14 +115,6 @@
           {
             "type": "command",
             "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/comments-review.sh"
           }
         ]
       },

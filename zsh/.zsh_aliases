@@ -385,3 +385,13 @@ ccim-ping() {
   echo "approve the 'control Messages' popover if it appears"
   echo "watch: tail -f /opt/homebrew/var/log/cc-imessage.log   (expect: sent outbox)"
 }
+
+# One-word flip of cc-imessage outbound (wraps enable/disable; takes effect on
+# the next reply, no daemon restart).
+ccim-toggle() {
+  if cc-imessage status | grep -q '^outbound: on'; then
+    cc-imessage disable
+  else
+    cc-imessage enable
+  fi
+}

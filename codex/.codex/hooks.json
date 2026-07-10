@@ -6,6 +6,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event UserPromptSubmit || true"
           }
         ]
       }
@@ -16,6 +20,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event PreToolUse || true"
           }
         ]
       }
@@ -26,6 +34,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event PermissionRequest || true"
           }
         ]
       }
@@ -36,6 +48,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event Stop || true"
           }
         ]
       }

@@ -8,6 +8,10 @@
     "DISABLE_GROWTHBOOK": "1"
   },
   "permissions": {
+    "allow": [
+      "Bash(herdlet:*)",
+      "Bash(tmux:*)"
+    ],
     "deny": [
       "Bash(rm -rf *)",
       "Bash(rm -fr *)",
@@ -28,12 +32,36 @@
   },
   "model": "claude-fable-5",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }
@@ -67,6 +95,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }
@@ -78,6 +110,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }
@@ -88,6 +124,10 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
+          },
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       },

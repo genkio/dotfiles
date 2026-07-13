@@ -31,6 +31,9 @@
     "defaultMode": "auto"
   },
   "model": "claude-fable-5",
+  "skillOverrides": {
+    "code-review": "user-invocable-only"
+  },
   "hooks": {
     "SessionStart": [
       {

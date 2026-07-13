@@ -1,0 +1,1 @@
+Code review in herd runs: when coordinating agents via herdlet/tmux, never invoke the built-in /code-review or any slash command that fans out review subagents in-session - they inherit the session's model and usage limits. Use the ponytail-review skill instead (one-shot reviewer workers in panes, synthesized findings).

@@ -9,6 +9,8 @@ brew "fd"
 brew "ffmpeg" unless in_vm
 brew "fzf"
 brew "genkio/tap/carbonyl"
+brew "genkio/tap/cc-imessage"
+brew "genkio/tap/herdlet"
 brew "genkio/tap/tui"
 brew "jq"
 brew "lnav"

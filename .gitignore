@@ -4,6 +4,9 @@ nvim.log
 /.claude
 # Repo-local Codex state is intentionally untracked; use codex/.codex/config.toml.example
 /.codex/
+# Codex stow package: keep tracked content despite global .codex/ ignore
+!codex/.codex/
+!codex/.codex/**
 # Claude Code runtime state inside the package directory
 claude/.claude/**
 !claude/.claude/

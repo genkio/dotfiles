@@ -16,6 +16,8 @@ INCLUDE_DEV=0
 BOOTSTRAP_MACOS=0
 BREW_BUNDLE_FAILURES=()
 
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --include-all)
@@ -36,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "Unknown option: $1" >&2
+      err "unknown option: $1"
       exit 1
       ;;
   esac
@@ -60,7 +62,7 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   export DOTFILES_SUDO_WARMED=1
 
   if ! printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S -v 2>/dev/null; then
-    echo "Error: sudo authentication failed." >&2
+    err "sudo authentication failed."
     unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED
     exit 1
   fi
@@ -100,7 +102,7 @@ brew_bundle_install() {
   # doesn't abort the whole provisioning run over one bad package (e.g.
   # sevenzip); record it and surface a summary at the end instead.
   if ! brew bundle --file "$file"; then
-    echo "Warning: some entries in $file failed to install; continuing setup." >&2
+    warn "some entries in $file failed to install; continuing setup."
     BREW_BUNDLE_FAILURES+=("$file")
   fi
 }
@@ -109,13 +111,13 @@ if [[ -d "$DOTFILES_DIR/.git" ]]; then
   if git -C "$DOTFILES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Using existing repo at $DOTFILES_DIR"
   else
-    echo "Error: $DOTFILES_DIR looks like a git repo, but it is incomplete or corrupt." >&2
-    echo "Remove it and rerun the bootstrap." >&2
+    err "$DOTFILES_DIR looks like a git repo, but it is incomplete or corrupt."
+    err "Remove it and rerun the bootstrap."
     exit 1
   fi
 else
   if [[ -e "$DOTFILES_DIR" ]]; then
-    echo "Error: $DOTFILES_DIR exists but is not a git repo." >&2
+    err "$DOTFILES_DIR exists but is not a git repo."
     exit 1
   fi
   echo "Cloning $REPO_URL to $DOTFILES_DIR"
@@ -144,7 +146,7 @@ fi
 # Homebrew install above pulled in Xcode CLT -> /usr/bin/python3 (Dock mutation) works.
 if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
   if [[ ! -f scripts/macos-bootstrap.sh ]]; then
-    echo "Error: scripts/macos-bootstrap.sh not found." >&2
+    err "scripts/macos-bootstrap.sh not found."
     exit 1
   fi
 
@@ -163,7 +165,7 @@ brew_bundle_install brew/Brewfile.base
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 # Non-fatal: if tailscale itself failed in the bundle above, don't abort the rest.
 sudo_pw brew services start tailscale \
-  || echo "Warning: could not start tailscale service; run 'sudo brew services start tailscale' later." >&2
+  || warn "could not start tailscale service; run 'sudo brew services start tailscale' later."
 # After bootstrap, run separately (bundling exit-node into `up` can silently drop it):
 #   sudo tailscale up --ssh --operator=$USER # prints login URL, auth in browser
 #   sudo tailscale set --advertise-exit-node # then approve in admin console
@@ -214,7 +216,7 @@ if [[ "$INCLUDE_APPS" -eq 1 ]]; then
   stow -t "$HOME" hammerspoon
   # Non-fatal: a failed Package Control download shouldn't abort provisioning.
   bash scripts/setup-sublime.sh \
-    || echo "Warning: Sublime Package Control setup failed; run 'make sublime' later." >&2
+    || warn "Sublime Package Control setup failed; run 'make sublime' later."
 fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then
@@ -223,9 +225,9 @@ fi
 
 if [[ ${#BREW_BUNDLE_FAILURES[@]} -gt 0 ]]; then
   echo >&2
-  echo "Setup finished, but brew bundle reported failures for:" >&2
+  warn "setup finished, but brew bundle reported failures for:"
   for f in "${BREW_BUNDLE_FAILURES[@]}"; do
-    echo "  - $f" >&2
+    warn "  - $f"
   done
-  echo "Retry with 'brew bundle --file <file>', or install the missing package directly with 'brew install <name>'." >&2
+  warn "retry with 'brew bundle --file <file>', or install the missing package directly with 'brew install <name>'."
 fi

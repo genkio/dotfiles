@@ -8,6 +8,8 @@ set -euo pipefail
 # user.signingkey + commit.gpgsign in ~/.gitconfig.local if present, and
 # copies the armored public key to the clipboard.
 
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
+
 NAME="genkio"
 EMAIL=""
 KEY_TYPE="RSA"
@@ -39,7 +41,7 @@ while [[ $# -gt 0 ]]; do
     --expire) EXPIRE="$2"; shift 2 ;;
     --passphrase) PASSPHRASE=1; shift ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
+    *) err "unknown option: $1"; usage; exit 1 ;;
   esac
 done
 
@@ -48,14 +50,14 @@ if [[ -z "$EMAIL" ]]; then
 fi
 
 if ! command -v gpg >/dev/null 2>&1; then
-  echo "gpg not found. Install GnuPG first (e.g. brew install gnupg)." >&2
+  err "gpg not found. Install GnuPG first (e.g. brew install gnupg)."
   exit 1
 fi
 
 case "$KEY_TYPE" in
   RSA|rsa)     KEY_TYPE="RSA" ;;
   EDDSA|eddsa) KEY_TYPE="EDDSA" ;;
-  *) echo "Unsupported key type: $KEY_TYPE (use RSA or EDDSA)" >&2; exit 1 ;;
+  *) err "unsupported key type: $KEY_TYPE (use RSA or EDDSA)"; exit 1 ;;
 esac
 
 # A key for this identity may already exist; generating another leaves
@@ -101,7 +103,7 @@ gpg --batch --status-file "$STATUS_FILE" --generate-key "$BATCH_FILE"
 KEY_ID="$(awk '/^\[GNUPG:\] KEY_CREATED/ { print $4 }' "$STATUS_FILE")"
 
 if [[ -z "$KEY_ID" ]]; then
-  echo "Could not locate generated key for $EMAIL" >&2
+  err "could not locate generated key for $EMAIL"
   exit 1
 fi
 

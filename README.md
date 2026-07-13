@@ -78,7 +78,18 @@ Run the automated script:
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - The core stow step installs `nvim`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
-- On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue.
+- On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue. A failed package (e.g. a `brew bundle` entry) is likewise a warning, not a stop.
+- Non-fatal warnings are prefixed `SETUP_WARN:` and fatal errors `SETUP_ERROR:` across every script `make` runs, so they are easy to spot in a long run (see below).
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps, stow `hammerspoon`, and set up Sublime Text (Package Control + auto-installed packages).
 - `--include-dev` to install dev tools (mise, codex, claude-code, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
+
+### Spotting warnings and errors
+
+Warnings and errors go to stderr, so fold it into stdout with `2>&1` to catch them. This runs the setup in the foreground with all output intact and just highlights the tagged lines in color:
+
+```sh
+make 2>&1 | grep --line-buffered --color=always -E 'SETUP_WARN|SETUP_ERROR|$'
+```
+
+The trailing `|$` matches every line, so nothing is filtered out; only `SETUP_WARN:` / `SETUP_ERROR:` get colored. To review after the fact instead, tee to a log and grep it: `make 2>&1 | tee setup.log`, then `grep SETUP_ setup.log`.

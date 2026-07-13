@@ -4,8 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
+source "$SCRIPT_DIR/lib.sh"
+
 if ! command -v brew >/dev/null 2>&1; then
-  echo "Homebrew is required to install dev tools." >&2
+  err "Homebrew is required to install dev tools."
   exit 1
 fi
 
@@ -21,7 +23,10 @@ brew_bundle_install() {
     echo "brew bundle: $file already satisfied, skipping"
     return 0
   fi
-  brew bundle --file "$file"
+  # brew bundle keeps going past a failed formula/cask, installs everything
+  # else, then exits non-zero. Swallow that so `set -e` doesn't abort the dev
+  # flow over one bad package; warn and continue.
+  brew bundle --file "$file" || warn "some entries in $file failed to install; continuing setup."
 }
 
 # Install dev tools via Homebrew
@@ -31,7 +36,7 @@ stow -t "$HOME" alacritty mise
 # repo root so it works cloned outside ~/dotfiles; non-fatal so a cosmetic seed
 # failure can't abort provisioning (theme-toggle.sh re-seeds on the next flip).
 DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-alacritty-theme.sh \
-  || echo "Warning: Alacritty theme seed failed; theme-toggle.sh re-seeds on the next flip." >&2
+  || warn "Alacritty theme seed failed; theme-toggle.sh re-seeds on the next flip."
 
 # mise: node, python, java, go, uv + global npm tools (versions declared in mise/.config/mise/config.toml)
 # Install node first so `npm` exists when activate resolves `npm:*@latest` versions.

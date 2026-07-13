@@ -14,6 +14,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/lib.sh"
 SOURCE_FILE="$REPO_ROOT/sublime/Package Control.sublime-settings"
 
 APP="/Applications/Sublime Text.app"
@@ -27,7 +28,7 @@ ASSOC_FILE="$REPO_ROOT/sublime/file-associations.txt"
 BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist" 2>/dev/null || echo com.sublimetext.4)"
 
 if [[ ! -f "$SOURCE_FILE" ]]; then
-  echo "Sublime settings baseline not found at $SOURCE_FILE" >&2
+  err "Sublime settings baseline not found at $SOURCE_FILE"
   exit 1
 fi
 
@@ -50,7 +51,7 @@ else
     echo "Bootstrapped Package Control into Installed Packages/."
   else
     rm -f "$tmp"
-    echo "Warning: could not download Package Control from $PC_URL; skipping bootstrap." >&2
+    warn "could not download Package Control from $PC_URL; skipping bootstrap."
   fi
 fi
 
@@ -74,8 +75,8 @@ if [[ -f "$ASSOC_FILE" ]]; then
     done < "$ASSOC_FILE"
     echo "Default opener: set $BUNDLE_ID for $assoc_set type(s), $assoc_skip skipped."
   else
-    echo "duti not found; skipping default-opener setup (it's in brew/Brewfile.apps)." >&2
-    echo "Install it, then re-run 'make sublime'." >&2
+    warn "duti not found; skipping default-opener setup (it's in brew/Brewfile.apps)."
+    warn "Install it, then re-run 'make sublime'."
   fi
 fi
 
@@ -96,15 +97,15 @@ if [[ -z "$PY" && -x /usr/bin/python3 ]]; then
   PY=/usr/bin/python3
 fi
 if [[ -z "$PY" ]]; then
-  echo "python3 not found; left existing $TARGET_FILE untouched." >&2
-  echo "Add any missing packages from $SOURCE_FILE by hand." >&2
+  warn "python3 not found; left existing $TARGET_FILE untouched."
+  warn "Add any missing packages from $SOURCE_FILE by hand."
   exit 0
 fi
 
 # Sublime settings are JSON with comments + trailing commas, which the stdlib
 # json parser rejects; strip both (string-aware) before parsing, union the
 # lists, and write back only when something is actually missing.
-"$PY" - "$SOURCE_FILE" "$TARGET_FILE" <<'PYEOF' || echo "Warning: Package Control merge failed; left settings untouched." >&2
+"$PY" - "$SOURCE_FILE" "$TARGET_FILE" <<'PYEOF' || warn "Package Control merge failed; left settings untouched."
 import io, json, sys
 
 def strip_comments(text):
@@ -161,7 +162,7 @@ try:
     want = load(source).get("installed_packages", [])
     data = load(target)
 except Exception as e:
-    sys.stderr.write("Package Control: could not parse settings (%s); left untouched.\n" % e)
+    sys.stderr.write("SETUP_WARN: Package Control could not parse settings (%s); left untouched.\n" % e)
     sys.exit(0)
 
 have = data.get("installed_packages", [])

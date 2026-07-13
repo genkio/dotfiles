@@ -7,8 +7,10 @@ SOURCE_FILE="$REPO_ROOT/codex/.codex/config.toml.example"
 TARGET_DIR="$HOME/.codex"
 TARGET_FILE="$TARGET_DIR/config.toml"
 
+source "$SCRIPT_DIR/lib.sh"
+
 if [[ ! -f "$SOURCE_FILE" ]]; then
-  echo "Codex config example not found at $SOURCE_FILE" >&2
+  err "Codex config example not found at $SOURCE_FILE"
   exit 1
 fi
 
@@ -21,7 +23,7 @@ if command -v stow >/dev/null 2>&1; then
   stow -t "$TARGET_DIR/skills" skills
   echo "Restored shared coding-agent skills into ~/.codex/skills"
 else
-  echo "GNU stow not found; skipping stow of codex package (config.toml will still be seeded)." >&2
+  warn "GNU stow not found; skipping stow of codex package (config.toml will still be seeded)."
 fi
 
 if [[ -e "$TARGET_FILE" ]]; then

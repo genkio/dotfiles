@@ -11,6 +11,8 @@ set -euo pipefail
 #
 # Pass --dry-run (-n) to print every mutation without executing it.
 
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
+
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
@@ -24,14 +26,14 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "Unknown option: $1" >&2
+      err "unknown option: $1"
       exit 1
       ;;
   esac
   shift
 done
 
-need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "Missing command: $1" >&2; exit 1; }; }
+need_cmd() { command -v "$1" >/dev/null 2>&1 || { err "missing command: $1"; exit 1; }; }
 need_cmd defaults
 need_cmd /usr/bin/python3
 need_cmd killall
@@ -81,7 +83,7 @@ optional() {
   fi
 
   SKIPPED+=("$*")
-  printf '  Skipping: %s\n' "$*"
+  warn "skipped (OS rejected): $*"
   return 0
 }
 
@@ -173,7 +175,7 @@ echo "Sound: Disable startup sound"
 if [[ "$DRY_RUN" -eq 1 ]]; then
   printf '  [dry-run] %s\n' 'sudo nvram StartupMute=%01'
 elif ! sudo_pw nvram StartupMute=%01 >/dev/null 2>&1; then
-  echo "  Skipping: could not set StartupMute NVRAM flag"
+  warn "could not set StartupMute NVRAM flag"
 fi
 
 ###############################################################################
@@ -326,7 +328,7 @@ set_wallpaper() {
 if [[ -f "$BLACK_PNG" ]]; then
   optional set_wallpaper "$BLACK_PNG"
 else
-  echo "  Skipping: $BLACK_PNG not found"
+  warn "$BLACK_PNG not found; left desktop background unchanged"
 fi
 
 ###############################################################################
@@ -414,9 +416,9 @@ echo "Done."
 
 if [[ ${#SKIPPED[@]} -gt 0 ]]; then
   echo ""
-  echo "Skipped writes (the OS rejected these — apply manually if needed):"
+  warn "skipped writes (the OS rejected these; apply manually if needed):"
   for cmd in "${SKIPPED[@]}"; do
-    printf '  - %s\n' "$cmd"
+    warn "  - $cmd"
   done
 fi
 

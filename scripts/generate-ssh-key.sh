@@ -7,6 +7,8 @@ set -euo pipefail
 # ssh-agent with the macOS keychain, appends an ~/.ssh/config block for the
 # host, prints the public key, and copies it to the clipboard.
 
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
+
 HOST="github"
 EMAIL=""
 NAME="genkio"
@@ -35,14 +37,14 @@ while [[ $# -gt 0 ]]; do
     --type) KEY_TYPE="$2"; shift 2 ;;
     --passphrase) PASSPHRASE=1; shift ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
+    *) err "unknown option: $1"; usage; exit 1 ;;
   esac
 done
 
 # Normalise to filename-safe label
 HOST="$(echo "$HOST" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '_' | sed 's/_*$//')"
 if [[ -z "$HOST" ]]; then
-  echo "Invalid host label." >&2
+  err "invalid host label."
   exit 1
 fi
 
@@ -64,7 +66,7 @@ chmod 700 "$SSH_DIR"
 case "$KEY_TYPE" in
   ed25519) KEYGEN_ARGS=(-t ed25519) ;;
   rsa)     KEYGEN_ARGS=(-t rsa -b 4096) ;;
-  *) echo "Unsupported key type: $KEY_TYPE" >&2; exit 1 ;;
+  *) err "unsupported key type: $KEY_TYPE"; exit 1 ;;
 esac
 
 KEY_PATH="$SSH_DIR/id_${KEY_TYPE}_${HOST}"

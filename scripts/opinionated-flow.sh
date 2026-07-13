@@ -14,6 +14,7 @@ DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 INCLUDE_APPS=0
 INCLUDE_DEV=0
 BOOTSTRAP_MACOS=0
+BREW_BUNDLE_FAILURES=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -94,7 +95,14 @@ brew_bundle_install() {
     echo "brew bundle: $file already satisfied, skipping"
     return 0
   fi
-  brew bundle --file "$file"
+  # brew bundle keeps going past a failed formula/cask, installs everything
+  # else, then exits non-zero with a summary. Swallow that non-zero so `set -e`
+  # doesn't abort the whole provisioning run over one bad package (e.g.
+  # sevenzip); record it and surface a summary at the end instead.
+  if ! brew bundle --file "$file"; then
+    echo "Warning: some entries in $file failed to install; continuing setup." >&2
+    BREW_BUNDLE_FAILURES+=("$file")
+  fi
 }
 
 if [[ -d "$DOTFILES_DIR/.git" ]]; then
@@ -153,7 +161,9 @@ brew trust genkio/tap || true
 brew_bundle_install brew/Brewfile.base
 # sudo: run as root LaunchDaemon for always-on server (no user login required).
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
-sudo_pw brew services start tailscale
+# Non-fatal: if tailscale itself failed in the bundle above, don't abort the rest.
+sudo_pw brew services start tailscale \
+  || echo "Warning: could not start tailscale service; run 'sudo brew services start tailscale' later." >&2
 # After bootstrap, run separately (bundling exit-node into `up` can silently drop it):
 #   sudo tailscale up --ssh --operator=$USER # prints login URL, auth in browser
 #   sudo tailscale set --advertise-exit-node # then approve in admin console
@@ -209,4 +219,13 @@ fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then
   bash scripts/setup-dev.sh
+fi
+
+if [[ ${#BREW_BUNDLE_FAILURES[@]} -gt 0 ]]; then
+  echo >&2
+  echo "Setup finished, but brew bundle reported failures for:" >&2
+  for f in "${BREW_BUNDLE_FAILURES[@]}"; do
+    echo "  - $f" >&2
+  done
+  echo "Retry with 'brew bundle --file <file>', or install the missing package directly with 'brew install <name>'." >&2
 fi

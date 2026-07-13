@@ -53,7 +53,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5",
+  "model": "opus[1m]",
   "skillOverrides": {
     "code-review": "user-invocable-only"
   },

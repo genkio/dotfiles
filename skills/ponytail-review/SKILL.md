@@ -38,9 +38,11 @@ write `$WORK/context.md`:
 
 ## step 2 - fan out one-shot reviewers
 
-three lenses, each a fresh `claude -p` pane on a mid or cheap tier -
-never bare `claude`, never the master's model. write each lens prompt to
-`$WORK/lens-<x>.md` before spawning.
+three lenses, each a fresh one-shot reviewer pane on a cheap or mid tier -
+never the master's (priciest) model. spawn each with `$LAUNCH` (your agent's
+launch command, as in the herdlet skill) and a cheap/mid model id for your
+backend (Claude `haiku`/`sonnet`, GLM-on-Fireworks `minimax-m3`/`glm-5p2`).
+write each lens prompt to `$WORK/lens-<x>.md` before spawning.
 
 every lens prompt carries the same contract:
 
@@ -69,7 +71,7 @@ the lenses:
 ```bash
 for x in a b c; do
   tmux split-window -d -c "$PWD" \
-    "HERDLET_ID=$PROJ/rev-$x CC_IMESSAGE_SKIP=1 claude --model sonnet \
+    "HERDLET_ID=$PROJ/rev-$x CC_IMESSAGE_SKIP=1 $LAUNCH --model <cheap-id> \
      --permission-mode acceptEdits -p 'read and follow $WORK/lens-$x.md'"
 done
 herdlet wait --id $PROJ/rev-a,$PROJ/rev-b,$PROJ/rev-c --state done,blocked --timeout 550

@@ -79,17 +79,22 @@ Run the automated script:
 - The core stow step installs `nvim`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
 - On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue. A failed package (e.g. a `brew bundle` entry) is likewise a warning, not a stop.
-- Non-fatal warnings are prefixed `SETUP_WARN:` and fatal errors `SETUP_ERROR:` across every script `make` runs, so they are easy to spot in a long run (see below).
+- Non-fatal warnings are prefixed `SETUP_WARN:` (yellow) and fatal errors `SETUP_ERROR:` (red) across every script `make` runs, so they stand out in a long run by default (see below).
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps, stow `hammerspoon`, and set up Sublime Text (Package Control + auto-installed packages).
 - `--include-dev` to install dev tools (mise, codex, claude-code, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
 
 ### Spotting warnings and errors
 
-Warnings and errors go to stderr, so fold it into stdout with `2>&1` to catch them. This runs the setup in the foreground with all output intact and just highlights the tagged lines in color:
+Run in the foreground and `SETUP_WARN:` / `SETUP_ERROR:` lines are colored automatically, so no piping is needed to see them go by.
+
+To keep a copy for later, tee to a log (color is dropped when output is not a terminal, so the file stays clean), then grep by prefix:
 
 ```sh
-make 2>&1 | grep --line-buffered --color=always -E 'SETUP_WARN|SETUP_ERROR|$'
+make 2>&1 | tee setup.log
+grep SETUP_ setup.log        # warnings + errors
+grep SETUP_WARN setup.log    # non-fatal only
+grep SETUP_ERROR setup.log   # fatal only
 ```
 
-The trailing `|$` matches every line, so nothing is filtered out; only `SETUP_WARN:` / `SETUP_ERROR:` get colored. To review after the fact instead, tee to a log and grep it: `make 2>&1 | tee setup.log`, then `grep SETUP_ setup.log`.
+Warnings and errors go to stderr, hence the `2>&1`. To watch only the problems scroll by live (hides normal progress), pipe straight to grep: `make 2>&1 | grep SETUP_`.

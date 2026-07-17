@@ -1,1 +1,3 @@
-Code review in herd runs: when coordinating agents via herdlet/tmux, never invoke the built-in /code-review or any slash command that fans out review subagents in-session - they inherit the session's model and usage limits. Use the ponytail-review skill instead (one-shot reviewer workers in panes, synthesized findings).
+Code review: default to the subagent-review skill for any review of a branch/diff/PR - including bare "review this" asks and /code-review-style requests. It fans out read-only `review-lens` subagents (pinned to sonnet, Read/Grep/Glob only), so nothing runs on the session's model. Never invoke the built-in /code-review; its finders inherit the calling session's model and usage limits.
+
+Use herd-review (tmux-pane workers via herdlet) only when explicitly named, or when reviewers must run non-Claude models/CLIs in-session subagents can't spawn those. tmux/herdlet being available is NOT a reason to prefer it.

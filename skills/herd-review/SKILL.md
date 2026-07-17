@@ -1,9 +1,9 @@
 ---
-name: ponytail-review
-description: "Herd-native code review: review a diff with one-shot reviewer workers in tmux panes (cheap models, pre-gathered shared context), then synthesize fact-checked findings for the implementer. Use INSTEAD of the built-in /code-review or any in-session multi-agent review whenever coordinating agents via herdlet - in-session review subagents all inherit the calling session's model and usage limits."
+name: herd-review
+description: "Herd-native code review: review a diff with one-shot reviewer workers in tmux panes (cheap models, pre-gathered shared context), then synthesize fact-checked findings for the implementer. Use ONLY when explicitly named, or when reviewer workers must run non-Claude models/CLIs (codex, opencode) that in-session subagents can't spawn. For normal code review default to subagent-review (read-only subagents pinned to a cheap model). Never invoke the built-in /code-review; its finders inherit the calling session's model and usage limits."
 ---
 
-# ponytail-review - herd-native code review
+# herd-review - herd-native code review
 
 requires tmux + the herdlet CLI (same preconditions as the herdlet skill).
 you are the driver: you gather context once, spawn disposable reviewers,
@@ -36,12 +36,30 @@ write `$WORK/context.md`:
   perf on hot paths only, tests
 - anything known-good or out of scope (don't pay reviewers to rediscover it)
 
+reviewing a published PR: also pull its existing review threads + comments
+(`gh pr view --comments` / `gh api .../pulls/<n>/comments`) into context.md.
+classify every prior finding before deduping - "already raised" is not
+"resolved":
+
+- fixed by a commit: dedup it
+- unanswered: re-raise it
+- closed by author rebuttal WITHOUT a code change: do NOT dedup. fact-check
+  the rebuttal like a fresh claim (spec/RFC/BCP citations get checked
+  against the actual deployment context, not taken on authority); even if
+  you end up agreeing, it goes in the synthesis as a shipping-unfixed risk,
+  noting whether a follow-up ticket exists (a deferral without one is
+  untracked risk - say so; the human files it). "author pushed back" is a
+  state, not a resolution.
+
+note a prior approval. skip only when a blind review is explicitly
+requested (A/B evals).
+
 ## step 2 - fan out one-shot reviewers
 
 three lenses, each a fresh one-shot reviewer pane on a cheap or mid tier -
 never the master's (priciest) model. spawn each with `$LAUNCH` (your agent's
 launch command, as in the herdlet skill) and a cheap/mid model id for your
-backend (Claude `haiku`/`sonnet`, GLM-on-Fireworks `minimax-m3`/`glm-5p2`).
+backend (Claude `haiku`/`sonnet`).
 write each lens prompt to `$WORK/lens-<x>.md` before spawning.
 
 every lens prompt carries the same contract:
@@ -55,6 +73,10 @@ every lens prompt carries the same contract:
 - write findings to `$WORK/findings-<x>.md`, highest severity first, one
   per line: `[blocker|major|minor|nit] file:line - issue + consequence;
   proof; fix.` quality over quantity. if clean, write exactly `No findings.`
+- major/blocker consequence must state blast radius: who hits it and how
+  often in production ("every web user at token expiry" vs "one mobile
+  user replaying a token"). severity tracks production impact, not code
+  locality - a race on a path every request shares is a blocker.
 
 the lenses:
 
@@ -83,9 +105,11 @@ reviewer should never sit `blocked` - if one does, `peek` it, it went
 off-script.
 
 optional 4th reviewer for cross-model diversity: if `codex` is on PATH,
-run the lens-b prompt through `codex exec` (stdin closed with
-`< /dev/null`, wrapped in `timeout`, output redirected to
-`$WORK/findings-codex.md`, poll the file - never `tail`). different model
+run it through `codex exec` (stdin closed with `< /dev/null`, wrapped in
+`timeout`, output redirected to `$WORK/findings-codex.md`, poll the file -
+never `tail`). prefer the canonical reviewer prompt at
+`~/pafin/skills/cryptact/prompts/codex-review.md` when present (substitute
+the real $WORK paths); else feed it the lens-b prompt. different model
 families catch different bugs.
 
 ## step 3 - synthesize (this is the value-add)
@@ -101,17 +125,42 @@ do NOT concatenate the findings files:
    cases, confirmations that correct code is correct
 5. prioritize blocker > major > minor > nit; if a finding isn't worth the
    implementer's time, cut it
+6. cheap dynamic check (driver only, when safe): if the diff adds an
+   entrypoint/CLI or touches module loading / side-effect imports,
+   smoke-import or run it once. read-only lenses cannot see load-time
+   failures - a missing side-effect import passes every static read and
+   fails 100% at runtime.
+7. scope check: if the diff changes a symbol shared by flows outside the
+   PR's stated scope (e.g. a mobile PR touching the web session path),
+   name each such flow and what changed for it in the summary - even when
+   no finding fired on it. the human tests what the PR says it's about;
+   flows it silently changes are the ones nobody exercises.
 
 write the survivors to `plans/<milestone>-review-findings.md` with stable
 ids (F1, F2, ...) and `herdlet send` the implementer worker the path. kill
 the reviewer panes; a re-review after fixes gets fresh one-shot reviewers.
 
-## re-review after fixes
+## re-review rounds - the leniency ladder
 
-each round asks for less, never more: round 2 checks only that round-1
-findings are fixed and the fixes didn't regress the changed lines - no new
-nits that could have been raised in round 1. round 3+: blockers/majors
-only, otherwise call it done.
+each round asks for less, never more, and everything worth raising goes out
+all at once - never raise on round N+1 what you could have raised on round N
+unless the code changed since. one exception: a major/blocker closed by
+rebuttal without a code change stays raisable in every round (and in later
+sessions) until it is fixed or the accepted risk is in the human-facing
+summary - politeness must not compound across rounds.
+
+- round 1: full spectrum - blocker/major/minor/nit in one pass
+- round 2: verify round-1 findings are fixed without regressing the changed
+  lines. blockers/majors always go out; beyond that only minors + IMPORTANT
+  nits (risks a future bug or real confusion - no naming bikeshed, no
+  "could be slightly simpler"). drop the rest silently.
+- round 3+: nothing above nit remains = call it done; at most the few
+  important nits ride along
+- prior clean round + nothing new on the diff since = say exactly that,
+  zero comments
+
+(company version, incl. GitHub round counting:
+`~/pafin/skills/cryptact/docs/review-round.md`)
 
 ## hard rules
 
@@ -120,3 +169,7 @@ only, otherwise call it done.
 - reviewers are read-only on the codebase; only `$WORK` files are written
 - never commit, push, or open a PR off the back of a review; findings go
   to the implementer, the human owns the PR
+- GitHub is read-only: `gh` only to view/fetch (pr view, api GET). never
+  post comments, reviews, approvals, or tickets - every outbound word on
+  the PR is written by the human. findings live in local $WORK/plans
+  files only.

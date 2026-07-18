@@ -51,6 +51,13 @@
       "Read(**/.aws/**)",
       "Read(**/.ssh/**)"
     ],
+    "ask": [
+      "Bash(gh pr create:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh issue comment:*)"
+    ],
     "defaultMode": "auto"
   },
   "model": "opus[1m]",

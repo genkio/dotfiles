@@ -19,7 +19,8 @@ if [ "$theme" = "dark" ]; then
   fg='#a9b1d6'
   muted='#565f89'
   border='#414868'
-  active_border='#9ece6a'
+  # blue, not green: awaiting panes use green borders, active must differ
+  active_border='#7aa2f7'
   current_bg='#3b4261'
   current_fg='#c0caf5'
   attention='#f7768e'
@@ -31,7 +32,8 @@ else
   fg='#6f6e69'
   muted='#878580'
   border='#b7b5ac'
-  active_border='#66800b'
+  # blue, not green: awaiting panes use green borders, active must differ
+  active_border='#205EA6'
   current_bg='#fffcf0'
   current_fg='#100f0f'
   attention='#af3029'
@@ -45,16 +47,18 @@ agent_prefix='#{?@agent_attention,#[fg='"$attention"'#,bold],#{?@agent_busy,#[fg
 
 # Inactive panes show their agent state via @agent_pane_state (set by the
 # agent-{busy,attention,idle}.sh hooks on the agent's own pane): red when
-# that pane needs approval, orange while it works, otherwise the theme
-# default. tmux expands the style per pane, so each background pane's
-# border reflects its own agent independently. attention outranks busy.
+# that pane needs approval, orange while it works, green when it finished,
+# otherwise the theme default. tmux expands the style per pane, so each
+# background pane's border reflects its own agent independently.
+# attention outranks busy outranks awaiting.
 #
 # The active pane always keeps the plain active-border colour and ignores
 # @agent_pane_state: the focused pane should read as "here", and you can
 # already see what its agent is doing. Agent state is the signal for the
 # panes you are NOT watching. Leaving a busy/awaiting pane reveals its
-# colour as it goes inactive; focusing one resets it to the active border.
-pane_state_inactive='#{?#{==:#{@agent_pane_state},attention},fg='"$attention"',#{?#{==:#{@agent_pane_state},busy},fg='"$busy"',fg='"$border"'}}'
+# colour as it goes inactive; focusing one resets it to the active border
+# (and, via the pane-focus-in hook in .tmux.conf, clears a green for good).
+pane_state_inactive='#{?#{==:#{@agent_pane_state},attention},fg='"$attention"',#{?#{==:#{@agent_pane_state},busy},fg='"$busy"',#{?#{==:#{@agent_pane_state},awaiting},fg='"$awaiting"',fg='"$border"'}}}'
 tmux set-option -g pane-border-style "$pane_state_inactive"
 tmux set-option -g pane-active-border-style "fg=$active_border"
 

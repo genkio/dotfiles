@@ -5,6 +5,7 @@
 	"installed_packages":
 	[
 		"DiffTabs",
+		"Pretty JSON",
 		"rainbow_csv"
 	]
 }

@@ -345,6 +345,7 @@ local function actionTargetLabel(actionTarget, actionOptions)
     control_center = "Action: Control Center",
     window_left = "Action: Move Window Left",
     window_right = "Action: Move Window Right",
+    window_two_thirds = "Action: Grow Window to Two Thirds",
     window_maximize = "Action: Enter Full Screen",
     window_next_screen = "Action: Move Window to Next Screen",
     finder_in_alacritty = "Action: Open Finder Path in Alacritty",
@@ -758,8 +759,30 @@ local function windowMatchesUnitRect(window, unitRect)
   return frameWithinTolerance(window:frame(), absoluteFrameForUnit(screen:frame(), unitRect), 12)
 end
 
-local function windowIsHalfScreen(window)
-  return windowMatchesUnitRect(window, hs.layout.left50) or windowMatchesUnitRect(window, hs.layout.right50)
+local twoThirdsLeft = hs.geometry.rect(0, 0, 2 / 3, 1)
+local twoThirdsRight = hs.geometry.rect(1 / 3, 0, 2 / 3, 1)
+local oneThirdLeft = hs.geometry.rect(0, 0, 1 / 3, 1)
+local oneThirdRight = hs.geometry.rect(2 / 3, 0, 1 / 3, 1)
+
+-- Tiled positions produced by keys 1/2/3. A window sitting in any of these is
+-- considered already placed, so focusing its app must not fullscreen it.
+local snappedUnitRects = {
+  hs.layout.left50,
+  hs.layout.right50,
+  twoThirdsLeft,
+  twoThirdsRight,
+  oneThirdLeft,
+  oneThirdRight,
+}
+
+local function windowIsSnapped(window)
+  for _, unitRect in ipairs(snappedUnitRects) do
+    if windowMatchesUnitRect(window, unitRect) then
+      return true
+    end
+  end
+
+  return false
 end
 
 local function fullscreenWindow(window)
@@ -800,7 +823,7 @@ local function focusApp(app, shouldFullscreen, retriesRemaining)
   window = window or firstWindow(app)
 
   if window then
-    if shouldFullscreen and not windowIsHalfScreen(window) then
+    if shouldFullscreen and not windowIsSnapped(window) then
       fullscreenWindow(window)
     else
       focusWindow(window)
@@ -1039,6 +1062,93 @@ local function moveFocusedWindow(unitRect, missingWindowMessage)
   window:focus()
 end
 
+local function windowSideOnScreen(window)
+  local screen = window:screen()
+
+  if not screen then
+    return nil
+  end
+
+  local screenFrame = screen:frame()
+  local frame = window:frame()
+
+  if frame.x + (frame.w / 2) < screenFrame.x + (screenFrame.w / 2) then
+    return "left"
+  end
+
+  return "right"
+end
+
+-- Frontmost standard window on the given side of a screen, ignoring the
+-- reference window. The neighbor we shrink to 1/3 when growing to 2/3.
+local function frontmostWindowOnSide(referenceWindow, screen, side)
+  local screenFrame = screen:frame()
+  local screenCenterX = screenFrame.x + (screenFrame.w / 2)
+
+  for _, window in ipairs(hs.window.orderedWindows()) do
+    local windowScreen = window:screen()
+
+    if window:id() ~= referenceWindow:id()
+      and window:isStandard()
+      and windowScreen
+      and windowScreen:id() == screen:id() then
+      local frame = window:frame()
+      local windowSide = (frame.x + (frame.w / 2) < screenCenterX) and "left" or "right"
+
+      if windowSide == side then
+        return window
+      end
+    end
+  end
+
+  return nil
+end
+
+-- Grow the focused window to 2/3 of the side it currently sits on; shrink the
+-- neighbor on the other side (if any) to the remaining 1/3.
+local function twoThirdsFocusedWindow(missingWindowMessage)
+  local window = hs.window.focusedWindow()
+
+  if not window then
+    hs.alert.show(missingWindowMessage)
+    return
+  end
+
+  local function apply()
+    local screen = window:screen()
+
+    if not screen then
+      return
+    end
+
+    local side = windowSideOnScreen(window)
+    local focusedUnit = (side == "left") and twoThirdsLeft or twoThirdsRight
+    local neighborUnit = (side == "left") and oneThirdRight or oneThirdLeft
+    local neighborSide = (side == "left") and "right" or "left"
+    local neighbor = frontmostWindowOnSide(window, screen, neighborSide)
+
+    if neighbor then
+      neighbor:moveToUnit(neighborUnit, 0)
+    end
+
+    window:moveToUnit(focusedUnit, 0)
+    window:focus()
+  end
+
+  -- Match moveFocusedWindow: leave fullscreen first, then tile once settled.
+  if window:isFullScreen() then
+    window:setFullScreen(false)
+    hs.timer.doAfter(0.4, function()
+      if window:id() then
+        apply()
+      end
+    end)
+    return
+  end
+
+  apply()
+end
+
 local function fullscreenFocusedWindow(missingWindowMessage)
   local window = hs.window.focusedWindow()
 
@@ -1197,6 +1307,9 @@ local function runAction(actionTarget, actionOptions)
     end,
     window_right = function()
       moveFocusedWindow(hs.layout.right50, "No focused window to move right")
+    end,
+    window_two_thirds = function()
+      twoThirdsFocusedWindow("No focused window to resize")
     end,
     window_maximize = function()
       fullscreenFocusedWindow("No focused window to enter full screen")

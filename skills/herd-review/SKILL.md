@@ -1,14 +1,26 @@
 ---
 name: herd-review
-description: "Herd-native code review: review a diff with one-shot reviewer workers in tmux panes (cheap models, pre-gathered shared context), then synthesize fact-checked findings for the implementer. Use ONLY when explicitly named, or when reviewer workers must run non-Claude models/CLIs (codex, opencode) that in-session subagents can't spawn. For normal code review default to subagent-review (read-only subagents pinned to a cheap model). Never invoke the built-in /code-review; its finders inherit the calling session's model and usage limits."
+description: "Cross-model review panel: subagent-review's in-session Claude lenses PLUS non-Claude coding agents (codex) as full reviewers in tmux panes, synthesized with model provenance and a cross-family rebuttal round. Use when explicitly named, or when the diff's stakes warrant a second model family (money/tax paths, migrations, verification/archival gates, security). Never a Claude-only pane fan-out - for normal review default to subagent-review. Never invoke the built-in /code-review; its finders inherit the calling session's model and usage limits."
 ---
 
-# herd-review - herd-native code review
+# herd-review - cross-model review panel
 
-requires tmux + the herdlet CLI (same preconditions as the herdlet skill).
-you are the driver: you gather context once, spawn disposable reviewers,
-and synthesize. the expensive model (you) never fans out in-session
-subagents and never makes a reviewer re-derive context.
+requires tmux (+ the herdlet CLI when panes run as herd workers). you are
+the driver: you gather context once, run the Claude lenses IN-SESSION
+(subagent-review mechanics - panes never host Claude one-shots; subagents
+do that cheaper and more reliably), give each non-Claude agent its own pane
+as a FULL reviewer with its own loop, and synthesize with model provenance.
+different model families have different blind spots; consensus across
+families is the strongest confirmation a local review can produce, and a
+finding only one family can see is the whole reason to pay for two.
+
+## when to run this
+
+cross-model review roughly doubles the cost - gate it on blast radius,
+never on tmux being available: money/tax paths, migrations, verification
+and archival gates, security-adjacent changes, or an explicit ask. routine
+diffs stay on subagent-review alone (it already has a cheap ONE-SHOT codex
+slot; this skill is the full-agent version with a rebuttal round).
 
 ## why not the built-in /code-review
 
@@ -54,73 +66,60 @@ classify every prior finding before deduping - "already raised" is not
 note a prior approval. skip only when a blind review is explicitly
 requested (A/B evals).
 
-## step 2 - fan out one-shot reviewers
+## step 2 - fan out: Claude lenses in-session, other models in panes
 
-three lenses, each a fresh one-shot reviewer pane on a cheap or mid tier -
-never the master's (priciest) model. spawn each with `$LAUNCH` (your agent's
-launch command, as in the herdlet skill) and a cheap/mid model id for your
-backend (Claude `haiku`/`sonnet`).
-write each lens prompt to `$WORK/lens-<x>.md` before spawning.
+the three Claude lenses run as in-session read-only subagents exactly per
+subagent-review (a - line scan; b - contract vs impl; c - cross-file
+tracer), against the same `$WORK/context.md` + `review.diff`, findings
+persisted to `$WORK/findings-<x>.md` by the driver. do NOT spawn Claude
+one-shots in panes - that was this skill's historical failure mode: pane
+lifecycle babysitting and scrollback scraping for work subagents do
+natively.
 
-every lens prompt carries the same contract:
+each NON-Claude agent gets a pane and runs as a full agent - its own loop,
+its own choice of what to open in the repo. the value is a genuinely
+different exploration, not a different logo on the same prompt.
 
-- read `$WORK/context.md` first, then `$WORK/review.diff`; the repo is
-  checked out in cwd - read any file for context the diff doesn't show
-- use Read/Grep/Glob only; never edit code
-- verify every claim against real code: open the file:line, trace concrete
-  execution paths with concrete inputs, check the opposite before
-  concluding. a line you can't confirm is a line you don't cite.
-- write findings to `$WORK/findings-<x>.md`, highest severity first, one
-  per line: `[blocker|major|minor|nit] file:line - issue + consequence;
-  proof; fix.` quality over quantity. if clean, write exactly `No findings.`
-- major/blocker consequence must state blast radius: who hits it and how
-  often in production ("every web user at token expiry" vs "one mobile
-  user replaying a token"). severity tracks production impact, not code
-  locality - a race on a path every request shares is a blocker.
-
-the lenses:
-
-- **a - line scan**: hunk-by-hunk diff read; diff-local bugs (logic, edge
-  cases, off-by-one, error handling, type coercion)
-- **b - contract vs impl**: three questions in order: is the problem real,
-  is this the right solution (simpler / more correct / less risky
-  alternative? matches the agreed design?), is it correctly implemented.
-  a coherent implementation of the wrong thing is a finding.
-- **c - cross-file tracer**: trace changed symbols to callers/callees
-  outside the diff; stale call sites, violated invariants, integration
-  breaks.
-
-```bash
-for x in a b c; do
-  tmux split-window -d -c "$PWD" \
-    "HERDLET_ID=$PROJ/rev-$x CC_IMESSAGE_SKIP=1 $LAUNCH --model <cheap-id> \
-     --permission-mode acceptEdits -p 'read and follow $WORK/lens-$x.md'"
-done
-herdlet wait --id $PROJ/rev-a,$PROJ/rev-b,$PROJ/rev-c --state done,blocked --timeout 550
-```
-
-the any-of wait (herdlet >= 0.3.0) wakes on the first transition; repeat
-it until `herdlet list --prefix $PROJ/rev-` shows all done. a headless
-reviewer should never sit `blocked` - if one does, `peek` it, it went
-off-script.
-
-optional 4th reviewer for cross-model diversity: if `codex` is on PATH,
-run it through `codex exec` (stdin closed with `< /dev/null`, wrapped in
-`timeout`, output redirected to `$WORK/findings-codex.md`, poll the file -
-never `tail`). prefer the canonical reviewer prompt at
-`~/pafin/skills/cryptact/prompts/codex-review.md` when present (substitute
-the real $WORK paths); else feed it the lens-b prompt. different model
-families catch different bugs.
+- brief: `$WORK/lens-<agent>.md` = lens b's three questions (is the problem
+  real / is this the right solution / is it correctly implemented) + the
+  shared contract (context.md first, then the diff; repo checked out in
+  cwd, read any file; never edit; one finding per line, severity first,
+  blast radius on majors)
+- handback is a FILE, never pane scrollback: launch with output redirected
+  to `$WORK/findings-<agent>.md`; poll the file or process - never `tail`
+  (it buffers until exit)
+- codex: `codex exec` per `~/pafin/skills/shared/docs/codex.md`, but the
+  sandbox flag is environment-specific: worker pods must bypass codex's
+  sandbox (the doc explains why); LOCALLY use `--sandbox read-only` - it
+  works and enforces the read-only contract for free. close stdin
+  (`< /dev/null`); wrap in a timeout (macOS has no `timeout` - gtimeout,
+  or skip the wrapper and poll). prefer the canonical reviewer prompt at
+  `~/pafin/skills/cryptact/prompts/codex-review.md` when present
+  (substitute the real $WORK paths)
+- lifecycle via herdlet works for codex exec workers as-is: launch with
+  `HERDLET_ID=$PROJ/rev-codex`, the wired codex hooks register the worker,
+  track working/done, and record the SESSION id - verified empirically
+- step 4 re-enters that session: if the pane closed when exec exited,
+  spawn a fresh pane and `herdlet resume --id $PROJ/rev-codex --pane %N`
+  (types `codex resume <session>`), then `herdlet send` the rebuttal;
+  plain `tmux split-window` + file polling is the fallback when hooks
+  aren't wired (`herdlet setup` wires them)
 
 ## step 3 - synthesize (this is the value-add)
 
 do NOT concatenate the findings files:
 
-1. merge the same issue across reviewers - consensus is signal
+1. merge the same issue across reviewers and TAG every survivor with its
+   contributing models, short form: `[fable5]`, `[gpt5.6]`,
+   `[fable5+gpt5.6]` (resolve the real model names at runtime, never
+   hardcode). consensus across MODEL FAMILIES is the strongest
+   confirmation, and the tags carry provenance into the findings file -
+   and, if the human posts them, into the PR
 2. fact-check every claim against the real code; drop or correct anything
    that doesn't hold (reviewers hallucinate line numbers and invent issues)
 3. scrutinize lone findings hardest - a single-reviewer finding is either
-   the best catch or a false positive
+   the best catch or a false positive. note which family keeps catching
+   what the other misses; that map says where each model is blind
 4. drop noise: linter nits, speculative perf, defensive code for impossible
    cases, confirmations that correct code is correct
 5. prioritize blocker > major > minor > nit; if a finding isn't worth the
@@ -136,9 +135,20 @@ do NOT concatenate the findings files:
    no finding fired on it. the human tests what the PR says it's about;
    flows it silently changes are the ones nobody exercises.
 
+## step 4 - cross-family rebuttal (the panes earn their keep)
+
+before writing the findings file, hand each surviving major/blocker to the
+OTHER family for refutation: the codex pane gets the Claude-lens survivors,
+a fresh in-session subagent gets codex's - each prompted to REFUTE, not
+confirm. a finding that survives cross-examination by a different model
+family is as confirmed as a local review gets; one that dies here was
+plausible-but-wrong and would have wasted the implementer's time. the
+persistent pane makes this a follow-up message, not a fresh context build.
+
 write the survivors to `plans/<milestone>-review-findings.md` with stable
-ids (F1, F2, ...) and `herdlet send` the implementer worker the path. kill
-the reviewer panes; a re-review after fixes gets fresh one-shot reviewers.
+ids (F1, F2, ...) and their model tags, and `herdlet send` the implementer
+worker the path. kill the reviewer panes only now; a re-review after fixes
+gets fresh reviewers.
 
 finding ids are workspace bookkeeping, not vocabulary: they must never
 appear in committed code, comments, test names, or commit messages. plans/
@@ -171,8 +181,9 @@ summary - politeness must not compound across rounds.
 
 ## hard rules
 
-- never run the built-in /code-review (or any in-session fan-out review)
-  from a herd session
+- never run the built-in /code-review from a herd session
+- Claude reviewers never run in panes - lenses are in-session subagents
+  (subagent-review mechanics); panes host non-Claude agents only
 - reviewers are read-only on the codebase; only `$WORK` files are written
 - never commit, push, or open a PR off the back of a review; findings go
   to the implementer, the human owns the PR

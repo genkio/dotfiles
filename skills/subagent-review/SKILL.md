@@ -104,11 +104,16 @@ fact-check trail, then synthesize from the files.
 
 optional 4th reviewer for cross-model diversity: if `codex` is on PATH and
 authenticated, the driver runs it via Bash (`codex exec`, stdin closed with
-`< /dev/null`, wrapped in `timeout`, output to `$WORK/findings-codex.md` -
-it cannot be a subagent). prefer the canonical reviewer prompt at
+`< /dev/null`, wrapped in `timeout` - gtimeout on macOS, or skip the
+wrapper and poll; locally use `--sandbox read-only`, never the pod bypass
+flag). output to `$WORK/findings-codex.md` - it cannot be a subagent.
+prefer the canonical reviewer prompt at
 `~/pafin/skills/cryptact/prompts/codex-review.md` when present (substitute
 the real $WORK paths); else feed it the lens-b prompt. different model
-families catch different bugs.
+families catch different bugs. for HIGH-STAKES diffs (money/tax paths,
+migrations, verification/archival gates, security), escalate to the full
+cross-model panel instead: herd-review runs codex as a persistent agent
+and adds a cross-family rebuttal round.
 
 ## step 3 - synthesize (this is the value-add)
 

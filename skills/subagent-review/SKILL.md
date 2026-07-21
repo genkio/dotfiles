@@ -138,6 +138,13 @@ write the survivors to `plans/<milestone>-review-findings.md` with stable
 ids (F1, F2, ...) and hand the path to the implementer. a re-review after
 fixes gets fresh one-shot subagents.
 
+finding ids are workspace bookkeeping, not vocabulary: they must never
+appear in committed code, comments, test names, or commit messages. plans/
+is git-ignored, so `(review F6)` in a comment is noise nobody outside the
+session can resolve - the fix carries its rationale in plain words, in
+place. tell the implementer this when handing over the findings file, and
+treat any id that leaks into the diff as a finding on the next round.
+
 ## re-review rounds - the leniency ladder
 
 each round asks for less, never more, and everything worth raising goes out

@@ -140,6 +140,13 @@ write the survivors to `plans/<milestone>-review-findings.md` with stable
 ids (F1, F2, ...) and `herdlet send` the implementer worker the path. kill
 the reviewer panes; a re-review after fixes gets fresh one-shot reviewers.
 
+finding ids are workspace bookkeeping, not vocabulary: they must never
+appear in committed code, comments, test names, or commit messages. plans/
+is git-ignored, so `(review F6)` in a comment is noise nobody outside the
+session can resolve - the fix carries its rationale in plain words, in
+place. tell the implementer this when handing over the findings file, and
+treat any id that leaks into the diff as a finding on the next round.
+
 ## re-review rounds - the leniency ladder
 
 each round asks for less, never more, and everything worth raising goes out

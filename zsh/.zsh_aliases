@@ -149,6 +149,99 @@ lq() {
   lazysql "${pre[@]}" "${line##*$'\t'}"
 }
 
+_lr_age() {  # $1=epoch -> REPLY: compact age (9s/5m/23h/2d/Jun 25)
+  local d=$(( EPOCHSECONDS - $1 ))
+  if   (( d < 60 ));     then REPLY="${d}s"
+  elif (( d < 3600 ));   then REPLY="$(( d / 60 ))m"
+  elif (( d < 86400 ));  then REPLY="$(( d / 3600 ))h"
+  elif (( d < 604800 )); then REPLY="$(( d / 86400 ))d"
+  else strftime -s REPLY '%b %d' $1
+  fi
+}
+
+_lr_clean() {  # $1=raw title -> REPLY: one line, trimmed, <=72 chars
+  emulate -L zsh
+  setopt extended_glob
+  local s=${1//$'\n'/ }; s=${s//$'\t'/ }; s=${s//$'\r'/ }
+  s=${s##[[:space:]]#}
+  s=${s%%[[:space:]]#}
+  (( ${#s} > 72 )) && s="${s[1,71]}…"
+  REPLY=${s:-'(untitled)'}
+}
+
+# List coding-agent sessions started in THIS dir, newest first; Enter resumes.
+#   claude -> ~/.claude/projects/<cwd, with / . _ folded to ->/<uuid>.jsonl
+#   codex  -> ~/.codex/sessions/**/rollout-*-<uuid>.jsonl (cwd in the header)
+# Titles (claude aiTitle, codex first user_message) can sit hundreds of KB into
+# the file, so grep -m1 scans it whole: stops at the first hit, no cap needed.
+# fzf picker, `select` fallback; needs jq for codex titles.
+lr() {
+  emulate -L zsh
+  setopt local_options extended_glob null_glob
+  zmodload zsh/datetime 2>/dev/null   # EPOCHSECONDS, strftime
+  zmodload zsh/stat 2>/dev/null       # zstat
+
+  local -a rows st
+  local f id title mt age ct disp agent
+
+  local enc=${PWD//\//-}; enc=${enc//./-}; enc=${enc//_/-}
+  local cdir=$HOME/.claude/projects/$enc
+  if [[ -d $cdir ]]; then
+    for f in $cdir/*.jsonl(N.); do
+      zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
+      id=${f:t:r}
+      title=$(grep -m1 -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null)
+      title=${title#'"aiTitle":"'}; title=${title%'"'}
+      _lr_age $mt; age=$REPLY
+      _lr_clean "$title"; ct=$REPLY
+      agent=claude
+      disp="${(r:6:)agent} ${(l:6:)age}  $ct"
+      rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id" )
+    done
+  fi
+
+  for f in $HOME/.codex/sessions/**/*.jsonl(N.); do
+    head -c 1024 "$f" 2>/dev/null | grep -qF "\"cwd\":\"$PWD\"" || continue
+    zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
+    id=${f:t:r}; id=${id: -36}
+    title=$(grep -m1 '"payload":{"type":"user_message"' "$f" 2>/dev/null | jq -r '.payload.message // empty' 2>/dev/null)
+    _lr_age $mt; age=$REPLY
+    _lr_clean "$title"; ct=$REPLY
+    agent=codex
+    disp="${(r:6:)agent} ${(l:6:)age}  $ct"
+    rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id" )
+  done
+
+  (( ${#rows} )) || { print -u2 "lr: no Claude or Codex sessions for $PWD"; return 1; }
+
+  local -a lines
+  lines=( "${(@f)$(print -rl -- "${rows[@]}" | sort -t$'\t' -k1,1nr | cut -f2-)}" )
+
+  local line
+  if (( ${#lines} > 1 )); then
+    if (( $+commands[fzf] )); then
+      line=$(print -rl -- "${lines[@]}" | fzf --delimiter=$'\t' --with-nth=1 \
+        --height=60% --reverse --no-sort --prompt='resume ' \
+        --header='claude / codex sessions in this dir · enter resumes') || return
+    else
+      local pick PS3='resume> '
+      select pick in "${lines[@]%%$'\t'*}"; do
+        [[ -n $pick ]] && { line=$lines[$REPLY]; break; }
+      done
+    fi
+  else
+    line=$lines[1]
+  fi
+  [[ -n $line ]] || { print -u2 "lr: nothing selected"; return 1; }
+
+  local -a parts=( "${(@ps:\t:)line}" )
+  case $parts[2] in
+    claude) claude --resume "$parts[3]" ;;
+    codex)  codex resume "$parts[3]" ;;
+    *) print -u2 "lr: unknown agent '$parts[2]'"; return 1 ;;
+  esac
+}
+
 alias box="maestral"
 
 zip() {

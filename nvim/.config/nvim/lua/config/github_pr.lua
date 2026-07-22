@@ -107,6 +107,48 @@ local function blamed_commit(root, path, line)
   return sha
 end
 
+local function current_dir()
+  local path = vim.api.nvim_buf_get_name(0)
+  if path == '' then
+    return vim.uv.cwd()
+  end
+
+  return vim.fs.dirname(vim.fs.normalize(path))
+end
+
+-- Worktree-aware: gh resolves the PR from whatever branch this dir is on.
+local function branch_root()
+  local output = run({
+    'git',
+    '-C',
+    current_dir(),
+    'rev-parse',
+    '--show-toplevel',
+  })
+  if not output then
+    return nil, 'Current directory is not in a git worktree'
+  end
+
+  return vim.trim(output)
+end
+
+local function branch_pull_request(root)
+  local data, err = run_json({
+    'gh',
+    'pr',
+    'view',
+    '--json',
+    'number,title,url',
+  }, {
+    cwd = root,
+  })
+  if not data then
+    return nil, err or 'No GitHub PR is associated with the current branch'
+  end
+
+  return data
+end
+
 local function repo_name_with_owner(root)
   local data, err = run_json({
     'gh',
@@ -270,6 +312,22 @@ function M.open_current_line_pr()
       open_pull_request(choice)
     end
   end)
+end
+
+function M.open_branch_pr()
+  local root, root_err = branch_root()
+  if not root then
+    notify(root_err, vim.log.levels.WARN)
+    return
+  end
+
+  local pr, pr_err = branch_pull_request(root)
+  if not pr then
+    notify(pr_err, vim.log.levels.WARN)
+    return
+  end
+
+  open_pull_request(pr)
 end
 
 return M

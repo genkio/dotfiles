@@ -111,6 +111,7 @@ nvim
 - `<leader>gp`: preview the current hunk
 - `<leader>gb`: show Git blame for the current line
 - `<leader>gB`: open the GitHub PR associated with the blamed line's commit (requires `gh`)
+- `<leader>gr`: open the GitHub PR for the current branch in the default browser (requires `gh`)
 
 ## Flash.nvim
 

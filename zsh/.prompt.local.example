@@ -1,0 +1,15 @@
+# ~/.prompt.local - saved prompts for `pp` (the prompt picker in .zsh_aliases).
+# One prompt per line. Blank lines and lines starting with # are ignored.
+#
+# Placeholders: $N:label  -> pp asks "label: " and substitutes every occurrence.
+#   e.g.  $1:github-url  ->  pp prompts "github-url: " and fills in your answer.
+# Reuse the same $N:label to fill multiple spots from one answer.
+#
+# Copy this to ~/.prompt.local (not tracked) and edit it with your own prompts:
+#   cp ~/.prompt.local.example ~/.prompt.local
+
+Review the PR at $1:github-url. Summarize the risky changes and flag anything that needs a second look, focusing on correctness and security.
+Explain the architecture of this repository: entry points, key modules, and how data flows between them. Then list the 3 highest impact-to-effort refactors.
+Investigate the failing test "$1:test-name". Find the root cause, explain it, and propose a minimal fix without changing unrelated behavior.
+Open $1:path and add tests covering its edge cases. Do not change the implementation.
+Draft a conventional-commit message for the currently staged changes. Output only the message.

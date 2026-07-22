@@ -489,3 +489,69 @@ ccim-toggle() {
     cc-imessage enable
   fi
 }
+
+# pp: pick a saved prompt, choose a coding agent, fill any placeholders, copy the
+# finished prompt to the clipboard, then launch the agent empty -- paste (Cmd+V)
+# into its composer to review before sending. Agents auto-submit a prompt passed
+# as an argument, so we hand it over via the clipboard instead of the CLI.
+#   prompts:      ~/.prompt.local, one per line (blank + #comment lines skipped)
+#   placeholders: $N:label  -> pp asks "label: " and substitutes every occurrence
+#   pp            -> pick, choose agent, fill, copy, launch
+#   pp -em        -> claude gets --effort max (ignored for codex/opencode)
+#   extra args pass through to the chosen agent (e.g. pp --model opus)
+pp() {
+  local file="${PROMPT_LOCAL:-$HOME/.prompt.local}"
+  [[ -f "$file" ]] || { print -u2 "pp: no prompt file at $file (cp ~/.prompt.local.example \"$file\")"; return 1; }
+  command -v fzf >/dev/null || { print -u2 "pp: fzf not found"; return 1; }
+
+  local em=0 a; local -a extra
+  for a in "$@"; do [[ "$a" == "-em" ]] && em=1 || extra+=("$a"); done
+
+  local -a prompts
+  prompts=("${(@f)$(grep -vE '^[[:space:]]*(#|$)' -- "$file")}")
+  (( ${#prompts} )) || { print -u2 "pp: no prompts in $file"; return 1; }
+
+  local -a menu; local i disp
+  for i in {1..${#prompts}}; do
+    disp="${prompts[i][1,80]}"
+    (( ${#prompts[i]} > 80 )) && disp+="…"
+    menu+=("$i"$'\t'"$disp")
+  done
+  local sel
+  sel=$(print -rl -- "${menu[@]}" | fzf --delimiter=$'\t' --with-nth='2..' --height=40% --reverse --prompt='prompt> ') || return
+  local prompt="${prompts[${sel%%$'\t'*}]}"
+
+  local agent
+  agent=$(print -rl -- claude codex opencode | fzf --height=40% --reverse --prompt='agent> ') || return
+  [[ -n "$agent" ]] || return
+
+  local -a tokens
+  tokens=("${(@f)$(print -r -- "$prompt" | grep -oE '\$[0-9]+:[A-Za-z0-9_-]+' | awk '!seen[$0]++')}")
+  local tok val
+  for tok in "${tokens[@]}"; do
+    [[ -n "$tok" ]] || continue
+    val=""
+    read "val?${tok#*:}: " || return
+    prompt="${prompt//${tok}/${val}}"
+  done
+
+  # copy the finished prompt (no trailing newline, so the paste doesn't auto-submit).
+  # osc52-copy.sh does pbcopy locally AND emits OSC52 up to the terminal, so this
+  # lands on your real clipboard even over ssh; plain pbcopy would hit the remote box.
+  local copier="$HOME/dotfiles/tmux/bin/osc52-copy.sh"
+  if [[ -x "$copier" ]]; then printf '%s' "$prompt" | "$copier"
+  elif command -v pbcopy >/dev/null; then printf '%s' "$prompt" | pbcopy
+  elif command -v wl-copy >/dev/null; then printf '%s' "$prompt" | wl-copy
+  elif command -v xclip >/dev/null; then printf '%s' "$prompt" | xclip -selection clipboard
+  else print -u2 "pp: no clipboard method found"; return 1; fi
+
+  local -a cmd
+  case "$agent" in
+    claude)   cmd=(claude); (( em )) && cmd+=(--effort max) ;;
+    codex)    (( em )) && print -u2 "pp: -em applies to claude only, ignoring"; cmd=(codex) ;;
+    opencode) (( em )) && print -u2 "pp: -em applies to claude only, ignoring"; cmd=(opencode) ;;
+  esac
+  cmd+=("${extra[@]}")
+  print -u2 "pp: prompt on clipboard -- paste into ${agent} (Cmd+V), review, then enter"
+  "${cmd[@]}"
+}

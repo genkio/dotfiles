@@ -99,3 +99,4 @@ Local overrides not tracked by git go in:
 - `~/.local/bin/env` - sourced at end of .zshrc
 - `~/.gitconfig.local` - included from `.gitconfig` for private Git identity; seeded from `git/.gitconfig.local.example`, not stowed
 - `~/.codex/config.toml` - machine-local Codex config; seeded from `codex/.codex/config.toml.example`, not stowed, because Codex persists project trust and permission state there
+- `~/.prompt.local` - saved prompts for the `pp` picker (zsh `.zsh_aliases`); seeded from `zsh/.prompt.local.example`, not stowed

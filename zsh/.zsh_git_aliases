@@ -179,8 +179,8 @@ gtreen() {
 
 # tear down matching Docker containers/volumes/networks, then git worktree remove -f <path> && git branch -D <branch>
 gtreer() {
-  local sel branch target_dir main_worktree cur prompt line rest container_id container_name container_state container_project proj
-  local -a docker_containers docker_container_ids docker_projects docker_volumes docker_networks vols nets
+  local sel branch target_dir main_worktree cur prompt line rest container_id container_name container_state container_project proj pid
+  local -a docker_containers docker_container_ids docker_projects docker_volumes docker_networks vols nets host_pids
 
   # first thing: daemon down is indistinguishable from "no containers" later,
   # which once let leftovers survive teardown silently
@@ -257,14 +257,24 @@ gtreer() {
     echo "gtreer: no Docker resources found for $target_dir" >&2
   fi
 
-  if ((${#docker_container_ids})); then
-    prompt="Remove ${#docker_container_ids} container(s)"
-    ((${#docker_volumes})) && prompt+=" + ${#docker_volumes} volume(s) [DATA LOSS]"
-    ((${#docker_networks})) && prompt+=" + ${#docker_networks} network(s)"
-    prompt+=", remove worktree $target_dir, and delete branch $branch? [y/N] "
+  # host processes (sandbox `up`, editors, watchers) aren't docker's problem:
+  # after removal they'd run against deleted paths and squat ports until reboot.
+  # pgrep -f matches argv; escape dots, the only regex meta these paths carry
+  host_pids=("${(@f)$(pgrep -f -- "${target_dir//./\\.}" 2>/dev/null)}")
+  [[ -n "${host_pids[1]}" ]] || host_pids=()
+  if ((${#host_pids})); then
+    echo "gtreer: warning: host processes referencing $target_dir:" >&2
+    ps -o pid=,command= -p "${(j:,:)host_pids}" 2>/dev/null | cut -c1-110 | sed 's/^/  /' >&2
   else
-    prompt="Remove worktree $target_dir and delete branch $branch? [y/N] "
+    echo "gtreer: no host processes referencing $target_dir" >&2
   fi
+
+  prompt="Remove worktree $target_dir and delete branch $branch"
+  ((${#docker_container_ids})) && prompt+=" + ${#docker_container_ids} container(s)"
+  ((${#docker_volumes})) && prompt+=" + ${#docker_volumes} volume(s) [DATA LOSS]"
+  ((${#docker_networks})) && prompt+=" + ${#docker_networks} network(s)"
+  ((${#host_pids})) && prompt+=" + kill ${#host_pids} host process(es)"
+  prompt+="? [y/N] "
 
   if ! read -q "REPLY?$prompt"; then
     echo
@@ -278,6 +288,15 @@ gtreer() {
     cd "$main_worktree" || return
   fi
 
+  if ((${#host_pids})); then
+    kill "${host_pids[@]}" 2>/dev/null
+    sleep 1
+    # TERM first is manners; anything still alive gets the hammer
+    for pid in "${host_pids[@]}"; do
+      kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+    done
+  fi
+
   if ((${#docker_container_ids})); then
     docker rm -fv "${docker_container_ids[@]}" || return
     # best-effort: volume/network rm fails non-fatally if still used elsewhere
@@ -285,7 +304,19 @@ gtreer() {
     ((${#docker_networks})) && docker network rm "${docker_networks[@]}" 2>/dev/null
   fi
 
-  git worktree remove -f "$target_dir" || return
+  if ! git worktree remove -f "$target_dir"; then
+    # Finder races a fresh .DS_Store into the emptying dir -> "Directory not
+    # empty" on the final rmdir. Sweep junk + empty dirs; anything else = bail
+    if [[ -d "$target_dir" ]]; then
+      find "$target_dir" -name '.DS_Store' -delete 2>/dev/null
+      find "$target_dir" -type d -empty -delete 2>/dev/null
+      if [[ -d "$target_dir" ]]; then
+        echo "gtreer: $target_dir still not empty after junk sweep - inspect it" >&2
+        return 1
+      fi
+    fi
+    git worktree prune
+  fi
   # -D: delete already confirmed above, -d would strand unmerged branches
   git branch -D "$branch"
 }

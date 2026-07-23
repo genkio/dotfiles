@@ -5,7 +5,7 @@
 -- to app definitions, multi-app pickers, or system actions.
 --
 -- Features:
---   - Single app bindings: RCmd+B → "Brave Browser" / { app = "Brave Browser", fullscreen = true }
+--   - Single app bindings: RCmd+B → "Firefox" / { app = "Firefox", fullscreen = true }
 --   - Multi-app picker: RCmd+M → choose between "Mail" / "Messages"
 --   - System actions: window tiling, notification center, control center
 --   - Config overlay: hold right-Command for 0.5s to see all bindings

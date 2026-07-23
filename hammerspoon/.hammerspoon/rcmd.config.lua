@@ -1,7 +1,7 @@
 return {
   -- Values can be an app name/bundle ID/path, an app table like
-  -- { app = "Brave Browser", fullscreen = true }, a table with an action,
-  -- or multiple apps via { "Brave Browser", "Google Chrome" } / { apps = { ... } }.
+  -- { app = "Firefox", fullscreen = true }, a table with an action,
+  -- or multiple apps via { "Firefox", "Google Chrome" } / { apps = { ... } }.
   -- `fullscreen = true` still just focuses the app when its current window is
   -- already snapped to a tiled position (left/right half, or the 2/3 and 1/3
   -- splits from key 3).
@@ -22,5 +22,5 @@ return {
   s = "Sublime",
   u = "com.netease.uuremote",
   w = "WeChat",
-  z = { app = "Brave Browser", fullscreen = true },
+  z = { app = "Firefox", fullscreen = true },
 }

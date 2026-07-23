@@ -6,6 +6,7 @@ on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 # macOS 26 (Tahoe) ships a native battery charge limit in Settings -> Battery.
 # Only install AlDente on older releases that lack it.
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
+cask "firefox"
 cask "hammerspoon"
 cask "sublime-text"
 # setup-sublime.sh uses duti to make sublime the default text/code opener

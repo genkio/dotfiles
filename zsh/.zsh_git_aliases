@@ -47,14 +47,14 @@ grb() {
 
 # ../<project>-<branch> anchored to the main worktree, so it works from inside
 # any worktree (show-toplevel would nest paths)
-_gtree_target_dir() {
+_gwt_target_dir() {
   local main
   main=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}')
   [[ -n "$main" ]] || return 1
   print -r -- "${main:h}/${main:t}-${1//\//-}"
 }
 
-_gtree_path_is_within() {
+_gwt_path_is_within() {
   local child="$1" parent="$2"
 
   [[ -n "$child" && -n "$parent" && "$child" != "<no value>" ]] || return 1
@@ -65,7 +65,7 @@ _gtree_path_is_within() {
 
 # one inspect per container (not per-field): -aq scans every container, so
 # separate inspects per field would be too chatty
-_gtree_docker_containers() {
+_gwt_docker_containers() {
   local target="$1" target_abs id working_dir config_files project state name source match
   local -a ids lines mounts
 
@@ -95,13 +95,13 @@ _gtree_docker_containers() {
     mounts=("${(@)lines[6,-1]}")
 
     match=0
-    if _gtree_path_is_within "$working_dir" "$target_abs"; then
+    if _gwt_path_is_within "$working_dir" "$target_abs"; then
       match=1
     fi
 
     if (( ! match )); then
       for source in "${(s:,:)config_files}"; do
-        if _gtree_path_is_within "$source" "$target_abs"; then
+        if _gwt_path_is_within "$source" "$target_abs"; then
           match=1
           break
         fi
@@ -110,7 +110,7 @@ _gtree_docker_containers() {
 
     if (( ! match )); then
       for source in "${mounts[@]}"; do
-        if _gtree_path_is_within "$source" "$target_abs"; then
+        if _gwt_path_is_within "$source" "$target_abs"; then
           match=1
           break
         fi
@@ -124,7 +124,7 @@ _gtree_docker_containers() {
 }
 
 # git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
-gtreea() {
+gwta() {
   local branch="$1" target_dir
 
   if [[ -z "$branch" ]]; then
@@ -141,7 +141,7 @@ gtreea() {
     branch=${branch%% *}
   fi
 
-  target_dir=$(_gtree_target_dir "$branch") || return
+  target_dir=$(_gwt_target_dir "$branch") || return
 
   git fetch origin "$branch" || return
   if git show-ref --quiet --verify "refs/heads/$branch"; then
@@ -154,7 +154,7 @@ gtreea() {
 }
 
 # git worktree add -b <branch> ../<project>-<branch> <default-branch>
-gtreen() {
+gwtn() {
   local branch="$1" base target_dir
 
   if [[ -z "$branch" ]]; then
@@ -165,11 +165,11 @@ gtreen() {
   # full ref, not --short: a stray local branch named origin/<x> makes the
   # short name ambiguous and git returns remotes/origin/<x> instead
   base=$(git symbolic-ref --quiet refs/remotes/origin/HEAD) || {
-    echo "gtreen: origin/HEAD is not set for this repo" >&2
+    echo "gwtn: origin/HEAD is not set for this repo" >&2
     return 1
   }
 
-  target_dir=$(_gtree_target_dir "$branch") || return
+  target_dir=$(_gwt_target_dir "$branch") || return
 
   # branching from stale origin/HEAD invites avoidable rebases
   git fetch origin "${base#refs/remotes/origin/}" || return
@@ -178,14 +178,14 @@ gtreen() {
 }
 
 # tear down matching Docker containers/volumes/networks, then git worktree remove -f <path> && git branch -D <branch>
-gtreer() {
+gwtr() {
   local sel branch target_dir main_worktree cur prompt line rest container_id container_name container_state container_project proj pid
   local -a docker_containers docker_container_ids docker_projects docker_volumes docker_networks vols nets host_pids
 
   # first thing: daemon down is indistinguishable from "no containers" later,
   # which once let leftovers survive teardown silently
   if command -v docker >/dev/null 2>&1 && ! docker ps -aq >/dev/null 2>&1; then
-    echo "gtreer: warning: Docker daemon unreachable, cannot check for leftover containers" >&2
+    echo "gwtr: warning: Docker daemon unreachable, cannot check for leftover containers" >&2
     if ! read -q "REPLY?Continue without the Docker check? [y/N] "; then
       echo
       echo "Cancelled."
@@ -206,14 +206,14 @@ gtreer() {
   if [[ -n "$1" ]]; then
     sel=$(print -r -- "$sel" | awk -F'\t' -v b="$1" '$1 == b {print; exit}')
     if [[ -z "$sel" ]]; then
-      echo "gtreer: no worktree for branch $1" >&2
+      echo "gwtr: no worktree for branch $1" >&2
       return 1
     fi
   elif [[ -n "$cur" && "${cur:A}" != "${main_worktree:A}" ]]; then
     # standing in a side worktree: that's the one to remove, skip the picker
     sel=$(print -r -- "$sel" | awk -F'\t' -v p="$cur" '$2 == p {print; exit}')
     if [[ -z "$sel" ]]; then
-      echo "gtreer: current worktree has no branch (detached?)" >&2
+      echo "gwtr: current worktree has no branch (detached?)" >&2
       return 1
     fi
   else
@@ -224,10 +224,10 @@ gtreer() {
   branch=${sel%%$'\t'*}
   target_dir=${sel#*$'\t'}
 
-  docker_containers=("${(@f)$(_gtree_docker_containers "$target_dir")}")
+  docker_containers=("${(@f)$(_gwt_docker_containers "$target_dir")}")
   [[ -n "${docker_containers[1]}" ]] || docker_containers=()
   if ((${#docker_containers})); then
-    echo "gtreer: warning: Docker resources found for $target_dir:" >&2
+    echo "gwtr: warning: Docker resources found for $target_dir:" >&2
     for line in "${docker_containers[@]}"; do
       container_id=${line%%$'\t'*}
       rest=${line#*$'\t'}
@@ -254,7 +254,7 @@ gtreer() {
       && echo "  + ${#docker_volumes} volume(s), ${#docker_networks} network(s)" >&2
   elif command -v docker >/dev/null 2>&1; then
     # say so even on no match: silence must mean the check didn't run
-    echo "gtreer: no Docker resources found for $target_dir" >&2
+    echo "gwtr: no Docker resources found for $target_dir" >&2
   fi
 
   # host processes (sandbox `up`, editors, watchers) aren't docker's problem:
@@ -263,10 +263,10 @@ gtreer() {
   host_pids=("${(@f)$(pgrep -f -- "${target_dir//./\\.}" 2>/dev/null)}")
   [[ -n "${host_pids[1]}" ]] || host_pids=()
   if ((${#host_pids})); then
-    echo "gtreer: warning: host processes referencing $target_dir:" >&2
+    echo "gwtr: warning: host processes referencing $target_dir:" >&2
     ps -o pid=,command= -p "${(j:,:)host_pids}" 2>/dev/null | cut -c1-110 | sed 's/^/  /' >&2
   else
-    echo "gtreer: no host processes referencing $target_dir" >&2
+    echo "gwtr: no host processes referencing $target_dir" >&2
   fi
 
   prompt="Remove worktree $target_dir and delete branch $branch"
@@ -311,7 +311,7 @@ gtreer() {
       find "$target_dir" -name '.DS_Store' -delete 2>/dev/null
       find "$target_dir" -type d -empty -delete 2>/dev/null
       if [[ -d "$target_dir" ]]; then
-        echo "gtreer: $target_dir still not empty after junk sweep - inspect it" >&2
+        echo "gwtr: $target_dir still not empty after junk sweep - inspect it" >&2
         return 1
       fi
     fi

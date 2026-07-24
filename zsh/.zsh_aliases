@@ -2,10 +2,13 @@ alias vmise='mise use $(jq -r ".volta | to_entries[] | \"\(.key)@\(.value)\"" pa
 alias y="yazi"
 cc() {
   local -a pre
-  if [[ "$1" == "-em" ]]; then
-    pre=(--effort max)
-    shift
-  fi
+  while true; do
+    case "$1" in
+      -em) pre+=(--effort max); shift ;;
+      -m)  pre+=(--model "$2"); shift 2 ;;
+      *) break ;;
+    esac
+  done
   if [[ $# -eq 0 ]]; then
     claude "${pre[@]}"
   elif [[ "$1" == -* ]]; then
@@ -14,6 +17,7 @@ cc() {
     claude "${pre[@]}" -n "$*"
   fi
 }
+alias ccf="cc -m claude-fable-5"
 alias ccx="claude --dangerously-skip-permissions"
 alias cx="codex"
 alias cxx="codex --dangerously-bypass-approvals-and-sandbox"

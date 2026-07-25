@@ -94,6 +94,9 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix x` | Kill pane (auto-rebalance) |
 | `prefix X` | Kill all other panes in window |
 | `prefix y` | Toggle synchronize-panes |
+| `prefix b` | Break pane out into its own window here (auto-rebalance) |
+| `prefix B` | Break pane out into a brand-new session |
+| `prefix G` | Gather current window back into the default (`tmp`) session |
 | `prefix T` | Set/edit pane label |
 | `prefix P` | Copy the first number found in the pane label to clipboard |
 | `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |

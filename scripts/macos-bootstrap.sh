@@ -122,7 +122,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Ask for admin once up front (used by Firewall, FileVault, and Rosetta).
+# Ask for admin once up front (used by Firewall and FileVault).
 # Skip when invoked from opinionated-flow.sh, which already captured the
 # password into DOTFILES_SUDO_PASSWORD; sudo_pw feeds it on every call.
 if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 && -z "${DOTFILES_SUDO_WARMED:-}" ]]; then
@@ -345,13 +345,6 @@ fi
 ###############################################################################
 # System
 ###############################################################################
-
-echo "System: Install Rosetta 2"
-if [[ "$(uname -m)" == "arm64" ]]; then
-  run sudo_pw softwareupdate --install-rosetta --agree-to-license || true
-else
-  echo "  Skipping: Rosetta only applies to Apple Silicon (arch: $(uname -m))"
-fi
 
 echo "Menu Bar: Reduce item spacing"
 defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2

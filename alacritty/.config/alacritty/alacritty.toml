@@ -30,6 +30,13 @@ bindings = [
   # that chord before Alacritty sees it. Cmd chords bypass the IME and never
   # reach tmux/nvim, so this can't be shadowed.
   { key = "Space", mods = "Command|Shift", action = "ToggleViMode" },
+  # Join the clipboard into one line: TUI left padding + soft-wrap breaks gone.
+  # Alacritty can't pipe a yank through a filter, so this rewrites the clipboard
+  # after the fact - yank with vi-mode y first, then hit this.
+  # Not shift+y: that is already 4 default vi bindings (select to end of line +
+  # Copy), and user bindings stack on top of defaults instead of replacing them,
+  # so the line yank would clobber the clipboard before this ran.
+  { key = "Y", mods = "Command|Shift", command = { program = "/bin/sh", args = ["-c", "$HOME/dotfiles/tmux/bin/unwrap-clipboard.sh"] } },
   # Cmd+Shift+n/p -> tmux session next/prev. tmux bind has no Cmd modifier, so
   # emit a private escape here and let tmux user-keys catch these exact bytes.
   { key = "N", mods = "Command|Shift", chars = "\u001B[120~" },

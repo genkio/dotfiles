@@ -123,7 +123,8 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by defau
 
 | Key | Action |
 |---|---|
-| `y` | Copy selection (stays in copy mode, OSC52) |
+| `y` | Copy selection verbatim (stays in copy mode, OSC52) |
+| `Y` | Copy selection joined into one line (drops TUI padding + soft-wrap breaks) |
 | `Enter` | Copy selection (stays in copy mode, OSC52) |
 | Mouse drag | Copy on drag end (OSC52) |
 
@@ -137,6 +138,7 @@ Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
 |---|---|
 | `Shift+Enter` | Insert newline (multi-line prompt) |
 | `Cmd+Shift+Space` | Toggle vi mode |
+| `Cmd+Shift+Y` | Join the clipboard into one line (after a vi-mode `y`, strips TUI padding + soft-wrap breaks) |
 
 Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t` (or `scripts/theme-toggle.sh` outside tmux): it rewrites `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live) and repaints the running terminal via OSC. No splits/tabs - use tmux.
 

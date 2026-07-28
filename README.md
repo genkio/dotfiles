@@ -75,6 +75,8 @@ Run the automated script:
 
 - `make` (equivalent to `./scripts/opinionated-flow.sh --bootstrap-macos --include-all`)
 - Other targets: `make bootstrap`, `make apps`, `make dev`, `make ssh`, `make gpg`, `make sublime`
+- `make ssh` defaults to GitHub; pass a host label to key it per service: `make ssh gitlab` (or `make ssh HOST=gitlab`) writes `~/.ssh/id_ed25519_gitlab` and appends a `gitlab.com` block to `~/.ssh/config`. `github`, `bitbucket`, and `gitlab` get a real hostname and paste URL; any other label is used verbatim as the hostname.
+- Identity is optional and passed the same way: `make ssh gitlab EMAIL=me@example.com NAME='Genkio Ji'`. Worth setting, because the script writes the email it used into `~/.gitconfig.local`, and its default is the GitHub noreply address. Only explicit `VAR=...` on the command line is honoured, so an exported `$EMAIL`/`$NAME` in your shell cannot leak in. For `--type` and `--passphrase`, call `./scripts/generate-ssh-key.sh` directly.
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - The core stow step installs `nvim`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).

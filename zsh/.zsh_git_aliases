@@ -54,6 +54,18 @@ _gwt_target_dir() {
   print -r -- "${main:h}/${main:t}-${1//\//-}"
 }
 
+# prints "<head branch>\n<true|false cross-repo>" for a PR number
+_gwt_pr_head() {
+  local pr="$1"
+
+  command -v gh >/dev/null 2>&1 || {
+    echo "gwt: gh not installed, pass a branch name instead of #$pr" >&2
+    return 1
+  }
+  gh pr view "$pr" --json headRefName,isCrossRepository \
+    --jq '.headRefName, .isCrossRepository'
+}
+
 _gwt_path_is_within() {
   local child="$1" parent="$2"
 
@@ -124,8 +136,17 @@ _gwt_docker_containers() {
 }
 
 # git fetch origin <branch> && git worktree add --track -b <branch> ../<project>-<branch> origin/<branch>
+# takes a branch name or, like gh pr checkout, a PR number
 gwta() {
-  local branch="$1" target_dir
+  local branch="$1" pr_ref target_dir
+  local -a pr_head
+
+  if [[ "$branch" == <-> ]]; then
+    pr_head=("${(@f)$(_gwt_pr_head "$branch")}") || return
+    # fork heads live in another repo, origin only publishes them as pull refs
+    [[ ${pr_head[2]} == true ]] && pr_ref="refs/pull/$branch/head"
+    branch=${pr_head[1]}
+  fi
 
   if [[ -z "$branch" ]]; then
     git fetch --prune origin || return
@@ -143,7 +164,13 @@ gwta() {
 
   target_dir=$(_gwt_target_dir "$branch") || return
 
-  git fetch origin "$branch" || return
+  if [[ -n "$pr_ref" ]]; then
+    git show-ref --quiet --verify "refs/heads/$branch" \
+      || git fetch origin "$pr_ref:refs/heads/$branch" || return
+  else
+    git fetch origin "$branch" || return
+  fi
+
   if git show-ref --quiet --verify "refs/heads/$branch"; then
     # branch outlived its worktree (e.g. removal kept it), re-attach instead of failing on -b
     git worktree add "$target_dir" "$branch" || return

@@ -74,7 +74,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `gpuf` | Force-push current branch with lease |
 | `gundo` | `git reset --soft HEAD~1` (undo last commit, keep changes staged) |
 | `gdc <commit>` | Copy a commit's diff to the clipboard |
-| `gwta [branch]` | Add a worktree tracking a remote branch (fzf-picks one if omitted), then `cd` in |
+| `gwta [branch\|pr#]` | Add a worktree tracking a remote branch or a PR number like `gh pr checkout` (fzf-picks a branch if omitted), then `cd` in |
 | `gwtn [branch]` | Add a worktree on a new branch off the default branch, then `cd` in |
 | `gwtr [branch]` | Remove a worktree (fzf-picks one if omitted), tear down its Docker containers/volumes/networks, and delete its branch, after confirmation |
 

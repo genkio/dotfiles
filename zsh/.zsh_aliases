@@ -13,6 +13,9 @@ cc() {
     claude "${pre[@]}"
   elif [[ "$1" == -* ]]; then
     claude "${pre[@]}" "$@"
+  elif [[ "$1" == /* ]]; then
+    # leading slash means a command to run, not a session name
+    claude "${pre[@]}" "$*"
   else
     claude "${pre[@]}" -n "$*"
   fi

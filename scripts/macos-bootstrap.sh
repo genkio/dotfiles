@@ -342,6 +342,41 @@ else
   sudo_pw /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on >/dev/null
 fi
 
+# sudo_local is Apple's supported drop-in and survives OS updates; editing
+# /etc/pam.d/sudo directly does not. Both lines are optional/sufficient, so a
+# missing module or a Mac without Touch ID just falls back to the password.
+echo "Security: Enable Touch ID for sudo"
+PAM_REATTACH="$(brew --prefix 2>/dev/null || echo /opt/homebrew)/lib/pam/pam_reattach.so"
+if is_vm; then
+  # no Secure Enclave passthrough in any macOS guest, so pam_tid can never
+  # succeed; writing the file would only log a dlopen error on every sudo
+  echo "  Running inside a VM; skipping Touch ID for sudo."
+elif [[ ! -f /etc/pam.d/sudo_local.template ]]; then
+  warn "no /etc/pam.d/sudo_local.template on this macOS; skipping Touch ID for sudo"
+elif [[ -f /etc/pam.d/sudo_local ]]; then
+  echo "  /etc/pam.d/sudo_local already exists; leaving it alone."
+elif [[ "$DRY_RUN" -eq 1 ]]; then
+  printf '  [dry-run] %s\n' "write /etc/pam.d/sudo_local (pam_reattach + pam_tid)"
+else
+  PAM_TMP="$(mktemp)"
+  # pam_reattach must come first or pam_tid fails inside tmux/screen, which are
+  # not attached to the GUI session. Written even when the module is missing:
+  # this script runs before `brew bundle` installs it, and `optional` ignores it
+  # until it lands. Piping into `sudo tee` would collide with sudo_pw's
+  # password-on-stdin, hence mktemp + install.
+  cat >"$PAM_TMP" <<EOF
+# sudo_local: local config file which survives system update and is included for sudo
+auth       optional       $PAM_REATTACH ignore_ssh
+auth       sufficient     pam_tid.so
+EOF
+  if sudo_pw install -m 0444 -o root -g wheel "$PAM_TMP" /etc/pam.d/sudo_local; then
+    [[ -f "$PAM_REATTACH" ]] || warn "pam-reattach not installed yet; Touch ID works outside tmux until brew bundle installs it"
+  else
+    warn "could not write /etc/pam.d/sudo_local"
+  fi
+  rm -f "$PAM_TMP"
+fi
+
 ###############################################################################
 # System
 ###############################################################################

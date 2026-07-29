@@ -99,6 +99,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix G` | Gather current window back into the default (`tmp`) session |
 | `prefix T` | Set/edit pane label |
 | `prefix P` | Copy the first number found in the pane label to clipboard |
+| `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
 | `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |
 | `prefix I` | Install tmux plugins (`tpm`) |
 | `prefix q` | Show pane index numbers (press a number to jump) |

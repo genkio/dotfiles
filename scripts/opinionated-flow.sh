@@ -51,8 +51,6 @@ done
 # Secure Token prompt). Cleared on exit. Exported so macos-bootstrap.sh
 # inherits it; DOTFILES_SUDO_WARMED tells children to skip their own prompt.
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
-  repair_sudo_if_broken || exit 1
-
   if [[ -z "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
     printf 'Password (used once for sudo and FileVault): '
     stty -echo
@@ -62,6 +60,11 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   fi
   export DOTFILES_SUDO_PASSWORD
   export DOTFILES_SUDO_WARMED=1
+
+  # after the password is captured: the repair can then authenticate without a
+  # SecurityAgent dialog. Before the check below, which a broken PAM policy would
+  # otherwise fail as "authentication failed".
+  repair_sudo_if_broken || exit 1
 
   if ! printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S -v 2>/dev/null; then
     err "sudo authentication failed."

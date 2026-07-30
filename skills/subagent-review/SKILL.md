@@ -80,7 +80,10 @@ lens carries the same contract:
   concluding. a line you can't confirm is a line you don't cite.
 - return findings as your final message, highest severity first, one per
   line: `[blocker|major|minor|nit] file:line - issue + consequence;
-  proof; fix.` quality over quantity. if clean, return exactly `No findings.`
+  proof; fix.` proof QUOTES the offending code verbatim - a snippet the
+  driver can grep - never a bare line number; a finding whose snippet
+  greps to nothing doesn't ship. quality over quantity. if clean, return
+  exactly `No findings.`
 - major/blocker consequence must state blast radius: who hits it and how
   often in production ("every web user at token expiry" vs "one mobile
   user replaying a token"). severity tracks production impact, not code
@@ -121,7 +124,9 @@ do NOT concatenate the findings:
 
 1. merge the same issue across reviewers - consensus is signal
 2. fact-check every claim against the real code; drop or correct anything
-   that doesn't hold (reviewers hallucinate line numbers and invent issues)
+   that doesn't hold (reviewers hallucinate line numbers and invent issues).
+   re-derive every file:line by grepping the claim's quoted snippet - never
+   trust the reviewer's number; no greppable snippet, no located finding
 3. scrutinize lone findings hardest - a single-reviewer finding is either
    the best catch or a false positive
 4. drop noise: linter nits, speculative perf, defensive code for impossible

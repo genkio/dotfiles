@@ -17,7 +17,9 @@ brew "lnav"
 brew "mole"
 brew "mpv" unless in_vm
 brew "neovim"
-# lets pam_tid (Touch ID for sudo) work inside tmux; see macos-bootstrap.sh
+# lets pam_tid (Touch ID for sudo) work inside tmux; macos-bootstrap.sh installs
+# it itself (it runs before this bundle) and needs it on disk before referencing
+# it in /etc/pam.d/sudo_local; listed here so it stays managed and upgraded
 brew "pam-reattach" unless in_vm
 brew "ripgrep"
 brew "sevenzip"

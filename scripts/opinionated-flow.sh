@@ -51,6 +51,8 @@ done
 # Secure Token prompt). Cleared on exit. Exported so macos-bootstrap.sh
 # inherits it; DOTFILES_SUDO_WARMED tells children to skip their own prompt.
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+  repair_sudo_if_broken || exit 1
+
   if [[ -z "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
     printf 'Password (used once for sudo and FileVault): '
     stty -echo

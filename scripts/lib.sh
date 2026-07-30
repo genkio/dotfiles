@@ -24,6 +24,25 @@ fi
 warn() { echo "${_SETUP_YELLOW}SETUP_WARN: $*${_SETUP_RESET}" >&2; }
 err() { echo "${_SETUP_RED}SETUP_ERROR: $*${_SETUP_RESET}" >&2; }
 
+# Detect a guest VM (mirrors the Brewfile check) so host-only steps such as
+# FileVault and Touch ID can be skipped on virtual machines.
+is_vm() {
+  [[ "$(/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null)" == "1" ]] && return 0
+  /usr/sbin/sysctl -n hw.model 2>/dev/null | grep -qiE 'VirtualMac|VMware|Parallels|QEMU'
+}
+
+# Feeds the captured password to sudo via stdin. Needed because Homebrew's
+# brew.sh runs `sudo --reset-timestamp` on every invocation
+# (Library/Homebrew/brew.sh:~1136), so the cache is dead right after any `brew`
+# call. Falls back to plain sudo when no password is set (standalone runs).
+sudo_pw() {
+  if [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
+    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@"
+  else
+    sudo "$@"
+  fi
+}
+
 # openpam fails the whole sudo policy when a module named in /etc/pam.d/sudo_local
 # cannot be dlopen'd, so every sudo dies with "unable to initialize PAM" - the one
 # that would delete the file included. -n keeps the probe from ever prompting.

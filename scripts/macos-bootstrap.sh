@@ -50,13 +50,6 @@ else
   echo "macOS major $MACOS_MAJOR detected"
 fi
 
-# Detect a guest VM (mirrors the Brewfile check) so host-only steps such as
-# FileVault can be skipped on virtual machines.
-is_vm() {
-  [[ "$(/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null)" == "1" ]] && return 0
-  /usr/sbin/sysctl -n hw.model 2>/dev/null | grep -qiE 'VirtualMac|VMware|Parallels|QEMU'
-}
-
 # Tracks commands that failed under `optional` so the end of the run can
 # surface them as a manual-followup list (e.g. settings Apple now restricts
 # via TCC on macOS 26).
@@ -93,18 +86,6 @@ defaults_write() {
 
 defaults_current_host_write() {
   optional defaults -currentHost write "$@"
-}
-
-# Wrapper that feeds the captured password to sudo via stdin. Needed because
-# Homebrew's brew.sh resets the sudo timestamp on every invocation, so the
-# cache may be cold by the time we get here. Falls back to plain sudo when
-# no password is set (standalone invocation).
-sudo_pw() {
-  if [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
-    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@"
-  else
-    sudo "$@"
-  fi
 }
 
 # Single cleanup hook: stop the sudo keepalive and remove the FileVault askpass
@@ -406,100 +387,15 @@ else
   sudo fdesetup enable
 fi
 
-# sudo_local is Apple's supported drop-in and survives OS updates; editing
-# /etc/pam.d/sudo directly does not. Last step on purpose: from here on sudo may
-# want a fingerprint, which the scripted sudo calls above cannot answer.
-echo "Security: Enable Touch ID for sudo"
-
-# openpam aborts the entire policy when a module cannot be dlopen'd - `optional`
-# does not soften that - so one dangling path here breaks every sudo on the box
-# with "unable to initialize PAM", including the sudo needed to undo it. Only
-# ever name a module that exists on disk at write time. Prefix varies by chip
-# (/opt/homebrew on Apple Silicon, /usr/local on Intel).
-pam_reattach_so() {
-  local prefix
-  for prefix in "$(brew --prefix 2>/dev/null)" /opt/homebrew /usr/local; do
-    if [[ -n "$prefix" && -f "$prefix/lib/pam/pam_reattach.so" ]]; then
-      printf '%s\n' "$prefix/lib/pam/pam_reattach.so"
-      return 0
-    fi
-  done
-  return 1
-}
-
-# pam_reattach must come first or pam_tid fails inside tmux/screen, which are
-# not attached to the GUI session.
-sudo_local_body() {
-  echo "# sudo_local: local config file which survives system update and is included for sudo"
-  [[ -n "$PAM_REATTACH" ]] && printf 'auth       optional       %s ignore_ssh\n' "$PAM_REATTACH"
-  echo "auth       sufficient     pam_tid.so"
-}
-
-# only the two lines this script writes, so hand edits are never clobbered
-sudo_local_is_ours() {
-  ! grep -qvE '^#|^[[:space:]]*$|^auth[[:space:]]+optional[[:space:]]+\S*pam_reattach\.so ignore_ssh$|^auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so$' /etc/pam.d/sudo_local
-}
-
-warn_dangling_pam_modules() {
-  local module
-  while read -r module; do
-    [[ -f "$module" ]] || warn "/etc/pam.d/sudo_local names missing $module; every sudo will fail until that file exists or the line goes"
-  done < <(awk '/^auth/ && $3 ~ /^\// { print $3 }' /etc/pam.d/sudo_local)
-}
-
-PAM_REATTACH="$(pam_reattach_so || true)"
-PAM_WRITE=1
-
-if is_vm; then
-  # no Secure Enclave passthrough in any macOS guest, so pam_tid can never
-  # succeed; writing the file would only log a dlopen error on every sudo
-  echo "  Running inside a VM; skipping Touch ID for sudo."
-elif [[ ! -f /etc/pam.d/sudo_local.template ]]; then
-  warn "no /etc/pam.d/sudo_local.template on this macOS; skipping Touch ID for sudo"
-elif [[ "$DRY_RUN" -eq 1 ]]; then
-  printf '  [dry-run] %s\n' "write /etc/pam.d/sudo_local (pam_tid${PAM_REATTACH:+ + pam_reattach})"
-else
-  # Brewfile.base carries pam-reattach, but `brew bundle` only runs after this
-  # script, and by then a stale reference would already have killed sudo.
-  if [[ -z "$PAM_REATTACH" ]] && command -v brew >/dev/null 2>&1; then
-    echo "  Installing pam-reattach first (a missing module here would break sudo)."
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install pam-reattach >/dev/null \
-      || warn "could not install pam-reattach"
-    PAM_REATTACH="$(pam_reattach_so || true)"
-  fi
-  [[ -n "$PAM_REATTACH" ]] || warn "pam_reattach.so not found; writing pam_tid only, so Touch ID for sudo will not work inside tmux"
-
-  if [[ -f /etc/pam.d/sudo_local ]]; then
-    if diff -q <(sudo_local_body) /etc/pam.d/sudo_local >/dev/null 2>&1; then
-      echo "  /etc/pam.d/sudo_local already configured."
-      PAM_WRITE=0
-    elif ! sudo_local_is_ours; then
-      echo "  /etc/pam.d/sudo_local has local edits; leaving it alone."
-      warn_dangling_pam_modules
-      PAM_WRITE=0
-    fi
-  fi
-
-  if [[ "$PAM_WRITE" -eq 1 ]]; then
-    # piping into `sudo tee` would collide with sudo_pw's password-on-stdin,
-    # hence mktemp + install
-    PAM_TMP="$(mktemp)"
-    sudo_local_body >"$PAM_TMP"
-    if sudo_pw install -m 0444 -o root -g wheel "$PAM_TMP" /etc/pam.d/sudo_local; then
-      # belt and braces: never leave the run with a sudo it cannot use
-      if sudo_broken_by_pam; then
-        err "the new /etc/pam.d/sudo_local broke sudo; removing it"
-        if remove_sudo_local; then
-          warn "Touch ID for sudo left unconfigured"
-        else
-          rm -f "$PAM_TMP"
-          exit 1
-        fi
-      fi
-    else
-      warn "could not write /etc/pam.d/sudo_local"
-    fi
-    rm -f "$PAM_TMP"
+# Last, and skipped entirely when the caller says it will run it later: pam_tid
+# makes sudo ask for a fingerprint, which no scripted sudo can answer, so it has
+# to come after the final sudo of the whole setup run - not just this script's.
+if [[ -z "${DOTFILES_DEFER_TOUCHID:-}" ]]; then
+  TOUCHID_SCRIPT="$(dirname -- "${BASH_SOURCE[0]}")/touchid-sudo.sh"
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    bash "$TOUCHID_SCRIPT" --dry-run
+  else
+    bash "$TOUCHID_SCRIPT"
   fi
 fi
 

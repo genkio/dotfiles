@@ -80,6 +80,7 @@ Run the automated script:
 - The script also prepares `~/.ssh` and stows `ssh/.ssh/config` when `~/.ssh/config` is not already a regular file.
 - The core stow step installs `nvim`.
 - `--bootstrap-macos` to run `scripts/macos-bootstrap.sh` at the end (macOS only; prompts for `sudo` and may require logout/login for some settings).
+- Touch ID for sudo (`/etc/pam.d/sudo_local`) is written by `scripts/touchid-sudo.sh` as the very last step of the run, because from then on `sudo` asks for a fingerprint instead of taking the password the setup feeds it. Standalone: `bash scripts/touchid-sudo.sh` (`--dry-run` to preview).
 - On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue. A failed package (e.g. a `brew bundle` entry) is likewise a warning, not a stop.
 - Non-fatal warnings are prefixed `SETUP_WARN:` (yellow) and fatal errors `SETUP_ERROR:` (red) across every script `make` runs, so they stand out in a long run by default (see below).
 - `--include-all` to install both GUI apps and dev tools.

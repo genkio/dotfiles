@@ -80,18 +80,6 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true; unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED' EXIT
 fi
 
-# Wrapper that feeds the captured password to sudo via stdin. Needed because
-# Homebrew's brew.sh runs `sudo --reset-timestamp` on every invocation
-# (Library/Homebrew/brew.sh:~1136), so the cache is dead right after any
-# `brew` call. Falls back to plain sudo when no password is set.
-sudo_pw() {
-  if [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
-    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@"
-  else
-    sudo "$@"
-  fi
-}
-
 # Skip the slow `brew bundle` install attempt when every entry is already
 # installed AND up-to-date. `brew bundle check` only dependency-resolves
 # (no install). HOMEBREW_NO_AUTO_UPDATE=1 keeps the probe itself fast;
@@ -155,7 +143,9 @@ if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
     exit 1
   fi
 
-  bash scripts/macos-bootstrap.sh
+  # Touch ID for sudo is the one setting that must wait for the end of the whole
+  # run, not just this script: see the deferred call below.
+  DOTFILES_DEFER_TOUCHID=1 bash scripts/macos-bootstrap.sh
 fi
 
 # carbonyl ships from third-party genkio/tap. Newer Homebrew refuses to load
@@ -226,6 +216,19 @@ fi
 
 if [[ "$INCLUDE_DEV" -eq 1 ]]; then
   bash scripts/setup-dev.sh
+fi
+
+# Deliberately last: pam_tid makes sudo ask for a fingerprint, which the piped
+# password cannot answer, so nothing that sudos may follow. The keepalive is the
+# main offender - it re-authenticates every 60s, and every `brew` call resets the
+# timestamp, so it would pop a Touch ID prompt over and over.
+if [[ "$BOOTSTRAP_MACOS" -eq 1 ]]; then
+  if [[ -n "${SUDO_KEEPALIVE_PID:-}" ]]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    SUDO_KEEPALIVE_PID=""
+  fi
+  # sudo_pw feeds the password on stdin, so the dead keepalive costs it nothing
+  bash scripts/touchid-sudo.sh || warn "Touch ID for sudo not configured; rerun 'bash scripts/touchid-sudo.sh'"
 fi
 
 if [[ ${#BREW_BUNDLE_FAILURES[@]} -gt 0 ]]; then

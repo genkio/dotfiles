@@ -12,6 +12,16 @@ export EDITOR="nvim"
 export VISUAL="$EDITOR"
 
 export PATH="$HOME/.local/bin:$PATH"
+# Apple Silicon puts brew in /opt/homebrew, which is not in the default PATH, so
+# without this a fresh terminal on arm64 cannot find brew at all. Intel's
+# /usr/local/bin is already in /etc/paths, but shellenv still adds the
+# HOMEBREW_*/MANPATH/INFOPATH vars. Guarded so nested shells skip the fork.
+if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
+  for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    [[ -x "$_brew" ]] && eval "$("$_brew" shellenv)" && break
+  done
+  unset _brew
+fi
 export GPG_TTY=$(tty)
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"

@@ -40,9 +40,13 @@ DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-alacritty-theme.sh \
 
 # mise: node, python, java, go, uv + global npm tools (versions declared in mise/.config/mise/config.toml)
 # Install node first so `npm` exists when activate resolves `npm:*@latest` versions.
-mise install node
+# --quiet: mise repaints a live multi-progress UI several times a second, and a
+# captured setup log keeps every frame (~500 of 800 lines in one run). Errors and
+# warnings still print; --silent would swallow those too.
+echo "mise: installing toolchains and global npm tools (quiet, takes a few minutes)..."
+mise install --quiet node
 eval "$(mise activate bash)"
-mise install
+mise install --quiet
 
 # Install Claude Code via official shell installer (self-updates via `claude update`)
 export PATH="$HOME/.local/bin:$PATH"
@@ -51,8 +55,9 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 
 if ! command -v maestral >/dev/null 2>&1; then
-  mise exec -- uv tool install maestral
-  # Enable autostart on login with `dropbox autostart on`
+  mise exec -- uv tool install --quiet maestral
+  # Sign in with `maestral auth link`, then `maestral start`; autostart on login
+  # is `maestral autostart -Y` (it takes -Y/-N, not on/off).
 fi
 
 # Restore Claude Code settings

@@ -45,6 +45,18 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+# Single cleanup hook, registered before the first tty or sudo touch: bash keeps
+# only the last EXIT trap, so everything the run has to undo goes here.
+SUDO_KEEPALIVE_PID=""
+cleanup() {
+  if [[ -n "$SUDO_KEEPALIVE_PID" ]]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+  fi
+  unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED
+  restore_tty
+}
+trap cleanup EXIT
+
 # Capture password once up front. Used for sudo (kept warm via -S in the
 # keepalive so it survives even if the timestamp expires during long brew
 # steps) and for FileVault's fdesetup -inputplist (avoids its separate
@@ -77,7 +89,6 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
       sleep 60
     done ) &
   SUDO_KEEPALIVE_PID=$!
-  trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true; unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED' EXIT
 fi
 
 # Skip the slow `brew bundle` install attempt when every entry is already
@@ -238,4 +249,50 @@ if [[ ${#BREW_BUNDLE_FAILURES[@]} -gt 0 ]]; then
     warn "  - $f"
   done
   warn "retry with 'brew bundle --file <file>', or install the missing package directly with 'brew install <name>'."
+fi
+
+# The two steps this script cannot do for you: one needs a private identity, the
+# other a browser login. Printed last so they survive the scrollback, and only
+# when still pending so a re-run stays quiet.
+NEXT_STEPS=()
+PLACEHOLDER_EMAIL="$(git config -f "$DOTFILES_DIR/git/.gitconfig.local.example" user.email 2>/dev/null || true)"
+CURRENT_EMAIL="$(git config user.email 2>/dev/null || true)"
+if [[ -z "$CURRENT_EMAIL" || "$CURRENT_EMAIL" == "$PLACEHOLDER_EMAIL" ]]; then
+  NEXT_STEPS+=("make ssh   # SSH key + your real git identity in ~/.gitconfig.local")
+fi
+# `tailscale status` exits 0 even when logged out, so read the backend state.
+if command -v tailscale >/dev/null 2>&1 &&
+  ! tailscale status --json 2>/dev/null | grep -q '"BackendState": *"Running"'; then
+  NEXT_STEPS+=("make tailscale   # tailnet login; prints a URL to authorize in the browser")
+fi
+# uv drops maestral in ~/.local/bin, which this script's PATH need not have:
+# setup-dev.sh exports it for its own process only. `auth status` exits non-zero
+# until an account is linked ("Configuration 'maestral' does not exist").
+MAESTRAL_BIN="$(command -v maestral || true)"
+[[ -n "$MAESTRAL_BIN" ]] || MAESTRAL_BIN="$HOME/.local/bin/maestral"
+MAESTRAL_PENDING=""
+if [[ -x "$MAESTRAL_BIN" ]] && ! "$MAESTRAL_BIN" auth status >/dev/null 2>&1; then
+  NEXT_STEPS+=("box auth link   # Dropbox sign-in, then 'box start' and 'box autostart -Y'")
+  MAESTRAL_PENDING=1
+fi
+if [[ ${#NEXT_STEPS[@]} -gt 0 ]]; then
+  # Belt and braces: the keepalive can break the tty at any point in a long run,
+  # not only inside a sudo_pw call, and this block is the output that has to stay
+  # readable.
+  restore_tty
+  echo
+  echo "Still to do by hand:"
+  for step in "${NEXT_STEPS[@]}"; do
+    echo "  $step"
+  done
+  # maestral pins rubicon-objc>=0.4.1 unbounded, and 0.5.5 moved an
+  # ObjCClass("NSEvent") lookup to import time. AppKit is not loaded in a plain
+  # python process, so the daemon dies on import and `box start` only reports a
+  # Pyro5 socket error. Drop this once maestral ships its own upper bound.
+  if [[ -n "$MAESTRAL_PENDING" ]]; then
+    echo
+    echo '  If "box start" fails, check "maestral log show": on "ObjC Class NSEvent"'
+    echo '  not found, the daemon got rubicon-objc >= 0.5.5. Reinstall it pinned:'
+    echo "    uv tool install --force maestral --with 'rubicon-objc<0.5.5'"
+  fi
 fi

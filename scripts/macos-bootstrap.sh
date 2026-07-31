@@ -88,9 +88,10 @@ defaults_current_host_write() {
   optional defaults -currentHost write "$@"
 }
 
-# Single cleanup hook: stop the sudo keepalive and remove the FileVault askpass
-# helper, even if the run is interrupted. One EXIT trap so neither clobbers the
-# other (bash keeps only the last trap registered per signal).
+# Single cleanup hook: stop the sudo keepalive, remove the FileVault askpass
+# helper, and put the terminal back as we found it, even if the run is
+# interrupted. One EXIT trap so none clobbers the others (bash keeps only the
+# last trap registered per signal).
 SUDO_KEEPALIVE_PID=""
 ASKPASS_SCRIPT=""
 cleanup() {
@@ -100,6 +101,7 @@ cleanup() {
   if [[ -n "$ASKPASS_SCRIPT" ]]; then
     rm -f "$ASKPASS_SCRIPT"
   fi
+  restore_tty
 }
 trap cleanup EXIT
 
@@ -366,6 +368,12 @@ elif [[ "$DRY_RUN" -eq 1 ]]; then
 elif sudo_pw fdesetup isactive >/dev/null 2>&1; then
   echo "  FileVault already active; skipping enable."
 elif [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
+  # fdesetup prints the personal recovery key on stdout, so on a terminal it ends
+  # up in scrollback and in any tee'd setup log - permanently, and in the repo if
+  # the log is saved there. Redirect it to a 0600 file created before the run so
+  # the key never has a world-readable moment.
+  FV_KEY_FILE="$HOME/filevault-recovery-key.txt"
+  (umask 077; : >"$FV_KEY_FILE")
   # Use SUDO_ASKPASS so the sudo password channel doesn't collide with
   # fdesetup's plist on stdin (sudo_pw's `printf | sudo -S` would steal stdin
   # and starve fdesetup -> "Incoming data needs to be in a plist format").
@@ -381,9 +389,17 @@ sys.stdout.buffer.write(plistlib.dumps({
     "Username": os.environ["USER"],
     "Password": os.environ["DOTFILES_SUDO_PASSWORD"],
 }, fmt=plistlib.FMT_XML))
-' | SUDO_ASKPASS="$ASKPASS_SCRIPT" sudo -A fdesetup enable -inputplist
+' | SUDO_ASKPASS="$ASKPASS_SCRIPT" sudo -A fdesetup enable -inputplist >"$FV_KEY_FILE"
   rm -f "$ASKPASS_SCRIPT"
+  if grep -q "Recovery key" "$FV_KEY_FILE" 2>/dev/null; then
+    echo "  Recovery key written to $FV_KEY_FILE (mode 600)."
+    echo "  Move it into your password manager, then delete the file."
+  else
+    warn "FileVault enable printed no recovery key; inspect $FV_KEY_FILE."
+  fi
 else
+  warn "FileVault is about to print the recovery key on screen: store it in your"
+  warn "password manager, and keep it out of any saved transcript of this run."
   sudo fdesetup enable
 fi
 

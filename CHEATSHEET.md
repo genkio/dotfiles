@@ -19,7 +19,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `cx` | `codex` |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |
-| `dropbox` | `maestral` |
+| `box` | `maestral` (Dropbox client; sign in with `box auth link`) |
 | `x` | `clear` |
 | `xx` | `exit` |
 | `ff` | `fastfetch` |

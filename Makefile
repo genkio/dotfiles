@@ -1,4 +1,4 @@
-TARGETS := all bootstrap apps dev stow ssh gpg sublime
+TARGETS := all bootstrap apps dev stow ssh gpg sublime tailscale
 
 .PHONY: $(TARGETS)
 
@@ -42,6 +42,9 @@ ssh:
 
 gpg:
 	./scripts/generate-gpg-key.sh
+
+tailscale:
+	./scripts/tailscale-up.sh
 
 sublime:
 	./scripts/setup-sublime.sh

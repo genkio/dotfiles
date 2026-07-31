@@ -24,6 +24,20 @@ fi
 warn() { echo "${_SETUP_YELLOW}SETUP_WARN: $*${_SETUP_RESET}" >&2; }
 err() { echo "${_SETUP_RED}SETUP_ERROR: $*${_SETUP_RESET}" >&2; }
 
+# A password prompt that dies mid-read (a scripted sudo racing the keepalive, an
+# interrupted run) leaves termios as it found it: newline stops implying carriage
+# return, so every later line staircases and the prompt draws garbled until that
+# window is closed. Snapshot before anything touches the tty, restore on exit.
+# Empty when there is no controlling terminal, which makes restore a no-op.
+# Braces around the redirect: with no tty it is bash, not stty, that reports
+# "/dev/tty: Device not configured", so the group has to swallow stderr.
+_SETUP_TTY_STATE="$({ stty -g </dev/tty; } 2>/dev/null || true)"
+
+restore_tty() {
+  [[ -n "$_SETUP_TTY_STATE" ]] || return 0
+  { stty "$_SETUP_TTY_STATE" </dev/tty; } 2>/dev/null || true
+}
+
 # Detect a guest VM (mirrors the Brewfile check) so host-only steps such as
 # FileVault and Touch ID can be skipped on virtual machines.
 is_vm() {
@@ -35,12 +49,20 @@ is_vm() {
 # brew.sh runs `sudo --reset-timestamp` on every invocation
 # (Library/Homebrew/brew.sh:~1136), so the cache is dead right after any `brew`
 # call. Falls back to plain sudo when no password is set (standalone runs).
+#
+# Restores the tty afterwards, keeping the exit status: a sudo underneath (brew
+# starts its own for service ownership) can prompt on the terminal and leave
+# termios raw when the keepalive refreshes the timestamp under it. Waiting for
+# the EXIT trap is too late - every line printed in between staircases.
 sudo_pw() {
+  local rc=0
   if [[ -n "${DOTFILES_SUDO_PASSWORD:-}" ]]; then
-    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@"
+    printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S "$@" || rc=$?
   else
-    sudo "$@"
+    sudo "$@" || rc=$?
   fi
+  restore_tty
+  return "$rc"
 }
 
 # openpam fails the whole sudo policy when a module named in /etc/pam.d/sudo_local

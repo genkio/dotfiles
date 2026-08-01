@@ -2,7 +2,6 @@ in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
         `/usr/sbin/sysctl -n hw.model 2>/dev/null`.strip.match?(/VirtualMac|VMware|Parallels|QEMU/i)
 
 brew "bat"
-brew "btop"
 brew "eza"
 brew "fastfetch"
 brew "fd"
@@ -12,6 +11,7 @@ brew "genkio/tap/carbonyl"
 brew "genkio/tap/cc-imessage"
 brew "genkio/tap/herdlet"
 brew "genkio/tap/tui"
+brew "htop"
 brew "jq"
 brew "lnav"
 brew "mole"

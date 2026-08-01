@@ -90,3 +90,7 @@ tmux set-option -g window-status-current-format "${agent_prefix} #[bold]#I:#W#F 
 # theme without rebinding keys here.
 tree_format='#{?pane_format,#{?pane_marked,#[reverse],}#{?pane_floating_flag,#[italics],}#{pane_current_command}#{pane_flags}#{?#{&&:#{pane_title},#{!=:#{pane_title},#{host_short}}},: "#{pane_title}",},window_format,'"${agent_prefix}"'#{?window_marked_flag,#[reverse],}#{window_name}#{window_flags}#{?#{&&:#{==:#{window_panes},1},#{&&:#{pane_title},#{!=:#{pane_title},#{host_short}}}},: "#{pane_title}",},#{session_windows} windows#{?session_grouped, (group #{session_group}: #{session_group_list}),}#{?session_attached, (attached),}}'
 tmux set-option -g @tree_format "$tree_format"
+
+# tmux-gh-pr renders PR markdown via gh/glamour, which can't see the
+# terminal bg from inside a popup; tell it which stylesheet to use
+tmux set-option -g @gh-pr-glamour-style "$theme"

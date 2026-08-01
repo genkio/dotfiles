@@ -231,7 +231,7 @@ Inside Markdown files in an Obsidian/Logseq-style vault (detected by `.obsidian/
 | `<leader>yr` | Copy file path + line range to clipboard, `$HOME`-relative (normal & visual) |
 | `<C-g>` | Show current file info (path, line count, position) on the command line |
 | `Q` | Quit all windows (prompts to save/discard on unsaved changes) |
-| `<Esc>` | Clear search highlight and the automatic cursor-word highlight |
+| `<Esc>` | Clear search highlight, the automatic cursor-word highlight, and the search counter |
 | `zc` / `zo` (JSON/JSONC) | Close / open the `{`...`}` or `[`...`]` block under the cursor |
 | `<leader>` then wait | Which-key popup of leader mappings (groups: Explorer, Git, LazyGit, Search, Diagnostics, Yank) |
 | `<leader>?` | Show buffer-local keymaps |
@@ -243,6 +243,7 @@ Inside Markdown files in an Obsidian/Logseq-style vault (detected by `.obsidian/
 - **Auto-reload**: files changed on disk reload automatically (notifies on reload).
 - **Restore cursor**: reopening a file restores the last cursor position.
 - **Cursor-word highlight**: idling on a word highlights its visible occurrences; moving the cursor clears it.
+- **Search count**: `/` and `?` show `current/total` in the window's top right corner (live while typing, updated by `n` / `N`), since `cmdheight = 0` hides Neovim's own count.
 - **Yank highlight**: yanked text flashes briefly.
 - **Theme follows macOS**: Flexoki Light (light) / TokyoNight Storm (dark), re-checked on focus.
 

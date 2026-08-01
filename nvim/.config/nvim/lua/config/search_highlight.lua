@@ -59,6 +59,8 @@ function M.setup()
   vim.keymap.set('n', '<Esc>', function()
     M.clear_cursor_word()
     vim.cmd.nohlsearch()
+    -- No event fires for a dropped `v:hlsearch`, so the counter cannot see this.
+    require('config.search_count').hide()
   end, {
     silent = true,
     desc = 'Clear search highlight',

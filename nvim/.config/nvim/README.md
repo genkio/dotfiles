@@ -46,6 +46,7 @@ nvim
 - `<leader>yr` copies the current line or visual line range as `path:start-end`, with the path shown relative to `$HOME` (e.g. `~/dotfiles/...`). Single-line selections drop the `:start-end` suffix.
 - Inside Markdown files in Obsidian/Logseq-style vaults, `gd` and `gr` switch to note/tag navigation and search, and typing `[[` or `#` triggers built-in omni completion for vault notes or tags.
 - There is no statusline; press `Ctrl-G` to show the file path, total lines, and cursor progress on demand.
+- `/` and `?` show a match counter (`3/17`) in the top right corner of the window, since `cmdheight=0` hides Neovim's own count.
 - When the cwd is inside `~/dotfiles`, picker searches include hidden files and exclude `.git`.
 - `<leader>sS` can reuse a compatible project LSP from another buffer, or bootstrap one from a hidden TS/JS project file when the current buffer itself has no attached LSP.
 - `<leader>` shows available leader mappings with `which-key.nvim`.
@@ -55,8 +56,9 @@ nvim
 
 ### Search Keybindings
 
-- `<Esc>`: clear search highlighting, including the automatic word highlight
+- `<Esc>`: clear search highlighting, including the automatic word highlight and the match counter
 - Idle on a word: highlight visible occurrences automatically; moving the cursor clears it
+- `/` or `?`: a `current/total` counter floats in the window's top right corner (see Search Count)
 - `<leader>sf`: fuzzy files in the current working directory
 - `<leader>sg`: grep text in the current working directory, literal mode by default
 - `<leader>sG`: grep with prompts for search text, directories, include globs, and exclude globs
@@ -101,6 +103,14 @@ nvim
 - Removed entirely (`laststatus=0`); combined with `cmdheight=0` the bottom rows stay clean
 - Press `Ctrl-G` to print the file path, total line count, and cursor progress in the message area (still works with `cmdheight=0`)
 - The file path also lives in the surrounding tmux status bar, so a permanent nvim statusline would just duplicate it
+
+## Search Count
+
+- Neovim's own `[3/17]` search count goes to the message area, which `cmdheight=0` discards, so `lua/config/search_count.lua` renders it in a one-line float anchored to the top right of the current window
+- The count updates live while typing at the `/` or `?` prompt, then follows the cursor through `n`, `N`, `*`, and `#`
+- It uses the `Search` highlight, and disappears with the search highlight itself: `<Esc>`, `:nohlsearch`, insert mode, or leaving the window
+- `0/0` means the pattern has no match; `3/?` means the 100ms `searchcount()` budget ran out before the whole buffer was scanned
+- Pickers, quickfix, and other non-plain windows are skipped
 
 ## Gitsigns.nvim
 

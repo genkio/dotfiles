@@ -14,7 +14,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 |---|---|
 | `vi` / `vi <file>` | `nvim .` / `nvim <file>` |
 | `y` | `yazi` |
-| `cc` | `claude`; `cc <text>` starts Claude with that prompt; `cc -<flag>` passes flags through; `cc -em` = `--effort max` |
+| `cc` | `claude`; `cc <text>` starts Claude with that prompt; `cc -<flag>` passes flags through; `cc -eh/-ex/-em` = `--effort high/xhigh/max` |
 | `ccx` | `claude --dangerously-skip-permissions` |
 | `cx` | `codex` |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |

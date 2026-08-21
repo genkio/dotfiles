@@ -1,10 +1,10 @@
 ---
-name: no-slop
-description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, reach for existing/stdlib/native solutions before writing new code, make surgical changes, surface assumptions, define verifiable success criteria, prevent shortcuts that create technical debt, and respect the type system in typed languages.
+name: code-discipline
+description: Engineering discipline for writing code: understand before implementing, reuse before writing, change surgically, verify against explicit success criteria. Use when writing, reviewing, or refactoring code to avoid overcomplication, reach for existing/stdlib/native solutions before writing new code, make surgical changes, surface assumptions, define verifiable success criteria, prevent shortcuts that create technical debt, and respect the type system in typed languages.
 license: MIT
 ---
 
-# No-Slop Coding Guidelines
+# Code Discipline
 
 Behavioral guidelines to reduce common LLM coding mistakes, derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
 

@@ -181,7 +181,7 @@
       }
     }
   },
-  "outputStyle": "Default",
+  "outputStyle": "Concise",
   "alwaysThinkingEnabled": true,
   "effortLevel": "medium",
   "tui": "fullscreen",

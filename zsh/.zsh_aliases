@@ -306,8 +306,7 @@ zip() {
 }
 
 _unzip_archive() {
-  local sevenzip="$1"
-  local src="${2:A}"
+  local src="${1:A}"
   local parent="${src:h}"
   local entry="${src:t}"
   local base="${entry:r}"
@@ -317,10 +316,30 @@ _unzip_archive() {
     return 1
   fi
 
-  if [[ "${entry:l}" != *.zip ]]; then
-    echo "unzip: expected a .zip file: $src"
-    return 1
-  fi
+  local tool
+  case "${entry:l}" in
+    *.zip)
+      tool="${commands[7zz]:-${commands[7z]}}"
+      if [[ -z "$tool" ]]; then
+        echo "unzip: 7-Zip executable not found"
+        return 127
+      fi
+      ;;
+    *.rar)
+      # unar picks up the sibling volumes on its own, so name the output
+      # directory after the set rather than after foo.part1
+      [[ "${base:l}" == *.part<-> ]] && base="${base:r}"
+      tool="${commands[unar]}"
+      if [[ -z "$tool" ]]; then
+        echo "unzip: unar not found"
+        return 127
+      fi
+      ;;
+    *)
+      echo "unzip: expected a .zip or .rar file: $src"
+      return 1
+      ;;
+  esac
 
   local dest="${parent}/${base}"
   if [[ -e "$dest" ]]; then
@@ -329,12 +348,16 @@ _unzip_archive() {
   fi
 
   mkdir "$dest" || return
-  "$sevenzip" x "$src" "-o$dest" || return
+  if [[ "${entry:l}" == *.rar ]]; then
+    "$tool" -quiet -no-directory -output-directory "$dest" "$src" || return
+  else
+    "$tool" x "$src" "-o$dest" || return
+  fi
 }
 
 unzip() {
   if [[ $# -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then
-    echo "Usage: unzip <zip-file-or-folder>"
+    echo "Usage: unzip <zip-or-rar-file-or-folder>"
     return 1
   fi
 
@@ -344,36 +367,32 @@ unzip() {
     return 1
   fi
 
-  local sevenzip="${commands[7zz]:-${commands[7z]}}"
-  if [[ -z "$sevenzip" ]]; then
-    echo "unzip: 7-Zip executable not found"
-    return 127
-  fi
-
   if [[ -d "$src" ]]; then
     local -a raw_archives archives
     local -A seen
     local archive
 
-    raw_archives=("$src"/*.zip(N) "$src"/*.ZIP(N))
+    raw_archives=("$src"/*.zip(N) "$src"/*.ZIP(N) "$src"/*.rar(N) "$src"/*.RAR(N))
     for archive in "${raw_archives[@]}"; do
       [[ -n "${seen[$archive]}" ]] && continue
+      # trailing volumes of a multi-part set: unar unpacks them via part1
+      [[ "${archive:t:l}" == *.part<2->.rar ]] && continue
       seen[$archive]=1
       archives+=("$archive")
     done
 
     if [[ ${#archives[@]} -eq 0 ]]; then
-      echo "unzip: no .zip files found in folder: $1"
+      echo "unzip: no .zip or .rar files found in folder: $1"
       return 1
     fi
 
     for archive in "${archives[@]}"; do
-      _unzip_archive "$sevenzip" "$archive" || return
+      _unzip_archive "$archive" || return
     done
     return
   fi
 
-  _unzip_archive "$sevenzip" "$src"
+  _unzip_archive "$src"
 }
 
 alias x="clear"

@@ -130,6 +130,9 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by defau
 | `m` | Render the selected Mermaid source as box art in the browser (clipboard untouched) |
 | Mouse drag | Copy on drag end (OSC52) |
 
+When the tmux server itself is remote, `prefix o` and copy-mode `m` copy the URL to
+your local clipboard (OSC52) instead of opening a browser on the far end.
+
 ---
 
 ## Alacritty

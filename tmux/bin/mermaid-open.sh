@@ -62,27 +62,7 @@ frag=$(LC_ALL=C awk '
 
 url="$base#$frag"
 
-# The browser has to be the one you are sitting in front of, so pick by where
-# the CLIENT is, not by which opener happens to be installed. SSH_CONNECTION
-# here is the session's (run-shell inherits session env, fed by
-# update-environment on attach), so it means "this tmux server is remote" - not
-# "some pane ssh'd out", which leaves the session env alone and still wants the
-# local `open`. On a remote Mac `open` would put the tab on that machine's
-# screen, and a remote xdg-open with no display can fall through to a text
-# browser that fights for the pane. Bounce the link to the local clipboard.
-opened=""
-if [ -n "${SSH_CONNECTION:-}${SSH_TTY:-}" ]; then
-  :
-elif command -v open >/dev/null 2>&1; then
-  open "$url" 2>/dev/null && opened=1
-elif [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "$url" >/dev/null 2>&1 && opened=1
-fi
-
-if [ -z "$opened" ]; then
-  printf -- '%s' "$url" | "$here/osc52-copy.sh" "$client_tty" "$client_termname"
-  say "mermaid: no browser here, link copied - paste it locally"
-  exit 0
-fi
-
-say "mermaid: rendering in the browser"
+case "$("$here/open-url.sh" "$url" "$client_tty" "$client_termname")" in
+  opened) say "mermaid: rendering in the browser" ;;
+  copied) say "mermaid: no browser here, link copied - paste it locally" ;;
+esac

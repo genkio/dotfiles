@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# prefix+o: open the current pane's GitHub PR in the default browser.
+# prefix+o: open the current pane's GitHub PR in the browser, or over ssh copy
+# the URL to the local clipboard instead (see open-url.sh).
 # Two sources, authoritative first:
 #   1. the branch checked out in the pane's cwd - gh matches it against origin's
 #      open PRs, so any repo/worktree works, not just review ones
@@ -44,14 +45,7 @@ fi
 # expired auth or a network failure
 [ -n "$url" ] || die "$(grep -m1 . "$errs" || echo "no PR here")"
 
-if command -v open >/dev/null 2>&1; then
-  open "$url"
-elif command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "$url"
-else
-  # headless box over ssh: bounce the URL to the LOCAL clipboard instead
-  printf -- '%s' "$url" | "$here/osc52-copy.sh"
-  die "no browser here, copied $url"
-fi
-
-say "opening $url"
+case "$("$here/open-url.sh" "$url" "$(ask '#{client_tty}')" "$(ask '#{client_termname}')")" in
+  opened) say "opening $url" ;;
+  copied) say "no browser here, copied $url" ;;
+esac

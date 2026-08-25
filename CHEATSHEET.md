@@ -127,6 +127,7 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by defau
 | `y` | Copy selection verbatim (stays in copy mode, OSC52) |
 | `Y` | Copy selection joined into one line (drops TUI padding + soft-wrap breaks) |
 | `Enter` | Copy selection (stays in copy mode, OSC52) |
+| `m` | Render the selected Mermaid source as box art in the browser (clipboard untouched) |
 | Mouse drag | Copy on drag end (OSC52) |
 
 ---

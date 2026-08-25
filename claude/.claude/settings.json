@@ -191,5 +191,6 @@
   "theme": "auto",
   "editorMode": "vim",
   "autoScrollEnabled": false,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "disableDeepLinkRegistration": "disable"
 }

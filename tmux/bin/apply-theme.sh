@@ -73,9 +73,18 @@ busy_hex="${busy#\#}"
 # status-usage.sh owns every conditional color in the left block (cpu offline,
 # ram maestral/dropbox state, low battery); pass the palette so tints track the theme.
 tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh $muted_hex $attention_hex $busy_hex)#[default]"
+# The clock is the first thing to drop on a narrow client (iPhone SSH app, a
+# half-width local window): it costs 8 columns and the phone already shows one.
+# tmux expands status-right once per client, so #{client_width} is that client's
+# own terminal, and a wide Mac client keeps the clock while a phone attached to
+# the same session doesn't.
+# tmux's #{>=:} compares as strings ("89" >= "100" is true), so subtract and
+# look for a minus sign instead.
+clock_min_width=100
+clock="#{?#{m:-*,#{e|-:#{client_width},$clock_min_width}},, [%H:%M]}"
 # open_usage_status.sh inlined, not the plugin's auto-inject (@tmux_open_usage_enabled
 # off), so it takes the theme color instead of the plugin's fixed gray and never dupes.
-tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default] [%H:%M]"
+tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]$clock"
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"

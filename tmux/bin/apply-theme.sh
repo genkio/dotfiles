@@ -88,8 +88,10 @@ tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/s
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"
-tmux set-option -g window-status-format "${agent_prefix} #I:#W#F "
-tmux set-option -g window-status-current-format "${agent_prefix} #[bold]#I:#W#F "
+# no #I: prefix - the name carries the meaning. Indexes still exist for
+# prefix+0-9 and Cmd+1-9; `tmux list-windows` prints them when one is unclear.
+tmux set-option -g window-status-format "${agent_prefix} #W#F "
+tmux set-option -g window-status-current-format "${agent_prefix} #[bold]#W#F "
 
 # choose-tree (prefix+w / C-Down) window rows reuse the same agent colours.
 # -F replaces the whole row, so this is tmux's stock tree format (copied from

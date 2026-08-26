@@ -183,7 +183,7 @@
   },
   "outputStyle": "Concise",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "xhigh",
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,

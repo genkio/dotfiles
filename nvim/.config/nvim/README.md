@@ -120,8 +120,8 @@ nvim
 - `]c` and `[c`: jump to the next or previous hunk (built-in diff-change nav inside a diff)
 - `<leader>gp`: preview the current hunk
 - `<leader>gb`: show Git blame for the current line
-- `<leader>gB`: open the GitHub PR associated with the blamed line's commit (requires `gh`)
-- `<leader>gr`: open the GitHub PR for the current branch in the default browser (requires `gh`)
+- `<leader>go`: open the GitHub PR for the current branch in the default browser (requires `gh`; mirrors tmux `prefix + o`)
+- `<leader>gO`: open the GitHub PR associated with the blamed line's commit (requires `gh`)
 
 ## Flash.nvim
 

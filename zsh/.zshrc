@@ -51,6 +51,26 @@ source $ZSH/oh-my-zsh.sh
 
 source <(fzf --zsh)
 
+# Keep SSH_* in long-lived tmux panes in sync with the newest client attach.
+# tmux update-environment (see .tmux.conf) refreshes the *session* environment,
+# but shells that already run keep their stale copy, so pam_reattach's
+# ignore_ssh can't tell a remote attach from a local one and sudo pops Touch ID
+# on the physical screen instead of asking for a password. Re-export before
+# every prompt so sudo always sees the current attach type.
+if [[ -n "$TMUX" ]]; then
+  _tmux_refresh_ssh_env() {
+    local line
+    for line in "${(@f)$(command tmux show-environment 2>/dev/null)}"; do
+      case "$line" in
+        SSH_CONNECTION=*|SSH_CLIENT=*|SSH_TTY=*) export "$line" ;;
+        -SSH_CONNECTION|-SSH_CLIENT|-SSH_TTY) unset "${line#-}" ;;
+      esac
+    done
+  }
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _tmux_refresh_ssh_env
+fi
+
 set -o vi
 setopt HIST_IGNORE_SPACE
 setopt HIST_IGNORE_ALL_DUPS

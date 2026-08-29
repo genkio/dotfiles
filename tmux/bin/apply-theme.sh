@@ -15,6 +15,7 @@ theme="$("${DOTFILES_DIR:-$HOME/dotfiles}/scripts/current-theme.sh")"
 
 if [ "$theme" = "dark" ]; then
   # TokyoNight Storm (status bar recedes below the #24283b editor surface)
+  term_bg='#24283b'
   bg='#1f2335'
   fg='#a9b1d6'
   muted='#565f89'
@@ -28,6 +29,7 @@ if [ "$theme" = "dark" ]; then
   awaiting='#9ece6a'
 else
   # Flexoki Light (status bar recedes below the #fffcf0 paper editor surface)
+  term_bg='#fffcf0'
   bg='#e6e4d9'
   fg='#6f6e69'
   muted='#878580'
@@ -40,6 +42,18 @@ else
   busy='#ad8301'
   awaiting='#66800b'
 fi
+
+# tmux answers an app's OSC 11 "what is your background?" query from window-style
+# when that style names a colour, and otherwise replays what the client terminal
+# reported at ATTACH time - a value it never re-queries. apply-terminal-colors.sh
+# repaints the live terminal by writing OSC straight to each client tty, so a flip
+# leaves that cache stale and TUIs that pick their palette from the query (Codex,
+# delta, bat) render the wrong one: light-mode cream surfaces on a dark terminal.
+# Naming the real bg here keeps the answer honest across a flip and across clients
+# (Mac + phone SSH), and paints the colour the terminal already uses, so panes look
+# unchanged.
+tmux set-option -g window-style "bg=$term_bg"
+tmux set-option -g window-active-style "bg=$term_bg"
 
 # `#,` inside a `#{?cond,then,else}` conditional escapes the comma so it
 # isn't treated as the field separator. Build the agent-state prefix once.

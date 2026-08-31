@@ -20,6 +20,9 @@ brew "neovim"
 # it itself (it runs before this bundle) and needs it on disk before referencing
 # it in /etc/pam.d/sudo_local; listed here so it stays managed and upgraded
 brew "pam-reattach" unless in_vm
+# clipboard image -> stdout for tmux/bin/clip-png.sh (prefix + V); the script
+# falls back to osascript, which is slower and re-encodes, when it is missing
+brew "pngpaste" unless in_vm
 brew "ripgrep"
 brew "sevenzip"
 brew "stow"

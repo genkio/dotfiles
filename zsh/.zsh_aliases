@@ -465,31 +465,6 @@ txk() {
 
 [[ -f "${${(%):-%N}:A:h}/.zsh_git_aliases" ]] && source "${${(%):-%N}:A:h}/.zsh_git_aliases"
 
-# Tailscale File Send
-# Usage: fsend <machine_name> <file1> [file2 ...]
-fsend() {
-  if [[ $# -lt 2 ]]; then
-    echo "Usage: fsend <machine_name> <file1> [file2 ...]"
-    return 1
-  fi
-
-  local machine="$1"
-  shift  # Remove machine from args, leaving only files
-
-  # Tailscale requires a trailing colon after the machine name/IP
-  tailscale file cp "$@" "${machine}:"
-}
-
-# Tailscale File Get
-# Usage: fget [destination_directory]
-fget() {
-  # Defaults to ~/Downloads/ if no destination is provided
-  local dest="${1:-$HOME/Downloads/}"
-
-  echo "Pulling waiting Tailscale files into $dest..."
-  tailscale file get "$dest"
-}
-
 ltail() {
   if [ $# -eq 0 ]; then
     echo "Usage: ltail <file_or_directory>"

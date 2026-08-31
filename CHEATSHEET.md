@@ -47,13 +47,6 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `txp <profile>` | `tmuxp load -y <profile>` |
 | `txl` | `tmux ls` |
 
-**Tailscale helpers**
-
-| Command | What it does |
-|---|---|
-| `fsend <machine> <file...>` | Send files with Tailscale file transfer |
-| `fget [dir]` | Pull waiting Tailscale files into `dir` or `~/Downloads/` |
-
 **Git shortcuts**
 
 | Alias / Fn | What it does |
@@ -100,6 +93,8 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix T` | Set/edit pane label |
 | `prefix P` | Copy the first number found in the pane label to clipboard |
 | `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
+| `prefix a` | fzf file picker (starts in `~/box`); pastes the chosen path into the pane to attach it to Claude Code / Codex |
+| `prefix V` | Attach the clipboard image to the pane: pulls it over the tailnet when the pane is on a machine you ssh'd into |
 | `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |
 | `prefix I` | Install tmux plugins (`tpm`) |
 | `prefix q` | Show pane index numbers (press a number to jump) |
@@ -132,6 +127,13 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by defau
 
 When the tmux server itself is remote, `prefix o` and copy-mode `m` copy the URL to
 your local clipboard (OSC52) instead of opening a browser on the far end.
+
+`prefix V` covers the other direction, where the clipboard is local and the agent
+is remote: an ssh pty carries only text, so it reads `$SSH_CLIENT`, ssh's back to
+that mac over the tailnet to dump the clipboard image, caches it in
+`~/.cache/tmux-clip` (pruned after 7 days) and pastes that path. Peer account
+names come from `@clip_ssh_users` in `.tmux.conf`, since `$SSH_CLIENT` is only an
+IP; both machines need Tailscale SSH (`scripts/tailscale-up.sh`).
 
 ---
 

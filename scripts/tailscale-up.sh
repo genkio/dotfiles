@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Wraps `sudo tailscale up --ssh --operator=<user>`:
 #   --ssh       enables Tailscale SSH into this machine
-#   --operator  lets tailscale, fsend and fget run without sudo afterwards
+#   --operator  lets the tailscale CLI run without sudo afterwards
 #
 # Exit-node flags are deliberately not bundled in: passing them to `up` can drop
 # them silently. Advertise with `sudo tailscale set --advertise-exit-node` (then

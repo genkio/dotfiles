@@ -50,14 +50,13 @@ lq() {
     return
   fi
 
+  # no docker (or daemon down) is not fatal - fall through to the sqlite/picker path
+  local ids_raw=""
   if ! command -v docker >/dev/null 2>&1; then
-    echo "lq: docker not found" >&2
-    return 1
-  fi
-  local ids_raw
-  if ! ids_raw="$(docker ps -q 2>/dev/null)"; then
-    echo "lq: cannot talk to docker (is the daemon running?)" >&2
-    return 1
+    echo "lq: docker not found - looking for a sqlite file instead" >&2
+  elif ! ids_raw="$(docker ps -q 2>/dev/null)"; then
+    ids_raw=""
+    echo "lq: cannot talk to docker (daemon down?) - looking for a sqlite file instead" >&2
   fi
 
   local repo

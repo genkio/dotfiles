@@ -22,7 +22,7 @@ cc() {
     claude "${pre[@]}" -n "$*"
   fi
 }
-alias ccf="cc -m claude-fable-5"
+alias ccf="cc -m claude-fable-5-1"
 alias ccx="claude --dangerously-skip-permissions"
 alias cx="codex"
 alias cxx="codex --dangerously-bypass-approvals-and-sandbox"

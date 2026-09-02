@@ -10,6 +10,9 @@ brew "lazygit"
 brew "lazysql"
 brew "mise"
 
-cask "alacritty"
+# alacritty: cask disabled upstream 2026-09-01 (fails_gatekeeper_check) because
+# the dmg is ad-hoc signed and not notarized. scripts/install-alacritty.sh
+# installs it from the pinned upstream release instead; restore the cask here
+# when Homebrew re-enables it.
 cask "codex"
 cask "orbstack" unless in_vm

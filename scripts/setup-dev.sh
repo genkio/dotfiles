@@ -31,6 +31,10 @@ brew_bundle_install() {
 
 # Install dev tools via Homebrew
 brew_bundle_install brew/Brewfile.dev
+# Not a cask: see the header of install-alacritty.sh. Non-fatal so a download
+# failure can't abort provisioning over one app.
+bash scripts/install-alacritty.sh \
+  || warn "Alacritty install failed; rerun scripts/install-alacritty.sh."
 stow -t "$HOME" alacritty mise
 # Seed Alacritty's active theme file so its first launch has colors. Resolved
 # repo root so it works cloned outside ~/dotfiles; non-fatal so a cosmetic seed

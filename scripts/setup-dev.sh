@@ -46,7 +46,9 @@ DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-alacritty-theme.sh \
 echo "mise: installing toolchains and global npm tools (quiet, takes a few minutes)..."
 mise install --quiet node
 eval "$(mise activate bash)"
-mise install --quiet
+# Non-fatal like brew_bundle_install above: one unresolvable npm tool (e.g. a
+# registry trust-policy rejection) shouldn't abort the rest of provisioning.
+mise install --quiet || warn "some toolchains/global npm tools failed to install; continuing setup."
 
 # Install Claude Code via official shell installer (self-updates via `claude update`)
 export PATH="$HOME/.local/bin:$PATH"

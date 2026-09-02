@@ -261,6 +261,15 @@ fi
 echo "Screen Saver: Start after 5 minutes idle"
 defaults_current_host_write com.apple.screensaver idleTime -int 300
 
+# Fliqlo comes from brew/Brewfile.apps, which the flow installs after this
+# script; the path is only resolved when the saver starts, so writing it early
+# is fine. Homebrew drops the .saver into ~/Library/Screen Savers.
+echo "Screen Saver: Use Fliqlo"
+defaults_current_host_write com.apple.screensaver moduleDict -dict \
+  moduleName Fliqlo \
+  path "${HOME}/Library/Screen Savers/Fliqlo.saver" \
+  type -int 0
+
 echo "Screen Saver: Require password immediately"
 defaults_current_host_write com.apple.screensaver askForPassword -int 1
 defaults_current_host_write com.apple.screensaver askForPasswordDelay -int 0

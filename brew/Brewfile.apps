@@ -9,6 +9,8 @@ cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
 cask "ungoogled-chromium"
 cask "firefox"
 cask "hammerspoon"
+# macos-bootstrap.sh selects this as the screen saver
+cask "fliqlo"
 cask "sublime-text"
 # setup-sublime.sh uses duti to make sublime the default text/code opener
 brew "duti"

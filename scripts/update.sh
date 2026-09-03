@@ -19,6 +19,10 @@
 #   filter   run it, then drop output lines that are known no-ops
 #            (tpm's `Already installed "x"`, and so on)
 #
+# Quiet is about the report, not about liveness: a step whose output is buffered
+# still shows a one-line progress indicator on the terminal while it runs, and
+# erases it when it finishes. See capture() below.
+#
 # `--verbose` prints every step's raw output. `--dry-run` reports what would
 # happen without changing anything, using each tool's own simulation.
 
@@ -52,7 +56,7 @@ done
   echo "DRY RUN: nothing will be installed, upgraded, pruned, or re-linked."
 
 STEP_LOG="$(mktemp)"
-trap 'rm -f "$STEP_LOG"' EXIT
+trap 'tick_stop; rm -f "$STEP_LOG"' EXIT
 
 # Print the command instead of running it (dry run only).
 run() {
@@ -63,9 +67,59 @@ run() {
   fi
 }
 
+# Buffering the output also buffers the only evidence the step is alive, and a
+# `brew upgrade` that has to build a bottle from source runs for 20 minutes. So
+# while a captured step runs, hold one self-erasing line on the terminal: what
+# is running, for how long, and the last `==>` the step wrote to the buffer.
+# stderr and tty-only, so a piped or redirected run prints exactly what it did
+# before, and a step that finishes in under a second still says nothing.
+CAPTURE_PROGRESS=1
+TICK_PID=""
+
+tick() {
+  local label="$1" start="$SECONDS" secs elapsed note
+  while :; do
+    sleep 1
+    secs=$((SECONDS - start))
+    if ((secs >= 60)); then elapsed="$((secs / 60))m$((secs % 60))s"; else elapsed="${secs}s"; fi
+    note="$(grep -a '==>' "$STEP_LOG" 2>/dev/null | tail -1 |
+      sed $'s/\033\[[0-9;]*m//g; s/.*==> //; s/\r//g')"
+    printf '\r\033[K  %s... %s%s' "$label" "$elapsed" "${note:+  ${note:0:60}}" >&2
+  done
+}
+
+tick_stop() {
+  [[ -n "$TICK_PID" ]] || return 0
+  kill "$TICK_PID" 2>/dev/null
+  wait "$TICK_PID" 2>/dev/null
+  TICK_PID=""
+  printf '\r\033[K' >&2
+}
+
+# A step is named by its command, not its arguments: `brew upgrade` reads better
+# than the 40 package names that follow it, and a `bash scripts/x.sh` step is
+# only ever interesting as x.sh.
+step_label() {
+  local cmd="${1##*/}"
+  case "$cmd" in
+    bash|sh|zsh) printf '%s' "${2##*/}" ;;
+    *) printf '%s%s' "$cmd" "${2:+ $2}" ;;
+  esac
+}
+
 # capture: run a step with its output buffered, preserving its exit status so
 # the caller can still `|| fail`.
-capture() { "$@" >"$STEP_LOG" 2>&1; }
+capture() {
+  local rc
+  if [[ "$CAPTURE_PROGRESS" == 1 && -t 2 ]]; then
+    tick "$(step_label "$@")" &
+    TICK_PID=$!
+  fi
+  "$@" >"$STEP_LOG" 2>&1
+  rc=$?
+  tick_stop
+  return "$rc"
+}
 
 # flush <section> [noise-ere]: print the buffered output, and the section
 # header above it, only if any line survives the noise filter. --verbose keeps
@@ -297,7 +351,15 @@ else
   # It writes every setting unconditionally and never compares against the
   # current value, so its per-setting output says nothing about what changed.
   # Only its own warnings and errors carry information here.
+  #
+  # It also runs its own `sudo -v`, whose prompt goes to the tty rather than
+  # into the buffer. A repainting progress line would erase that prompt and
+  # turn a password request into an apparent hang, so this step announces
+  # itself once and then leaves the terminal alone.
+  echo "  applying macOS defaults (may ask for your password)"
+  CAPTURE_PROGRESS=0
   capture bash scripts/macos-bootstrap.sh || fail "macOS defaults failed."
+  CAPTURE_PROGRESS=1
   keep 'SETUP_(WARN|ERROR)'
   flush macos
 fi

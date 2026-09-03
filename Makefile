@@ -1,4 +1,4 @@
-TARGETS := all bootstrap apps dev stow ssh gpg sublime tailscale
+TARGETS := all bootstrap apps dev update stow ssh gpg sublime tailscale
 
 .PHONY: $(TARGETS)
 
@@ -30,6 +30,9 @@ apps:
 
 dev:
 	./scripts/opinionated-flow.sh --include-dev
+
+update:
+	./scripts/update.sh $(if $(call cli,DRY_RUN),--dry-run)
 
 stow:
 	./scripts/restow.sh

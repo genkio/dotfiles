@@ -20,6 +20,14 @@ if ! command -v stow >/dev/null 2>&1; then
   exit 1
 fi
 
+# --dry-run: stow's own simulation, so the preview comes from stow's conflict
+# detection rather than a guess about what it would do. -v to make it say so.
+STOW_FLAGS=(-R)
+if [[ "${1:-}" == "--dry-run" || "${1:-}" == "-n" ]]; then
+  STOW_FLAGS+=(-n -v)
+  echo "(dry run: no symlinks will be changed)"
+fi
+
 cd "$REPO_ROOT"
 
 # Pre-create dirs that need to exist before stow runs so stow doesn't fold
@@ -30,10 +38,10 @@ mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
 mkdir -p "$HOME/.codex" "$HOME/.codex/skills"
 
 # Packages that stow straight to $HOME with no guards.
-HOME_PKGS=(brew mpv nvim tmux yazi zsh hammerspoon mise claude codex vim)
+HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon mise claude codex vim)
 
 echo "Restowing into ~: ${HOME_PKGS[*]}"
-stow -R -t "$HOME" "${HOME_PKGS[@]}"
+stow "${STOW_FLAGS[@]}" -t "$HOME" "${HOME_PKGS[@]}"
 
 # ssh and git: skip when a real file already exists at the target so we
 # don't clobber a hand-edited config (matches opinionated-flow.sh).
@@ -42,18 +50,18 @@ if [[ -e "$HOME/.ssh/config" && ! -L "$HOME/.ssh/config" ]]; then
 else
   mkdir -p "$HOME/.ssh"
   chmod 700 "$HOME/.ssh"
-  stow -R -t "$HOME" ssh
+  stow "${STOW_FLAGS[@]}" -t "$HOME" ssh
 fi
 
 if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
   echo "Skipping git: ~/.gitconfig exists and is not a symlink."
 else
-  stow -R -t "$HOME" git
+  stow "${STOW_FLAGS[@]}" -t "$HOME" git
 fi
 
 # Skills are stowed into nested per-agent dirs, each needs its own -t.
 echo "Restowing skills into ~/.claude/skills and ~/.codex/skills"
-stow -R -t "$HOME/.claude/skills" skills
-stow -R -t "$HOME/.codex/skills" skills
+stow "${STOW_FLAGS[@]}" -t "$HOME/.claude/skills" skills
+stow "${STOW_FLAGS[@]}" -t "$HOME/.codex/skills" skills
 
 echo "Done."

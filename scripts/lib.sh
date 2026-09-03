@@ -24,6 +24,22 @@ fi
 warn() { echo "${_SETUP_YELLOW}SETUP_WARN: $*${_SETUP_RESET}" >&2; }
 err() { echo "${_SETUP_RED}SETUP_ERROR: $*${_SETUP_RESET}" >&2; }
 
+# Progress headers go to stdout, so they need their own tty test: a run piped
+# to a file has a terminal on stderr surprisingly often, and vice versa.
+if [[ -t 1 ]]; then
+  _SETUP_BOLD=$'\033[1m'
+  _SETUP_CYAN=$'\033[36m'
+  _SETUP_OUT_RESET=$'\033[0m'
+else
+  _SETUP_BOLD=""
+  _SETUP_CYAN=""
+  _SETUP_OUT_RESET=""
+fi
+
+# Section header for a multi-step run. Bold so the eye can skip between stages
+# in a long scrollback; the `==>` prefix stays greppable without color.
+section() { echo "${_SETUP_BOLD}${_SETUP_CYAN}==> $*${_SETUP_OUT_RESET}"; }
+
 # A password prompt that dies mid-read (a scripted sudo racing the keepalive, an
 # interrupted run) leaves termios as it found it: newline stops implying carriage
 # return, so every later line staircases and the prompt draws garbled until that

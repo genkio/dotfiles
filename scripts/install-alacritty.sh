@@ -34,7 +34,18 @@ installed_version() {
     "$APP/Contents/Info.plist" 2>/dev/null
 }
 
-if [[ "$(installed_version || true)" == "$VERSION" ]]; then
+have="$(installed_version || true)"
+
+if [[ "${1:-}" == "--dry-run" || "${1:-}" == "-n" ]]; then
+  if [[ "$have" == "$VERSION" ]]; then
+    echo "  alacritty: $VERSION already installed, would skip"
+  else
+    echo "  alacritty: would install $VERSION over ${have:-nothing}"
+  fi
+  exit 0
+fi
+
+if [[ "$have" == "$VERSION" ]]; then
   echo "Alacritty $VERSION already installed, skipping"
   exit 0
 fi

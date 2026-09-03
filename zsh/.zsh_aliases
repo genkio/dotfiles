@@ -8,6 +8,8 @@ cc() {
       -ex) pre+=(--effort xhigh); shift ;;
       -em) pre+=(--effort max); shift ;;
       -m)  pre+=(--model "$2"); shift 2 ;;
+      # orchestrator mode: analyze / dispatch to herdlet workers / verify (~/.claude/prompts/orchestrator.md)
+      -o)  pre+=(--append-system-prompt-file "$HOME/.claude/prompts/orchestrator.md"); shift ;;
       *) break ;;
     esac
   done
@@ -23,6 +25,7 @@ cc() {
   fi
 }
 alias ccf="cc -m claude-fable-5-1"
+alias cco="cc -o -m claude-fable-5-1"
 alias ccx="claude --dangerously-skip-permissions"
 alias cx="codex"
 alias cxx="codex --dangerously-bypass-approvals-and-sandbox"
@@ -198,8 +201,12 @@ lr() {
     for f in $cdir/*.jsonl(N.); do
       zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
       id=${f:t:r}
-      title=$(grep -m1 -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null)
-      title=${title#'"aiTitle":"'}; title=${title%'"'}
+      title=$(grep -m1 -o '"customTitle":"[^"]*"' "$f" 2>/dev/null)
+      title=${title#'"customTitle":"'}; title=${title%'"'}
+      if [[ -z $title ]]; then
+        title=$(grep -m1 -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null)
+        title=${title#'"aiTitle":"'}; title=${title%'"'}
+      fi
       _lr_age $mt; age=$REPLY
       _lr_clean "$title"; ct=$REPLY
       agent=claude

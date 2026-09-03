@@ -23,3 +23,5 @@ git/.gitconfig.local
 
 # Skills package: keep tracked content only
 skills/.DS_Store
+!claude/.claude/prompts/
+!claude/.claude/prompts/**

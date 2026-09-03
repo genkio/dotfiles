@@ -9,10 +9,18 @@
 # Every step is non-fatal. A run that upgrades brew and then loses the network
 # should still restow, so one failure never costs you the rest of the pass.
 #
-# `--dry-run` (or `make update DRY_RUN=1`) reports without changing anything.
-# It prefers each tool's own preview - `brew outdated`, `mise prune -n`,
-# `stow -n`, `macos-bootstrap.sh -n` - over guessing, so the report comes from
-# the thing that will do the work. Read-only probes still hit the network.
+# Quiet by default: a step that had nothing to do prints nothing, not even its
+# header, so a no-op pass is a few lines instead of a screenful. Two mechanisms,
+# preferring the first because it cannot hide a real change behind a stale
+# pattern:
+#
+#   probe   ask whether there is work (`mise outdated`, `brew outdated`,
+#           `stow -n`) and skip the step entirely when there is not
+#   filter   run it, then drop output lines that are known no-ops
+#            (tpm's `Already installed "x"`, and so on)
+#
+# `--verbose` prints every step's raw output. `--dry-run` reports what would
+# happen without changing anything, using each tool's own simulation.
 
 set -uo pipefail
 
@@ -24,19 +32,70 @@ source "$SCRIPT_DIR/lib.sh"
 cd "$REPO_ROOT"
 
 DRY_RUN=0
-if [[ "${1:-}" == "--dry-run" || "${1:-}" == "-n" ]]; then
-  DRY_RUN=1
-  echo "DRY RUN: nothing will be installed, upgraded, pruned, or re-linked."
-fi
+VERBOSE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run|-n) DRY_RUN=1 ;;
+    --verbose|-v) VERBOSE=1 ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--dry-run|-n] [--verbose|-v]"
+      echo "  --dry-run, -n  Report what would change, touching nothing."
+      echo "  --verbose, -v  Print every step's output, including no-ops."
+      exit 0
+      ;;
+    *) err "unknown option: $1"; exit 1 ;;
+  esac
+  shift
+done
 
-# Print the command instead of running it. For steps where a real preview
-# exists, the caller uses that instead of this.
+[[ "$DRY_RUN" == 1 ]] &&
+  echo "DRY RUN: nothing will be installed, upgraded, pruned, or re-linked."
+
+STEP_LOG="$(mktemp)"
+trap 'rm -f "$STEP_LOG"' EXIT
+
+# Print the command instead of running it (dry run only).
 run() {
   if [[ "$DRY_RUN" == 1 ]]; then
     echo "  would run: $*"
   else
     "$@"
   fi
+}
+
+# capture: run a step with its output buffered, preserving its exit status so
+# the caller can still `|| fail`.
+capture() { "$@" >"$STEP_LOG" 2>&1; }
+
+# flush <section> [noise-ere]: print the buffered output, and the section
+# header above it, only if any line survives the noise filter. --verbose keeps
+# everything. Either way the buffer is emptied.
+flush() {
+  local sec="$1" noise="${2:-}" body
+  if [[ "$VERBOSE" == 1 || -z "$noise" ]]; then
+    body="$(cat "$STEP_LOG")"
+  else
+    # capture folds stderr into the log, so a sub-script's own warn()/err()
+    # lands here too. Exempt those from the noise pattern unconditionally: a
+    # filter tuned for chatter must never be able to hide a warning.
+    body="$(awk -v noise="$noise" '/SETUP_(WARN|ERROR)/ || $0 !~ noise' "$STEP_LOG")"
+  fi
+  body="$(printf '%s\n' "$body" | sed '/^[[:space:]]*$/d')"
+  if [[ -n "$body" ]]; then
+    section "$sec"
+    printf '%s\n' "$body"
+  fi
+  : >"$STEP_LOG"
+}
+
+# keep <ere>: reduce the buffer to just the matching lines, for a step whose
+# output is better described by what to show than by what to drop. No-op under
+# --verbose.
+keep() {
+  [[ "$VERBOSE" == 1 ]] && return 0
+  grep -E "$1" "$STEP_LOG" >"$STEP_LOG.keep" 2>/dev/null
+  mv -f "$STEP_LOG.keep" "$STEP_LOG"
+  return 0
 }
 
 # A pass over ~15 tools prints far more than anyone reads, and the two or three
@@ -57,29 +116,34 @@ note() { ATTENTION+=("$*"); }
 # Pulling is left to you: an automatic pull into a dirty tree or onto a local
 # commit is a worse surprise than a stale run. Just make "you are behind"
 # impossible to miss, because everything below re-links from the checkout.
-section "repo"
 if git fetch --quiet origin 2>/dev/null; then
   upstream="$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || true)"
   if [[ -n "$upstream" ]]; then
     behind="$(git rev-list --count "HEAD..$upstream" 2>/dev/null || echo 0)"
     if [[ "$behind" -gt 0 ]]; then
+      section "repo"
       fail "$behind commit(s) behind $upstream; 'git pull' first or this run re-links stale files."
-    else
+    elif [[ "$DRY_RUN" == 1 || "$VERBOSE" == 1 ]]; then
+      section "repo"
       echo "  up to date with $upstream"
     fi
   fi
 else
-  warn "  could not fetch; skipping the behind-check"
+  section "repo"
+  fail "could not fetch; skipping the behind-check"
 fi
 
-section "brew"
 # tailscale is held back deliberately. It runs as a root LaunchDaemon (see
 # opinionated-flow.sh:171), so a brew upgrade leaves root-owned paths that need
 # a manual `sudo rm` - not something an unattended update should trigger.
 tailscale_outdated() { brew outdated --quiet 2>/dev/null | grep -qx tailscale; }
 upgradable() { brew outdated --quiet 2>/dev/null | grep -vx tailscale; }
+bundle_satisfied() {
+  HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --file "$1" >/dev/null 2>&1
+}
 
 if [[ "$DRY_RUN" == 1 ]]; then
+  section "brew"
   # No `brew update` first: it rewrites tap metadata, which is a change. So this
   # lists what is outdated as of the last update, not as of this second.
   outdated="$(upgradable)"
@@ -95,23 +159,31 @@ if [[ "$DRY_RUN" == 1 ]]; then
     [[ -n "$missing" ]] && echo "  would install from $f:" && printf '    %s\n' $missing
   done
 else
-  brew update || fail "brew update failed"
+  # `brew update` prints tap churn on every run and says nothing about whether
+  # anything here needs upgrading, so it is only shown when it actually fails.
+  if ! capture brew update; then
+    flush brew
+    fail "brew update failed"
+  else
+    : >"$STEP_LOG"
+  fi
   outdated="$(upgradable)"
   if [[ -n "$outdated" ]]; then
     # Unquoted on purpose: one package per word is exactly the intent.
-    brew upgrade $outdated || fail "brew upgrade failed"
-  else
-    echo "  nothing to upgrade"
+    capture brew upgrade $outdated || fail "brew upgrade failed"
+    flush brew
   fi
   # bundle installs entries the repo gained since the last run; upgrade above
-  # only refreshes what is already there. Neither implies the other.
+  # only refreshes what is already there. Neither implies the other. `check`
+  # first so a satisfied Brewfile prints nothing at all.
   for f in brew/Brewfile brew/Brewfile.dev; do
-    brew bundle --file "$f" || fail "some entries in $f failed to install."
+    bundle_satisfied "$f" && continue
+    capture brew bundle --file "$f" || fail "some entries in $f failed to install."
+    flush brew
   done
 fi
 
 if tailscale_outdated; then
-  echo "  tailscale held back (root LaunchDaemon)"
   note "tailscale is outdated but held back. Upgrade it deliberately:
     sudo brew services stop tailscale && brew upgrade tailscale && sudo brew services start tailscale"
 fi
@@ -121,12 +193,13 @@ fi
 if [[ "$DRY_RUN" == 1 ]]; then
   bash scripts/install-alacritty.sh --dry-run
 else
-  bash scripts/install-alacritty.sh || fail "Alacritty install failed."
+  capture bash scripts/install-alacritty.sh || fail "Alacritty install failed."
+  flush alacritty 'already installed, skipping'
 fi
 
-section "mise"
 eval "$(mise activate bash)" 2>/dev/null || true
 if [[ "$DRY_RUN" == 1 ]]; then
+  section "mise"
   # prune deletes every version no config references, which includes tools
   # installed ad hoc. Showing the list is the whole point of the dry run.
   echo "  would install/upgrade tools in mise/.config/mise/config.toml"
@@ -138,67 +211,105 @@ if [[ "$DRY_RUN" == 1 ]]; then
     echo "  nothing to prune"
   fi
 else
-  # `latest` re-resolves on install, so this both adds new tools and moves the
-  # floating ones forward. prune then drops the versions nothing references.
-  mise install || fail "some toolchains/global npm tools failed to install."
-  mise prune --yes || fail "mise prune failed"
+  # Two probes, so an up-to-date toolchain is silent. `mise outdated` covers
+  # both floating versions moving forward and tools the config gained;
+  # --dry-run-code exits non-zero only when there is something to prune.
+  if [[ -n "$(mise outdated 2>/dev/null)" ]] || [[ -n "$(mise ls --missing 2>/dev/null)" ]]; then
+    capture mise install || fail "some toolchains/global npm tools failed to install."
+    flush mise
+  fi
+  if ! mise prune --dry-run-code >/dev/null 2>&1; then
+    capture mise prune --yes || fail "mise prune failed"
+    flush mise
+  fi
 fi
 
-section "apps"
 export PATH="$HOME/.local/bin:$PATH"
 if command -v claude >/dev/null 2>&1; then
-  run claude update || fail "claude update failed"
-  # The bootstrap adds claude-plugins-official once; without this its skills
-  # stay pinned to whatever the marketplace held on provisioning day.
-  run claude plugin marketplace update || fail "marketplace update failed"
+  if [[ "$DRY_RUN" == 1 ]]; then
+    section "apps"
+    run claude update
+    run claude plugin marketplace update
+  else
+    capture claude update || fail "claude update failed"
+    flush apps 'up to date|up-to-date|already'
+    # The bootstrap adds claude-plugins-official once; without this its skills
+    # stay pinned to whatever the marketplace held on provisioning day.
+    capture claude plugin marketplace update || fail "marketplace update failed"
+    flush apps 'up to date|up-to-date|already|No changes'
+  fi
 fi
-command -v maestral >/dev/null 2>&1 &&
-  { run mise exec -- uv tool upgrade maestral || fail "maestral upgrade failed"; }
+if command -v maestral >/dev/null 2>&1; then
+  if [[ "$DRY_RUN" == 1 ]]; then
+    run mise exec -- uv tool upgrade maestral
+  else
+    capture mise exec -- uv tool upgrade maestral || fail "maestral upgrade failed"
+    flush apps 'is already up-to-date|Nothing to upgrade'
+  fi
+fi
 
 # TPM clones each plugin as its own git repo under ~/.tmux/plugins, outside
 # both brew and stow, so nothing else here touches them. install_plugins picks
 # up plugins added to .tmux.conf elsewhere; update_plugins pulls the clones.
-section "tmux"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 if [[ -x "$TPM_DIR/bin/install_plugins" ]]; then
-  run "$TPM_DIR/bin/install_plugins" || fail "tmux plugin install failed"
-  run "$TPM_DIR/bin/update_plugins" all || fail "tmux plugin update failed"
-else
+  if [[ "$DRY_RUN" == 1 ]]; then
+    section "tmux"
+    run "$TPM_DIR/bin/install_plugins"
+    run "$TPM_DIR/bin/update_plugins" all
+  else
+    capture "$TPM_DIR/bin/install_plugins" || fail "tmux plugin install failed"
+    flush tmux '^Already installed'
+    capture "$TPM_DIR/bin/update_plugins" all || fail "tmux plugin update failed"
+    flush tmux 'Already up to date|^Updating|^"[^"]*" plugin'
+  fi
+elif [[ "$VERBOSE" == 1 || "$DRY_RUN" == 1 ]]; then
+  section "tmux"
   echo "  tpm not installed, skipping"
 fi
 
 # Seeded rather than stowed because Package Control rewrites the file at
 # runtime; re-running is how newly-curated packages and file associations
 # propagate (see the script's own header).
-section "sublime"
 if [[ -d "/Applications/Sublime Text.app" ]]; then
-  run bash scripts/setup-sublime.sh || fail "Sublime setup failed."
-else
+  if [[ "$DRY_RUN" == 1 ]]; then
+    section "sublime"
+    run bash scripts/setup-sublime.sh
+  else
+    capture bash scripts/setup-sublime.sh || fail "Sublime setup failed."
+    flush sublime 'already bootstrapped'
+  fi
+elif [[ "$VERBOSE" == 1 || "$DRY_RUN" == 1 ]]; then
+  section "sublime"
   echo "  Sublime Text not installed, skipping"
 fi
 
 # Defaults added on another machine only land here on a re-run. Documented as
 # safe to rerun, and it has its own --dry-run. Prompts for sudo.
-section "macos"
 if [[ "$DRY_RUN" == 1 ]]; then
+  section "macos"
   # Its dry-run prints every individual `defaults write` - 200+ lines that would
   # bury everything else in this report. Count them and point at the real thing.
   macos_writes="$(bash scripts/macos-bootstrap.sh --dry-run 2>&1 | grep -c '\[dry-run\]')"
   echo "  would apply $macos_writes settings"
   echo "  (scripts/macos-bootstrap.sh --dry-run for the full list)"
 else
-  bash scripts/macos-bootstrap.sh || fail "macOS defaults failed."
+  # It writes every setting unconditionally and never compares against the
+  # current value, so its per-setting output says nothing about what changed.
+  # Only its own warnings and errors carry information here.
+  capture bash scripts/macos-bootstrap.sh || fail "macOS defaults failed."
+  keep 'SETUP_(WARN|ERROR)'
+  flush macos
 fi
 
 # Last of the mutating steps: the unfolded packages (~/.claude/skills,
 # ~/.codex/skills, ~/.config/mpv) get per-file symlinks rather than one folded
 # dir, so an entry added upstream is invisible until this runs.
-section "stow"
-if [[ "$DRY_RUN" == 1 ]]; then
-  # `stow -R -n -v` emits an UNLINK+LINK pair for every link it already owns,
-  # each tagged "(reverts previous action)" - ~90 lines of no-op on a stowed
-  # machine. Drop those pairs so only real changes and conflicts survive. Run
-  # scripts/restow.sh --dry-run directly for the unfiltered output.
+#
+# `stow -R -n -v` emits an UNLINK+LINK pair for every link it already owns, each
+# tagged "(reverts previous action)" - ~90 lines of no-op on a stowed machine.
+# Dropping those pairs leaves only real changes and conflicts.
+stow_changes() {
   bash scripts/restow.sh --dry-run 2>&1 | awk '
     { line[NR] = $0 }
     /^LINK: / {
@@ -208,24 +319,42 @@ if [[ "$DRY_RUN" == 1 ]]; then
     END {
       for (i = 1; i <= NR; i++) {
         l = line[i]
-        if (l ~ /simulation mode/) continue
-        if (l ~ /^(UN)?LINK: /) {
-          p = l; sub(/^(UN)?LINK: /, "", p); sub(/ =>.*/, "", p)
-          if (p in noop) continue
-          changes++
-        }
+        if (l !~ /^(UN)?LINK: /) continue
+        p = l; sub(/^(UN)?LINK: /, "", p); sub(/ =>.*/, "", p)
+        if (p in noop) continue
         print l
       }
-      if (!changes) print "  no symlink changes"
     }'
-else
-  bash scripts/restow.sh || fail "restow failed"
+}
+
+pending_stow="$(stow_changes)"
+if [[ "$DRY_RUN" == 1 ]]; then
+  section "stow"
+  if [[ -n "$pending_stow" ]]; then
+    printf '%s\n' "$pending_stow"
+  else
+    echo "  no symlink changes"
+  fi
+elif [[ -n "$pending_stow" ]]; then
+  # The simulation above already told us what will change, so a real restow
+  # only runs when there is something to do.
+  capture bash scripts/restow.sh || fail "restow failed"
+  section "stow"
+  printf '%s\n' "$pending_stow"
 fi
 
-# Read-only either way, so it runs for real in a dry run too. It prints its own
-# report; CHECK_PINS_ACTIONS collects just the actionable lines for the summary.
+# Read-only either way. It prints its own report in dry-run/verbose mode;
+# otherwise only the actionable lines matter, and CHECK_PINS_ACTIONS collects
+# those without capturing its stdout (which would strip the colors).
 pins_actions="$(mktemp)"
-CHECK_PINS_ACTIONS="$pins_actions" bash scripts/check-pins.sh || true
+if [[ "$DRY_RUN" == 1 || "$VERBOSE" == 1 ]]; then
+  CHECK_PINS_ACTIONS="$pins_actions" bash scripts/check-pins.sh || true
+else
+  CHECK_PINS_ACTIONS="$pins_actions" capture bash scripts/check-pins.sh || true
+  # Only surface the report when a pin has actually expired. Its own section
+  # header is in the buffer too; drop it so flush's isn't a duplicate.
+  [[ -s "$pins_actions" ]] && flush pins '^==> pins$' || : >"$STEP_LOG"
+fi
 while IFS= read -r line; do
   [[ -n "$line" ]] && note "pin expired: $line"
 done <"$pins_actions"
@@ -238,6 +367,5 @@ if [[ "${#ATTENTION[@]}" -gt 0 ]]; then
     warn "  - $item"
   done
 else
-  echo
-  section "nothing needs your attention"
+  section "up to date, nothing needs your attention"
 fi

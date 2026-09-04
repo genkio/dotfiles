@@ -69,12 +69,27 @@ Installed as a cask via `brew/Brewfile.apps`. `scripts/setup-sublime.sh` (run by
 
 The live settings file is seeded, not stowed: Package Control rewrites it at runtime, so a symlink into the repo would churn.
 
+## Routine maintenance
+
+`make update` (`scripts/update.sh`, `--dry-run` via `make update DRY_RUN=1`) keeps an already-provisioned machine current. It never installs a package the machine does not already have, never writes a macOS default, and never asks for `sudo`, so it is safe to run unattended whatever profile the machine was built with:
+
+- `brew update && brew upgrade` for everything already installed. No `brew bundle`: that would install every entry of every Brewfile and quietly converge a base machine to `--include-all`. A package added to a Brewfile reaches other machines when you run `make apps` / `make dev` there.
+- Re-runs `scripts/install-alacritty.sh`, a no-op unless its pinned `VERSION` changed, so a deliberate bump on one machine reaches the others after a pull.
+- Restows every package, reporting only links that genuinely appeared, vanished, or conflicted.
+- Refreshes the generated Alacritty theme cache, and seeds `~/.gitconfig.local` / `~/.codex/config.toml` when missing. When they already exist it only reports which keys the `.example` has gained since; those files hold machine-local state, so merging is left to you.
+- Runs `scripts/check-pins.sh` (below).
+- Warns when the checkout is behind its upstream, but never pulls: an automatic pull into a dirty tree is a worse surprise than a stale run.
+
+Anything needing a decision is collected into one block at the end. `tailscaled` runs as a root LaunchDaemon, so upgrading its formula needs no privileges but restarting the daemon and removing the superseded root-owned keg do; `make update` reports both commands instead of asking for a password.
+
+Deliberately left alone: mise toolchains and uv tools (a global bump buys nothing, and project-local pins resolve independently), Claude Code, Oh My Zsh, tmux and Neovim plugins (nvim's lockfile is tracked, so updating it is a repo change), Sublime packages, and macOS defaults. Rerun `scripts/macos-bootstrap.sh` deliberately for the last of those.
+
 ## Opinionated flow
 
 Run the automated script:
 
 - `make` (equivalent to `./scripts/opinionated-flow.sh --bootstrap-macos --include-all`)
-- Other targets: `make bootstrap`, `make apps`, `make dev`, `make ssh`, `make gpg`, `make sublime`, `make tailscale`
+- Other targets: `make bootstrap`, `make apps`, `make dev`, `make update`, `make ssh`, `make gpg`, `make sublime`, `make tailscale`
 - `make tailscale` logs this machine into the tailnet (`scripts/tailscale-up.sh`): starts the tailscaled service if it is not responding, then runs `sudo tailscale up --ssh --operator=<you>` and prints a URL to authorize in the browser. Idempotent: it reports the current status and exits when the node is already up. Exit nodes stay separate: advertise with `sudo tailscale set --advertise-exit-node`, consume one with `scripts/tailscale-exit.sh on <node>`.
 - `make ssh` defaults to GitHub; pass a host label to key it per service: `make ssh gitlab` (or `make ssh HOST=gitlab`) writes `~/.ssh/id_ed25519_gitlab` and appends a `gitlab.com` block to `~/.ssh/config`. `github`, `bitbucket`, and `gitlab` get a real hostname and paste URL; any other label is used verbatim as the hostname.
 - Identity is optional and passed the same way: `make ssh gitlab EMAIL=me@example.com NAME='Genkio Ji'`. Worth setting, because the script writes the email it used into `~/.gitconfig.local`, and its default is the GitHub noreply address. Only explicit `VAR=...` on the command line is honoured, so an exported `$EMAIL`/`$NAME` in your shell cannot leak in. For `--type` and `--passphrase`, call `./scripts/generate-ssh-key.sh` directly.

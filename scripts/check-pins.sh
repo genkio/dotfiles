@@ -13,7 +13,8 @@
 # pin outlives the upstream problem and nobody notices. So this checks each
 # pin's escape condition and reports; it never edits anything.
 #
-# Advisory only: always exits 0 so a network blip can't fail `make update`.
+# Advisory only: always exits 0 so a network blip can't fail a caller that
+# folds this into a larger maintenance run.
 
 set -uo pipefail
 
@@ -31,8 +32,8 @@ pinned_alacritty="$(sed -n 's/^VERSION=\(.*\)$/\1/p' "$SCRIPT_DIR/install-alacri
 section "pins"
 
 # Actionable lines go to the report and, when CHECK_PINS_ACTIONS names a file,
-# also to that file. update.sh sets it so it can reprint them in its summary
-# without capturing our stdout, which would strip the colors.
+# also to that file, so a caller can reprint them in its own summary without
+# capturing our stdout (which would strip the colors).
 action() {
   echo "    -> $*"
   [[ -n "${CHECK_PINS_ACTIONS:-}" ]] && echo "$*" >>"$CHECK_PINS_ACTIONS"

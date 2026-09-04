@@ -23,13 +23,6 @@ fi
 mkdir -p "$override_dir"
 printf '%s\n' "$next" > "$override"
 
-# Tmux: idempotent; no-ops if no tmux server is running.
-"$dotfiles/tmux/bin/apply-theme.sh"
-
-# Alacritty: rewrite its active colors file; live_config_reload picks it up.
-# Non-fatal like the tmux step so a cosmetic seed failure can't abort the toggle.
-"$dotfiles/scripts/apply-alacritty-theme.sh" || true
-
-# Repaint the live terminal too (bg/fg/palette) so shell panes + padding follow,
-# not just apps that paint themselves. Over SSH this is what reaches the client.
-"$dotfiles/scripts/apply-terminal-colors.sh" || true
+# tmux + Alacritty's config + the live terminal (OSC). A manual flip holds until
+# the next client attach/detach, when client-theme.sh recomputes from scratch.
+"$dotfiles/scripts/apply-theme-all.sh"

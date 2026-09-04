@@ -205,20 +205,32 @@ gwtn() {
 }
 
 # tear down matching Docker containers/volumes/networks, then git worktree remove -f <path> && git branch -D <branch>
+# -y: assume yes for every prompt, for scripted teardown (see review-done). the
+# warnings still print, so the log says what was destroyed
 gwtr() {
   local sel branch target_dir main_worktree cur prompt line rest container_id container_name container_state container_project proj pid
   local -a docker_containers docker_container_ids docker_projects docker_volumes docker_networks vols nets host_pids
+  local assume_yes=0
+
+  while [[ "$1" == -* ]]; do
+    case "$1" in
+      -y|--yes) assume_yes=1; shift ;;
+      *) echo "gwtr: unknown flag $1 (usage: gwtr [-y] [<branch>])" >&2; return 1 ;;
+    esac
+  done
 
   # first thing: daemon down is indistinguishable from "no containers" later,
   # which once let leftovers survive teardown silently
   if command -v docker >/dev/null 2>&1 && ! docker ps -aq >/dev/null 2>&1; then
     echo "gwtr: warning: Docker daemon unreachable, cannot check for leftover containers" >&2
-    if ! read -q "REPLY?Continue without the Docker check? [y/N] "; then
+    if (( ! assume_yes )); then
+      if ! read -q "REPLY?Continue without the Docker check? [y/N] "; then
+        echo
+        echo "Cancelled."
+        return 1
+      fi
       echo
-      echo "Cancelled."
-      return 1
     fi
-    echo
   fi
 
   main_worktree=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}') || return
@@ -301,14 +313,16 @@ gwtr() {
   ((${#docker_volumes})) && prompt+=" + ${#docker_volumes} volume(s) [DATA LOSS]"
   ((${#docker_networks})) && prompt+=" + ${#docker_networks} network(s)"
   ((${#host_pids})) && prompt+=" + kill ${#host_pids} host process(es)"
-  prompt+="? [y/N] "
 
-  if ! read -q "REPLY?$prompt"; then
+  if (( assume_yes )); then
+    echo "gwtr: $prompt (-y)" >&2
+  elif ! read -q "REPLY?$prompt? [y/N] "; then
     echo
     echo "Cancelled."
     return 1
+  else
+    echo
   fi
-  echo
 
   # can't remove worktree we're standing in; :A for symlink-safe compare
   if [[ "${PWD:A}/" == "${target_dir:A}/"* ]]; then

@@ -69,7 +69,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `gdc <commit>` | Copy a commit's diff to the clipboard |
 | `gwta [branch\|pr#]` | Add a worktree tracking a remote branch or a PR number like `gh pr checkout` (fzf-picks a branch if omitted), then `cd` in |
 | `gwtn [branch]` | Add a worktree on a new branch off the default branch, then `cd` in |
-| `gwtr [branch]` | Remove a worktree (fzf-picks one if omitted), tear down its Docker containers/volumes/networks, and delete its branch, after confirmation |
+| `gwtr [-y] [branch]` | Remove a worktree (fzf-picks one if omitted), tear down its Docker containers/volumes/networks, and delete its branch, after confirmation (`-y` skips it) |
 
 ---
 

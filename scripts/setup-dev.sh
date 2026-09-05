@@ -61,9 +61,30 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 
 if ! command -v maestral >/dev/null 2>&1; then
-  mise exec -- uv tool install --quiet maestral
+  # Two upstream breaks have to be dodged at once, and fixing either alone still
+  # leaves a daemon that will not start:
+  #   - rubicon-objc >= 0.5.5 moved an ObjCClass("NSEvent") lookup to import
+  #     time, but rubicon only ever loads Foundation/CoreFoundation, never
+  #     AppKit where NSEvent lives. GUI processes get away with it; a detached
+  #     daemon dies on import and `box start` only shows a Pyro5 socket error.
+  #   - Python 3.14 removed asyncio.events.AbstractEventLoopPolicy, which every
+  #     rubicon release to date still subclasses.
+  # So the pin below 0.5.5 forces 3.13 as well. Drop both once maestral ships an
+  # upper bound and rubicon moves off the removed policy API.
+  #
+  # --managed-python keeps the daemon off Homebrew's python@3.13. The keychain
+  # ACL holding the Dropbox token is bound to the cdhash of whichever
+  # interpreter wrote it, and every one of these is ad-hoc signed, so any move
+  # re-prompts for the login password on each `box start`. A uv-managed
+  # interpreter still moves on upgrade, but only when asked - `brew upgrade`
+  # cannot drag it out from under the tool.
+  mise exec -- uv python install --quiet 3.13
+  mise exec -- uv tool install --quiet maestral \
+    --managed-python --python 3.13 --with 'rubicon-objc<0.5.5'
   # Sign in with `maestral auth link`, then `maestral start`; autostart on login
   # is `maestral autostart -Y` (it takes -Y/-N, not on/off).
+  # `maestral start` prompts for a sync folder when [sync] path is unset, so it
+  # hangs with no output under a script: `maestral config set path ~/box`.
 fi
 
 # Restore Claude Code settings

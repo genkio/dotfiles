@@ -285,14 +285,18 @@ if [[ ${#NEXT_STEPS[@]} -gt 0 ]]; then
   for step in "${NEXT_STEPS[@]}"; do
     echo "  $step"
   done
-  # maestral pins rubicon-objc>=0.4.1 unbounded, and 0.5.5 moved an
-  # ObjCClass("NSEvent") lookup to import time. AppKit is not loaded in a plain
-  # python process, so the daemon dies on import and `box start` only reports a
-  # Pyro5 socket error. Drop this once maestral ships its own upper bound.
+  # setup-dev.sh already installs maestral with both pins (see the comment
+  # there). This stays for a maestral that arrived some other way, or one whose
+  # pins a `uv tool upgrade` quietly dropped - the failure is identical either
+  # way. The --python 3.13 half matters: rubicon-objc < 0.5.5 cannot run on
+  # 3.14, which removed the event loop policy API it subclasses.
   if [[ -n "$MAESTRAL_PENDING" ]]; then
     echo
     echo '  If "box start" fails, check "maestral log show": on "ObjC Class NSEvent"'
     echo '  not found, the daemon got rubicon-objc >= 0.5.5. Reinstall it pinned:'
-    echo "    uv tool install --force maestral --with 'rubicon-objc<0.5.5'"
+    echo "    uv tool install --force maestral --managed-python --python 3.13 \\"
+    echo "      --with 'rubicon-objc<0.5.5'"
+    echo '  If "box start" hangs printing nothing, the sync folder is unset:'
+    echo '    maestral config set path ~/box'
   fi
 fi

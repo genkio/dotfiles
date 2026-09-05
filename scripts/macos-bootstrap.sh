@@ -295,6 +295,32 @@ optional sudo_pw pmset -a displaysleep 0
 echo "Power: Disable Power Nap (AC and battery)"
 optional sudo_pw pmset -a powernap 0
 
+echo "Power: Limit battery charge to 80%"
+# The Battery > Charge Limit toggle (Sequoia+, Apple silicon laptops) has no
+# pmset/defaults equivalent: System Settings drives powerd through PowerUI's
+# smart-charge XPC client, so drive the same client. Needs no root, and the
+# policy powerd persists is the same `manualChargeLimit` the UI writes.
+set_charge_limit() {
+  osascript -l JavaScript -e '
+    ObjC.import("Foundation");
+    function run(argv) {
+      $.NSBundle.bundleWithPath("/System/Library/PrivateFrameworks/PowerUI.framework").load;
+      const cls = $.NSClassFromString("PowerUISmartChargeClient");
+      if (!cls) { throw new Error("PowerUISmartChargeClient unavailable"); }
+      const client = cls.alloc.initWithClientName("macos-bootstrap");
+      if (!client.isMCLSupported) { throw new Error("charge limit unsupported on this Mac"); }
+      const err = $();
+      if (!client.setMCLLimitError(parseInt(argv[0], 10), err)) {
+        throw new Error("setMCLLimit failed");
+      }
+    }' "$1"
+}
+if pmset -g batt 2>/dev/null | grep -q InternalBattery; then
+  optional set_charge_limit 80
+else
+  echo "  No internal battery; skipping."
+fi
+
 ###############################################################################
 # Desktop Background
 ###############################################################################

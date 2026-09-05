@@ -256,19 +256,69 @@ fi
 # Screen Saver & Lock
 ###############################################################################
 
-# Screen saver preferences moved to the per-host (ByHost) domain in macOS 14;
-# user-domain writes are silently ignored on Sonoma+ and Tahoe.
+# idleTime and askForPassword still live in the per-host (ByHost) screensaver
+# domain, but the module *selection* left it in macOS 14: WallpaperAgent owns
+# that now and ignores moduleDict, while still accepting the write. That silent
+# accept is why this looked like it worked for so long.
 echo "Screen Saver: Start after 5 minutes idle"
 defaults_current_host_write com.apple.screensaver idleTime -int 300
 
-# Fliqlo comes from brew/Brewfile.apps, which the flow installs after this
-# script; the path is only resolved when the saver starts, so writing it early
-# is fine. Homebrew drops the .saver into ~/Library/Screen Savers.
+# WallpaperAgent stores the choice as a binary plist repeated at every "Idle"
+# node of its index: all-displays, system default, and one per display and per
+# space. Those keys are UUIDs of *this* machine's displays and spaces, so walk
+# the tree instead of seeding a captured file. Kill the agent first, or it
+# writes its in-memory copy back over ours when it exits.
 echo "Screen Saver: Use Fliqlo"
-defaults_current_host_write com.apple.screensaver moduleDict -dict \
-  moduleName Fliqlo \
-  path "${HOME}/Library/Screen Savers/Fliqlo.saver" \
-  type -int 0
+set_screen_saver() {
+  killall WallpaperAgent 2>/dev/null || true
+  sleep 1
+  /usr/bin/python3 - "$1" <<'PY'
+import os, plistlib, sys
+from urllib.parse import quote
+
+saver = sys.argv[1]
+idx = os.path.expanduser(
+    "~/Library/Application Support/com.apple.wallpaper/Store/Index.plist")
+if not os.path.exists(idx):
+    sys.exit("wallpaper store missing")
+
+config = plistlib.dumps({"module": {"relative": "file://" + quote(saver)}},
+                        fmt=plistlib.FMT_BINARY)
+opts = plistlib.dumps(
+    {"values": {"legacyScreenSaverGenerationCount": {"picker": {"_0": {"id": "2"}}}}},
+    fmt=plistlib.FMT_BINARY)
+
+d = plistlib.load(open(idx, "rb"))
+n = 0
+
+def walk(node):
+    global n
+    if not isinstance(node, dict):
+        return
+    for key, value in node.items():
+        if key == "Idle" and isinstance(value, dict) and "Content" in value:
+            value["Content"]["Choices"] = [{
+                "Configuration": config,
+                "Files": [],
+                "Provider": "com.apple.wallpaper.choice.screen-saver",
+            }]
+            value["Content"]["EncodedOptionValues"] = opts
+            n += 1
+        else:
+            walk(value)
+
+walk(d)
+if not n:
+    sys.exit("no Idle nodes in wallpaper store")
+plistlib.dump(d, open(idx, "wb"), fmt=plistlib.FMT_BINARY)
+PY
+  killall WallpaperAgent 2>/dev/null || true
+}
+FLIQLO="${HOME}/Library/Screen Savers/Fliqlo.saver"
+# Brewfile.apps installs Fliqlo after this script, so on a first run the bundle
+# is usually still absent; the path only has to resolve when the saver starts.
+[[ -e "$FLIQLO" ]] || warn "Fliqlo not installed yet; rerun after 'make apps'"
+optional set_screen_saver "$FLIQLO"
 
 echo "Screen Saver: Require password immediately"
 defaults_current_host_write com.apple.screensaver askForPassword -int 1

@@ -159,6 +159,16 @@
           }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

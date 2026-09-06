@@ -1,21 +1,41 @@
-Herdlet workers (tmux panes spawned per the herdlet skill): herdlet has no
-spawn command or launch config, so the defaults live in the launch line. Every
-Claude Code worker is spawned with `--permission-mode auto`, an explicit `--model`,
-and an explicit `--effort`:
+Herdlet workers (tmux panes, herdlet 0.7.0+). Spawn every Claude Code worker
+with `herdlet spawn`, never a hand-built launch line:
 
 ```sh
-tmux split-window -d -h -P -F '#{pane_id}' -t "$TMUX_PANE" -c "$PWD" \
-  "HERDLET_ID=<project>/<role> claude -n '<project>/<role>: <one-line purpose>' --model <model> --effort <level> --permission-mode auto"
+herdlet spawn --id <project>/<role> --model <model> --effort <level> \
+  --title "<one-line purpose>" --brief plans/<topic>-brief.md
 ```
 
-`-t "$TMUX_PANE"` is not optional: without it tmux splits whatever window the
-owner is looking at, and the worker lands in another project's window.
-Prepend `CC_IMESSAGE_SKIP=1 CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1`
-so only the master pages the owner and the pane stays peekable. `-n` names the
-session (`customTitle` in the transcript) so it is findable in the resume picker
-and `lr` later; without it the title is guessed from "read the brief and do it".
+It applies the house defaults for you. It splits the CALLER's pane, so the
+worker cannot land in whatever window the owner happens to be looking at, and
+opens a new window instead when the split has no space. It sets
+`CC_IMESSAGE_SKIP=1` so only the master pages the owner, and
+`CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` so the pane stays peekable. It names
+the session `<id>: <title>` so the worker is findable in the resume picker and
+`lr` later. It passes `--permission-mode auto` and requires `--model` and
+`--effort`, so a worker never inherits the master's model. It registers the
+record with the model and effort BEFORE the worker's first hook, so the worker
+is addressable by name from t=0, including while it sits on a trust prompt. With
+`--brief` it sends the pointer line once that first hook fires. Exit 0 means the
+pane is up; exit 1 means the pane already died, so check the flags.
+
+By hand only for non-Claude agents and one-shot `-p` wrappers:
+`tmux split-window -d -h -P -F '#{pane_id}' -t "$TMUX_PANE" -c "$PWD"
+"CC_IMESSAGE_SKIP=1 HERDLET_ID=<project>/<role> <cmd>"`. `-t "$TMUX_PANE"` is
+not optional there, for the reason above.
+
+Wait in a background shell call, never a sleep loop:
+`herdlet wait --id <id> --state done,blocked,limited --timeout 560 --timeout-ok`.
+`--timeout-ok` makes a timeout exit 0, so the harness does not read it as a
+failed command. `limited` means the worker is sitting on a usage-limit banner:
+do NOT respawn it, its context is intact. Re-check usage, then wait again; it
+resumes on its own at the reset.
+
+Read a finished worker with `herdlet peek --transcript --id <id>` for its last
+message verbatim. Plain `peek` is only for what is on SCREEN right now: a menu,
+a banner, a running command. Long instructions go in a file and are sent as one
+pointer line, or with `herdlet send --id <id> --file <path>`.
 
 Approving a worker's remaining prompt is the orchestrator's call, not the
 owner's: `herdlet approve --id <id> --option <n>` (option 1 = Yes). Use
-`--wait` on it to resume waiting in the same call. Wait on `done,blocked` with
-a long timeout; never poll panes with sleep loops.
+`--wait` on it to resume waiting in the same call.

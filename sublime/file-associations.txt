@@ -1,109 +1,57 @@
-# Types opened by default in Sublime Text. scripts/setup-sublime.sh feeds each
-# non-comment line to `duti -s <bundle> <line> all`. A line is a UTI or a bare
-# file extension (no dot). Edit + re-run `make sublime` to apply.
+# Types opened by default in Sublime Text. scripts/setup-sublime.sh sets the
+# LaunchServices handler for each non-comment line, skipping the ones already
+# pointing at Sublime. Edit + re-run `make sublime` to apply.
+#
+# A line is a UTI or a bare file extension (no dot). Extensions are resolved to
+# a UTI before anything is written, and an extension no installed app declares
+# has no real UTI - it resolves to a throwaway `dyn.*` type that LaunchServices
+# will not attach a handler to. That covers most of what you would want here
+# (.rs, .go, .toml, .lua, .tf, ...): those files have no default opener to set,
+# so listing them does nothing. Prefer UTIs; keep the list to types that exist.
 
 # Broad categories. public.text is wide (also catches .rtf etc.); drop it if you
-# want only plain text + code.
+# want only plain text + code. Neither cascades to a child type another app
+# claims by name, which is why the specific types below are listed too.
 public.plain-text
 public.text
 public.source-code
 
-# Types with their own UTI that the broad categories above can miss.
+# Markup and data.
 public.json
 public.xml
-public.shell-script
-public.python-script
+public.yaml
 net.daringfireball.markdown
+public.css
+public.patch-file
+com.apple.log
 
-# Extensions (belt-and-suspenders for anything the UTIs miss).
-txt
-text
-log
-md
-markdown
-mdown
-mkd
-rst
-json
-json5
-jsonc
-yaml
-yml
-toml
-xml
-ini
-cfg
-conf
-properties
-env
-html
-htm
-css
-scss
-sass
-less
-js
-jsx
-mjs
-cjs
-ts
-tsx
-vue
-svelte
-sh
-bash
-zsh
-fish
-ps1
-py
-rb
-go
-rs
-c
-h
-cc
-cpp
-cxx
-hpp
-swift
-java
-kt
-kts
-scala
-clj
-cljs
-lua
-pl
-pm
-php
-r
-jl
-dart
-groovy
-gradle
-ex
-exs
-erl
-hs
-m
-mm
-sql
-graphql
-gql
-proto
-diff
-patch
-tf
-tfvars
-hcl
-nix
-cmake
-mk
-editorconfig
-gitignore
-gitattributes
+# Scripts.
+public.shell-script
+public.bash-script
+public.zsh-script
+public.python-script
+public.ruby-script
+public.perl-script
+public.php-script
+com.netscape.javascript-source
 
-# Spreadsheet-ish text; uncomment to open these in Sublime too.
-# csv
-# tsv
-# plist
+# Compiled-language sources.
+public.c-source
+public.c-header
+public.c-plus-plus-source
+public.c-plus-plus-header
+public.objective-c-source
+public.objective-c-plus-plus-source
+public.swift-source
+com.sun.java-source
+
+# Deliberately left out:
+#
+# - public.html. Setting it makes double-clicking an .html file open an editor
+#   instead of the browser, and takes the browser's file handling with it.
+#   Uncomment if that is what you want.
+# - `ts`. TypeScript has no UTI of its own; the extension resolves to
+#   public.mpeg-2-transport-stream, so listing it hijacks video files instead.
+# - `r`. Resolves to com.apple.rez-source (Rez, not R).
+# - Spreadsheet-ish text: public.comma-separated-values-text,
+#   public.tab-separated-values-text, com.apple.property-list.

@@ -63,7 +63,8 @@ Installed as a cask via `brew/Brewfile.apps`. `scripts/setup-sublime.sh` (run by
 
 - Bootstraps Package Control by dropping `Package Control.sublime-package` into `~/Library/Application Support/Sublime Text/Installed Packages/`.
 - Seeds (or merges) `installed_packages` into that app's User settings from `sublime/Package Control.sublime-settings`; Package Control installs any listed-but-missing package on launch.
-- Sets Sublime as the macOS default opener for text + code files via `duti` (from `brew/Brewfile.apps`); the type list lives in `sublime/file-associations.txt` (edit + re-run `make sublime`). Standalone `make sublime` needs `duti` present, so run `make apps` first on a new machine.
+- Sets Sublime as the macOS default opener for text + code files; the type list lives in `sublime/file-associations.txt` (edit + re-run `make sublime`). Reads the current handler with `duti` (from `brew/Brewfile.apps`), so standalone `make sublime` needs `duti` present - run `make apps` first on a new machine. Only types that differ are written, so a re-run on a provisioned machine changes nothing.
+  - It writes them into the LaunchServices handler table (`defaults export`/`import` on `com.apple.launchservices.secure`, then `killall lsd`) rather than calling `duti -s`. macOS makes the user confirm every handler change that goes through the LaunchServices API, one modal Finder dialog per type, which on a fresh machine meant ~30 stacked dialogs over the terminal.
 - First launch on a new machine bootstraps Package Control (one-time dependency migration; it may prompt to restart Sublime). Quit and reopen once and the listed packages install. This is Package Control's own bootstrap, unavoidable with any install method.
 - To add a package: install it once (`Package Control: Install Package`), add its name to `sublime/Package Control.sublime-settings`, commit, and re-run `make sublime` on other machines.
 

@@ -16,9 +16,13 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `y` | `yazi` |
 | `cc` | `claude`; `cc <text>` starts Claude with that prompt; `cc -<flag>` passes flags through; `cc -eh/-ex/-em` = `--effort high/xhigh/max` |
 | `ccx` | `claude --dangerously-skip-permissions` |
-| `cx` | `codex` |
+| `ccf` / `cco` | `cc` on Fable 5.1 / the same plus the orchestrator system prompt (`cc -o`, which dispatches herdlet workers) |
+| `cx` / `cxx` | `codex` / `codex --dangerously-bypass-approvals-and-sandbox` |
+| `lr` | List the coding-agent sessions started in this directory (Claude + Codex), newest first, with title and age; `Enter` resumes one |
+| `pp` | Prompt picker: choose a line from `~/.prompt.local`, choose the agent (claude/codex/opencode), fill any `$1:name` tokens, run it (`-em` = effort max) |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |
+| `lq [-r]` | Open lazysql on this repo's database: finds the repo's running postgres/mysql/mssql container and builds the URL from its port binding and env creds, else a sqlite file in the repo, else the bare picker (`-r` read-only) |
 | `box` | `maestral` (Dropbox client; sign in with `box auth link`) |
 | `x` | `clear` |
 | `xx` | `exit` |
@@ -176,6 +180,56 @@ Cmd never reaches the pty, so the window and session chords (`Cmd+1`..`Cmd+9`,
 as user-keys. The two files have to be kept in sync.
 
 Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t` (or `scripts/theme-toggle.sh` outside tmux): it rewrites `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live) and repaints the running terminal via OSC. No splits/tabs - use tmux.
+
+---
+
+## Hammerspoon
+
+`init.lua` loads seven modules from `hammerspoon/.hammerspoon`. Three own a
+trigger key, one remaps two keys, two run with no keys at all.
+
+### Rcmd launcher (hold right-Command)
+
+Hold **right** Command (the left one is untouched) and tap a key. Hold it for
+half a second without tapping to get an overlay of every binding. A key mapped
+to more than one app opens a picker, chosen with `1`-`9` / `0`.
+
+| Key | Target |
+|---|---|
+| `a` / `z` | Alacritty / Firefox (both fullscreen) |
+| `c` / `m` / `f` | Calendar / Mail / Finder |
+| `i` | iPhone Mirroring |
+| `t` / `s` | TablePlus / Sublime Text |
+| `u` / `w` | UURemote / WeChat |
+| `o` | Open the front Finder window's folder in Alacritty |
+| `q` | `vi ~/box/notes.txt` in Alacritty |
+| `n` | Notification Center |
+| `0` / `1` / `2` / `3` | Window: maximize / left half / right half / two-thirds |
+| `` ` `` | Move the window to the next screen |
+| `/` | Toggle "use F1, F2, etc. as standard function keys" (alerts which mode it landed in) |
+
+The map lives in `rcmd.config.lua`; a value can be an app name, a bundle ID, a
+list of apps, or one of the named actions.
+
+### Homerow navigation
+
+| Key | Action |
+|---|---|
+| `C-,` | Hint mode: yellow labels on the actionable elements of the focused window, type a label to click it |
+| `C-/` | Same, but right-click the element (labels tinted blue) |
+| `C-.` | Scroll mode: `j/k/h/l` scroll (`Shift` faster), `d`/`u` half page, `Space`/`S-Space` full page, `g`/`G` top/bottom, `Esc` exits. A window with several scrollable panes asks which one first (`1`/`2`/...) |
+
+### Other triggers
+
+| Key | Action |
+|---|---|
+| `Option+Space` | Raycast-lite palette: run an Apple Shortcut, or a quick link from `raycast.config.lua` (`{query}` placeholders) |
+| `Cmd+Shift+S` | Selection OCR: drag a rectangle, and its text (Japanese + English, via Apple's Vision framework) lands on the clipboard |
+| `F1` / `F2` | Escape / backtick, for an Apple Wireless Keyboard whose own keys are broken. Needs the standard-function-keys setting on, which `rcmd + /` toggles |
+
+No keys of their own: `input_source` switches the macOS input source per app
+(`input_source.config.lua`), and `uuremote_lock` starts the screen saver when a
+UURemote session disconnects, so the lock screen keeps Fliqlo.
 
 ---
 

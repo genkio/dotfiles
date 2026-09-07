@@ -202,5 +202,6 @@
   "editorMode": "vim",
   "autoScrollEnabled": false,
   "skipAutoPermissionPrompt": true,
-  "disableDeepLinkRegistration": "disable"
+  "disableDeepLinkRegistration": "disable",
+  "diffsidebarOpen": false
 }

@@ -103,7 +103,13 @@ tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-us
 # bar prints the same numbers one row up. Status formats expand against the
 # session's current pane, so this flips per window with no hook. *ssh* also
 # catches autossh/sshpass.
-tmux set-option -g status-right "#{?#{m:*ssh*,#{pane_current_command}},,#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]}"
+#
+# @usage_hidden is the prefix+u toggle: gate the format rather than rewrite
+# status-right, else a theme flip re-running this script resurrects a hidden
+# bar. tmux expands only the taken branch, so hiding stops the usage fetch as
+# well, exactly like an ssh pane already does.
+usage_segment="#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]"
+tmux set-option -g status-right "#{?#{||:#{@usage_hidden},#{m:*ssh*,#{pane_current_command}}},,$usage_segment}"
 
 # Chip shown by the F12 off-mode binding (see .tmux.conf). Published as an
 # option so the colour tracks the theme without the binding hardcoding one.

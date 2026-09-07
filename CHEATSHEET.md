@@ -90,7 +90,10 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix b` | Break pane out into its own window here (auto-rebalance) |
 | `prefix B` | Break pane out into a brand-new session |
 | `prefix G` | Gather current window back into the default (`tmp`) session |
-| `prefix T` | Set/edit pane label |
+| `prefix t` | Toggle light/dark theme (tmux + nvim + lazygit + the terminal) |
+| `prefix T` | Date/time/uptime/calendar popup |
+| `prefix u` | Show/hide the coding-agent usage block on the right status line (hidden also stops the usage fetch) |
+| `prefix C` | Set/edit pane label |
 | `prefix P` | Copy the first number found in the pane label to clipboard |
 | `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
 | `prefix a` | fzf file picker (starts in `~/box`); pastes the chosen path into the pane to attach it to Claude Code / Codex |
@@ -113,7 +116,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `M-0` | Jump to the highest-numbered window |
 | `C-/` (or `C-_`) | Toggle copy-mode |
 
-Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage` (disabled by default), `genkio/tmux-spoony`. Resurrect captures pane contents; save/restore is manual via `prefix C-s` / `prefix C-r`.
+Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage`, `genkio/tmux-spoony`, `genkio/tmux-gh-pr`. Resurrect captures pane contents; save/restore is manual via `prefix C-s` / `prefix C-r`. open-usage's own status injection is off (`@tmux_open_usage_enabled off`) because `tmux/bin/apply-theme.sh` inlines its script into `status-right` instead, to pick up the theme colour; `prefix u` hides that block.
 
 **Copy mode (vi keys)**
 

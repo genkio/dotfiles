@@ -76,6 +76,12 @@ pane_state_inactive='#{?#{==:#{@agent_pane_state},attention},fg='"$attention"',#
 tmux set-option -g pane-border-style "$pane_state_inactive"
 tmux set-option -g pane-active-border-style "fg=$active_border"
 
+# popups (prefix + a file picker, prefix + C clock) default to the terminal's
+# own colors, which after an OSC flip is whatever it was at attach time. Name
+# them so an overlay never lands light-on-light.
+tmux set-option -g popup-style "bg=$term_bg,fg=$fg"
+tmux set-option -g popup-border-style "fg=$border,bg=$term_bg"
+
 tmux set-option -g status-style "bg=$bg,fg=$fg"
 tmux set-option -g status-left-style "bg=$bg,fg=$fg"
 tmux set-option -g status-right-style "bg=$bg,fg=$fg"
@@ -88,18 +94,11 @@ busy_hex="${busy#\#}"
 # is healthy - it only names the signals worth a look (cpu, ram, net, dropbox,
 # battery). Pass the palette so its tints track the theme.
 tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh $muted_hex $attention_hex $busy_hex)#[default]"
-# The clock is the first thing to drop on a narrow client (iPhone SSH app, a
-# half-width local window): it costs 8 columns and the phone already shows one.
-# tmux expands status-right once per client, so #{client_width} is that client's
-# own terminal, and a wide Mac client keeps the clock while a phone attached to
-# the same session doesn't.
-# tmux's #{>=:} compares as strings ("89" >= "100" is true), so subtract and
-# look for a minus sign instead.
-clock_min_width=100
-clock="#{?#{m:-*,#{e|-:#{client_width},$clock_min_width}},, [%H:%M]}"
+# No clock here: it cost 8 permanent columns to answer a question asked a few
+# times a day, and prefix + C now opens a popup with the date and calendar too.
 # open_usage_status.sh inlined, not the plugin's auto-inject (@tmux_open_usage_enabled
 # off), so it takes the theme color instead of the plugin's fixed gray and never dupes.
-tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]$clock"
+tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]"
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"

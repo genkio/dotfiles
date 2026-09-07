@@ -349,6 +349,7 @@ local function actionTargetLabel(actionTarget, actionOptions)
     window_maximize = "Action: Enter Full Screen",
     window_next_screen = "Action: Move Window to Next Screen",
     finder_in_alacritty = "Action: Open Finder Path in Alacritty",
+    toggle_fn_keys = "Action: Toggle Standard Function Keys",
   }
 
   if actionTarget == "run_in_alacritty" and actionOptions and type(actionOptions.command) == "string" then
@@ -1291,6 +1292,66 @@ local function runCommandInAlacritty(command)
   end
 end
 
+-- Flipping "Use F1, F2, etc. keys as standard function keys" needs an
+-- IOHIDSystem parameter write, which Lua can't do; bin/fnstate.c explains why
+-- the defaults key alone is not enough. Build it on demand and cache it next to
+-- the source so the repo stays source-only.
+local fnStateSourceName = "bin/fnstate.c"
+local fnStateBinaryName = "bin/fnstate"
+
+local function fnStateBinaryPath()
+  for _, directory in ipairs(sourceDirectories()) do
+    local source = directory .. "/" .. fnStateSourceName
+
+    if hs.fs.attributes(source) then
+      local binary = directory .. "/" .. fnStateBinaryName
+      local binaryAttributes = hs.fs.attributes(binary)
+      local sourceAttributes = hs.fs.attributes(source)
+
+      if binaryAttributes and binaryAttributes.modification >= sourceAttributes.modification then
+        return binary
+      end
+
+      -- IOHIDGetParameter/IOHIDSetParameter are deprecated but unreplaced.
+      local command = ("/usr/bin/clang -O2 -Wno-deprecated-declarations -o %q %q -framework CoreFoundation -framework IOKit 2>&1"):format(
+        binary,
+        source
+      )
+      local output, status = hs.execute(command)
+
+      if not status then
+        return nil, "could not build fnstate: " .. tostring(output)
+      end
+
+      return binary
+    end
+  end
+
+  return nil, "bin/fnstate.c not found next to rcmd.lua"
+end
+
+local function toggleStandardFunctionKeys()
+  local binary, buildError = fnStateBinaryPath()
+
+  if not binary then
+    hs.alert.show("Could not change function key mode")
+    print("-- rcmd: " .. tostring(buildError))
+    return
+  end
+
+  local output, status = hs.execute(("%q toggle 2>&1"):format(binary))
+
+  if not status then
+    hs.alert.show("Could not change function key mode")
+    print("-- rcmd: fnstate failed: " .. tostring(output))
+    return
+  end
+
+  local enabled = tostring(output or ""):gsub("%s+", "") == "1"
+
+  hs.alert.show(enabled and "F-keys: standard function keys" or "F-keys: media controls")
+end
+
 local function runAction(actionTarget, actionOptions)
   local actionHandlers = {
     notification_center = function()
@@ -1318,6 +1379,7 @@ local function runAction(actionTarget, actionOptions)
       moveFocusedWindowToNextScreen("No focused window to move")
     end,
     finder_in_alacritty = openFinderPathInAlacritty,
+    toggle_fn_keys = toggleStandardFunctionKeys,
     run_in_alacritty = function()
       runCommandInAlacritty(actionOptions and actionOptions.command)
     end,

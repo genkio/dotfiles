@@ -10,6 +10,7 @@ return {
   ["2"] = { action = "window_right" },
   ["3"] = { action = "window_two_thirds" },
   ["`"] = { action = "window_next_screen" },
+  ["/"] = { action = "toggle_fn_keys" },
   a = { app = "Alacritty", fullscreen = true },
   c = "Calendar",
   f = "Finder",

@@ -25,3 +25,5 @@ git/.gitconfig.local
 skills/.DS_Store
 !claude/.claude/prompts/
 !claude/.claude/prompts/**
+
+hammerspoon/.hammerspoon/bin/fnstate

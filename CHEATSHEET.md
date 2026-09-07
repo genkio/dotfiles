@@ -90,6 +90,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix b` | Break pane out into its own window here (auto-rebalance) |
 | `prefix B` | Break pane out into a brand-new session |
 | `prefix G` | Gather current window back into the default (`tmp`) session |
+| `prefix p` / `prefix n` | Previous / next session (repeatable, so hold the prefix and keep tapping) |
 | `prefix t` | Toggle light/dark theme (tmux + nvim + lazygit + the terminal) |
 | `prefix T` | Date/time/uptime/calendar popup |
 | `prefix u` | Show/hide the coding-agent usage block on the right status line (hidden also stops the usage fetch) |
@@ -98,6 +99,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix F` | fzf file picker (starts in `~/box`); pastes the chosen path into the pane to attach it to Claude Code / Codex |
 | `prefix P` | Same for the macOS Photos library: fzf over recent photos with viu previews (`^o` fetches an iCloud original) |
 | `prefix V` | Attach the clipboard image to the pane: pulls it over the tailnet when the pane is on a machine you ssh'd into |
+| `prefix m` | Render the copy-mode selection as a Mermaid diagram in the browser (select in copy mode first; clipboard untouched) |
 | `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |
 | `prefix I` | Install tmux plugins (`tpm`) |
 | `prefix q` | Show pane index numbers (press a number to jump) |
@@ -107,14 +109,19 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | Key | Action |
 |---|---|
 | `C-z` / `C-Up` | Toggle pane zoom |
+| `C-x` / `C-y` | Half zoom: fill the column (full height) / fill the row (full width). Per-axis and per-pane, so a left and a right pane can both be maxed |
 | `C-h/j/k/l` | Navigate between panes |
 | `C-Down` | Choose a window from a tree (same as `prefix w`) |
+| `C-v` | Same tree, for terminals that swallow ctrl+arrow; tap again to enter the highlighted window |
 | `S-Left` / `S-Right` | Previous / next window |
 | `C-p` / `C-n` | Previous / next window |
 | `C-S-Left` / `C-S-Right` | Reorder window left / right |
-| `M-1` .. `M-9` | Jump to window 1-9 |
-| `M-0` | Jump to the highest-numbered window |
+| `Cmd+1` .. `Cmd+8` | Jump to window index 0-7 (Alacritty translates the chord, see below) |
+| `Cmd+9` | Jump to the last window (`Cmd+0` is left to Alacritty's font-size reset) |
+| `Cmd+Shift+n` / `Cmd+Shift+p` | Next / previous session |
+| `C-Right` | Arm the prefix, for one-tap leader on a phone keyboard |
 | `C-/` (or `C-_`) | Toggle copy-mode |
+| `F12` | Nested tmux: put the local (outer) server to sleep so every key reaches the inner session; `F12` again wakes it (a chip on status-left marks the sleeping state) |
 
 Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage`, `genkio/tmux-spoony`, `genkio/tmux-gh-pr`. Resurrect captures pane contents; save/restore is manual via `prefix C-s` / `prefix C-r`. open-usage's own status injection is off (`@tmux_open_usage_enabled off`) because `tmux/bin/apply-theme.sh` inlines its script into `status-right` instead, to pick up the theme colour; `prefix u` hides that block.
 
@@ -125,11 +132,12 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage`, `genkio/tmux-spoo
 | `y` | Copy selection verbatim (stays in copy mode, OSC52) |
 | `Y` | Copy selection joined into one line (drops TUI padding + soft-wrap breaks) |
 | `Enter` | Copy selection (stays in copy mode, OSC52) |
-| `m` | Render the selected Mermaid source as box art in the browser (clipboard untouched) |
 | Mouse drag | Copy on drag end (OSC52) |
 
-When the tmux server itself is remote, `prefix o` and copy-mode `m` copy the URL to
-your local clipboard (OSC52) instead of opening a browser on the far end.
+The Mermaid renderer is `prefix m`, not a bare `m` (the prefix table stays
+reachable from copy mode, and default `m`, mark-pane, is unbound). When the tmux
+server itself is remote, `prefix o` and `prefix m` copy the URL to your local
+clipboard (OSC52) instead of opening a browser on the far end.
 
 `prefix V` covers the other direction, where the clipboard is local and the agent
 is remote: an ssh pty carries only text, so it reads `$SSH_CLIENT`, ssh's back to
@@ -159,8 +167,13 @@ Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
 | Key | Action |
 |---|---|
 | `Shift+Enter` | Insert newline (multi-line prompt) |
-| `Cmd+Shift+Space` | Toggle vi mode |
+| `Cmd+Shift+Space` | Toggle vi mode (not the default `C-S-Space`, which a CJK input method eats) |
 | `Cmd+Shift+Y` | Join the clipboard into one line (after a vi-mode `y`, strips TUI padding + soft-wrap breaks) |
+| `Cmd+Shift+u/d/j/k` | Scroll the Claude Code transcript (sent as the alt+shift encoding, which tmux forwards untouched) |
+
+Cmd never reaches the pty, so the window and session chords (`Cmd+1`..`Cmd+9`,
+`Cmd+Shift+n/p`) are emitted here as private escapes and caught in `.tmux.conf`
+as user-keys. The two files have to be kept in sync.
 
 Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t` (or `scripts/theme-toggle.sh` outside tmux): it rewrites `~/.cache/dotfiles/alacritty-theme-active.toml` (Alacritty reloads it live) and repaints the running terminal via OSC. No splits/tabs - use tmux.
 
@@ -217,9 +230,10 @@ Inline blame is OFF by default. Signs: `+` add, `~` change, `_` delete.
 | `]c` / `[c` | Next / previous git hunk (built-in diff-change nav inside a diff) |
 | `<leader>gp` | Preview the current hunk |
 | `<leader>gb` | Blame the current line |
-| `<leader>gB` | Open the GitHub PR for the blamed line's commit (needs `gh`) |
+| `<leader>go` | Open the GitHub PR for the current branch (needs `gh`) |
+| `<leader>gO` | Open the GitHub PR for the blamed line's commit (needs `gh`) |
 | `<leader>lg` | Open LazyGit (default layout, command log hidden) |
-| `<leader>lG` | Open LazyGit (compact layout for small screens) |
+| `<leader>lf` | Open LazyGit (folded layout: narrows the side panels for small screens) |
 | `:LazyGit` | Open LazyGit (default layout) |
 
 ### Motion & jumps (Flash)
@@ -250,6 +264,8 @@ Inside Markdown files in an Obsidian/Logseq-style vault (detected by `.obsidian/
 | Key | Action |
 |---|---|
 | `<leader>yr` | Copy file path + line range to clipboard, `$HOME`-relative (normal & visual) |
+| `<leader>yR` | Copy the file's directory path to clipboard, `$HOME`-relative |
+| `<leader>r` (visual) | Reflow: unwrap a hard-wrapped selection into one paragraph line |
 | `<C-g>` | Show current file info (path, line count, position) on the command line |
 | `Q` | Quit all windows (prompts to save/discard on unsaved changes) |
 | `<Esc>` | Clear search highlight, the automatic cursor-word highlight, and the search counter |

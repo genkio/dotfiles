@@ -94,9 +94,9 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix T` | Date/time/uptime/calendar popup |
 | `prefix u` | Show/hide the coding-agent usage block on the right status line (hidden also stops the usage fetch) |
 | `prefix C` | Set/edit pane label |
-| `prefix P` | Copy the first number found in the pane label to clipboard |
 | `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
-| `prefix a` | fzf file picker (starts in `~/box`); pastes the chosen path into the pane to attach it to Claude Code / Codex |
+| `prefix F` | fzf file picker (starts in `~/box`); pastes the chosen path into the pane to attach it to Claude Code / Codex |
+| `prefix P` | Same for the macOS Photos library: fzf over recent photos with viu previews (`^o` fetches an iCloud original) |
 | `prefix V` | Attach the clipboard image to the pane: pulls it over the tailnet when the pane is on a machine you ssh'd into |
 | `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |
 | `prefix I` | Install tmux plugins (`tpm`) |
@@ -137,6 +137,18 @@ that mac over the tailnet to dump the clipboard image, caches it in
 `~/.cache/tmux-clip` (pruned after 7 days) and pastes that path. Peer account
 names come from `@clip_ssh_users` in `.tmux.conf`, since `$SSH_CLIENT` is only an
 IP; both machines need Tailscale SSH (`scripts/tailscale-up.sh`).
+
+`prefix P` is `prefix F` against the Photos library, which no file picker can
+walk: the listing is a read-only query of the library's sqlite db (so the
+terminal needs Full Disk Access) and previews are viu block art, Alacritty
+having no graphics protocol. What you pick is copied into `~/.cache/tmux-photo`
+(pruned after 7 days), HEIC converted by sips, because the bundle path holds a
+space the bare-path paste cannot carry. With iCloud "Optimize Mac Storage" most
+originals are not on the mac at all: those rows are marked `☁`, the preview
+names the resolution `Enter` would really attach (about a third of recent rows
+have only a ~480px thumbnail), and `^o` asks Photos.app to fetch the true
+original, which raises a one-time permission prompt. `ATTACH_PHOTO_LIMIT`
+changes how many recent photos are listed (500).
 
 ---
 

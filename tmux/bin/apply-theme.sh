@@ -76,7 +76,7 @@ pane_state_inactive='#{?#{==:#{@agent_pane_state},attention},fg='"$attention"',#
 tmux set-option -g pane-border-style "$pane_state_inactive"
 tmux set-option -g pane-active-border-style "fg=$active_border"
 
-# popups (prefix + a file picker, prefix + C clock) default to the terminal's
+# popups (prefix + F/P pickers, prefix + T clock) default to the terminal's
 # own colors, which after an OSC flip is whatever it was at attach time. Name
 # them so an overlay never lands light-on-light.
 tmux set-option -g popup-style "bg=$term_bg,fg=$fg"

@@ -115,7 +115,6 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `C-x` / `C-y` | Half zoom: fill the column (full height) / fill the row (full width). Per-axis and per-pane, so a left and a right pane can both be maxed |
 | `C-h/j/k/l` | Navigate between panes |
 | `C-Down` | Choose a window from a tree (same as `prefix w`) |
-| `C-v` | Same tree, for terminals that swallow ctrl+arrow; tap again to enter the highlighted window |
 | `S-Left` / `S-Right` | Previous / next window |
 | `C-p` / `C-n` | Previous / next window |
 | `C-S-Left` / `C-S-Right` | Reorder window left / right |

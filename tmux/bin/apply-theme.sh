@@ -84,8 +84,9 @@ tmux set-option -g status-right-style "bg=$bg,fg=$fg"
 muted_hex="${muted#\#}"
 attention_hex="${attention#\#}"
 busy_hex="${busy#\#}"
-# status-usage.sh owns every conditional color in the left block (cpu offline,
-# ram maestral/dropbox state, low battery); pass the palette so tints track the theme.
+# status-usage.sh owns the whole left block and prints nothing while the machine
+# is healthy - it only names the signals worth a look (cpu, ram, net, dropbox,
+# battery). Pass the palette so its tints track the theme.
 tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh $muted_hex $attention_hex $busy_hex)#[default]"
 # The clock is the first thing to drop on a narrow client (iPhone SSH app, a
 # half-width local window): it costs 8 columns and the phone already shows one.

@@ -19,7 +19,6 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `ccf` / `cco` | `cc` on Fable 5.1 / the same plus the orchestrator system prompt (`cc -o`, which dispatches herdlet workers) |
 | `cx` / `cxx` | `codex` / `codex --dangerously-bypass-approvals-and-sandbox` |
 | `lr` | List the coding-agent sessions started in this directory (Claude + Codex), newest first, with title and age; `Enter` resumes one |
-| `pp` | Prompt picker: choose a line from `~/.prompt.local`, choose the agent (claude/codex/opencode), fill any `$1:name` tokens, run it (`-em` = effort max) |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |
 | `lq [-r]` | Open lazysql on this repo's database: finds the repo's running postgres/mysql/mssql container and builds the URL from its port binding and env creds, else a sqlite file in the repo, else the bare picker (`-r` read-only) |

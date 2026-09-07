@@ -98,7 +98,18 @@ tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-us
 # times a day, and prefix + C now opens a popup with the date and calendar too.
 # open_usage_status.sh inlined, not the plugin's auto-inject (@tmux_open_usage_enabled
 # off), so it takes the theme color instead of the plugin's fixed gray and never dupes.
-tmux set-option -g status-right "#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]"
+#
+# Blank on an ssh pane: the remote runs these same dotfiles, so its own status
+# bar prints the same numbers one row up. Status formats expand against the
+# session's current pane, so this flips per window with no hook. *ssh* also
+# catches autossh/sshpass.
+tmux set-option -g status-right "#{?#{m:*ssh*,#{pane_current_command}},,#[fg=$muted]#(~/.tmux/plugins/tmux-open-usage/scripts/open_usage_status.sh)#[default]}"
+
+# Chip shown by the F12 off-mode binding (see .tmux.conf). Published as an
+# option so the colour tracks the theme without the binding hardcoding one.
+# The blue is the active-border accent, deliberately not `attention` red or
+# `busy` orange: those two mean "an agent needs you" everywhere else.
+tmux set-option -g @off_chip "#[bg=$active_border,fg=$term_bg,bold] ⇥ REMOTE (F12) #[default]"
 
 tmux set-option -g window-status-style "bg=$bg,fg=$fg"
 tmux set-option -g window-status-current-style "bg=$current_bg,fg=$current_fg"

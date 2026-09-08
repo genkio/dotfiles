@@ -43,4 +43,9 @@ require("selection_ocr").start()
 require("homerow").start()
 require("fkey_remap").start()
 require("input_source").start()
-require("uuremote_lock").start()
+if hs.fs.attributes("/Applications/UURemote.app", "mode") == "directory" then
+  require("uuremote_lock").start()
+  if package.searchpath("uuremote_monitor", package.path) then
+    require("uuremote_monitor").start()
+  end
+end

@@ -9,20 +9,13 @@
 
 local M = {}
 
-local POLL_SECONDS = 2
+local probe = require("uuremote_probe")
 local DISCONNECT_POLLS = 2
-
-local PROBE = [[
-lsof -nP -iTCP -a -c UURemoteS 2>/dev/null | awk '
-  /ESTABLISHED/ && $9 !~ /:443$/ { n++ }
-  END { print n + 0 }'
-]]
 
 local connected = false
 local zeroPolls = 0
 local locked = false
 local saverRunning = false
-local inFlight = false
 
 local function log(message)
   print("-- uuremote-lock: " .. message)
@@ -39,6 +32,10 @@ local function onDisconnected()
 end
 
 local function handleCount(count)
+  if count == nil then
+    zeroPolls = 0
+    return
+  end
   if count > 0 then
     zeroPolls = 0
     if not connected then
@@ -60,24 +57,6 @@ local function handleCount(count)
   end
 end
 
-local function poll()
-  if inFlight then
-    return
-  end
-  inFlight = true
-
-  hs.task
-    .new("/bin/sh", function(code, stdout)
-      inFlight = false
-      if code ~= 0 then
-        log("probe failed with exit " .. tostring(code))
-        return
-      end
-      handleCount(tonumber(stdout) or 0)
-    end, { "-c", PROBE })
-    :start()
-end
-
 function M.start()
   M.watcher = hs.caffeinate.watcher.new(function(event)
     local w = hs.caffeinate.watcher
@@ -93,8 +72,10 @@ function M.start()
   end)
   M.watcher:start()
 
-  M.timer = hs.timer.doEvery(POLL_SECONDS, poll)
-  poll()
+  probe.subscribe(function(sample)
+    handleCount(sample and sample.peerCount or nil)
+  end)
+  probe.start()
 end
 
 return M

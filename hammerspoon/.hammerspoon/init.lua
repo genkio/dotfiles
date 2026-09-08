@@ -41,7 +41,6 @@ require("rcmd").start()
 require("raycast").start()
 require("selection_ocr").start()
 require("homerow").start()
-require("fkey_remap").start()
 require("input_source").start()
 if hs.fs.attributes("/Applications/UURemote.app", "mode") == "directory" then
   require("uuremote_lock").start()

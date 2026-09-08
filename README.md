@@ -32,6 +32,7 @@ Install stow:
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
 - Optional app packages: `stow hammerspoon`, then `make sublime` to enable Sublime's Package Control and auto-install packages
 - Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
+- Herdr (terminal workspace manager): `mkdir -p ~/.config/herdr && stow herdr`
   - Both restore scripts also stow the shared `skills/` package into `~/.claude/skills/` and `~/.codex/skills/` so coding-agent skills are kept in one place.
 - Yazi: `stow yazi`
 

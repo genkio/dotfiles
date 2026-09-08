@@ -66,6 +66,7 @@ Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-subli
 | `alacritty` | `~/.config/alacritty/` | Terminal emulator (Flexoki Light / TokyoNight Storm). Run `scripts/apply-alacritty-theme.sh` after stow to seed the active theme; light/dark is driven by `theme-toggle.sh` (tmux `prefix + t`), which rewrites the active theme and repaints the running terminal via OSC |
 | `mise` | `~/.config/mise/` | Polyglot version manager (node/python/go/uv + global npm CLIs) |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; the whole package is linked (`settings.json`, `statusline-command.sh`, `keybindings.json`, plus the `rules/` and `hooks/` dirs) |
+| `herdr` | `~/.config/herdr/config.toml` | Terminal workspace manager replacing tmux; only `config.toml` is linked because herdr keeps logs, sockets and `session.json` in the same dir. Agent-state hooks live in the `claude` / `codex` packages (`herdr-agent-state.sh`, herdr-managed: `herdr integration install` overwrites them through the symlink) |
 | `vim` | `~/.vimrc` | Config for the OS-shipped `/usr/bin/vim`; `vi` is shadowed to nvim via `zsh/.zsh_aliases` |
 
 ## Neovim Config

@@ -42,8 +42,11 @@ cd "$REPO_ROOT"
 # them as symlinks (mpv writes runtime state into its config dir; skills
 # stow into nested per-agent dirs).
 mkdir -p "$HOME/.config/mpv"
-mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
+mkdir -p "$HOME/.claude" "$HOME/.claude/skills" "$HOME/.claude/hooks"
 mkdir -p "$HOME/.codex" "$HOME/.codex/skills"
+# herdr writes logs, sockets and session.json next to config.toml, so the dir
+# must exist as a real dir or stow would fold it into a symlink.
+mkdir -p "$HOME/.config/herdr"
 
 # Progress goes to stderr, where `stow -v` also writes, so the two stay
 # interleaved in a combined capture. A caller filtering that output needs to
@@ -59,7 +62,7 @@ run_stow() {
 }
 
 # Packages that stow straight to $HOME with no guards.
-HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon mise claude codex vim)
+HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon mise claude codex herdr vim)
 run_stow "$HOME" "into ~: ${HOME_PKGS[*]}" "${HOME_PKGS[@]}"
 
 # ssh and git: skip when a real file already exists at the target so we

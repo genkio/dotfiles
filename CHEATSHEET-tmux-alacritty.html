@@ -55,6 +55,10 @@ tr:hover td{background:#FDFCF6}
   border:1px solid var(--ui)}
 .src.pl{background:#F7EAF1;color:var(--magenta);border-color:#EACFDE}
 .src.tm{background:#F0F3E4;color:var(--green);border-color:#DDE3C8}
+.src.hx{background:#FBEAE8;color:var(--red);border-color:#F0CFC9}
+.src.hd{background:#FDF3E7;color:var(--orange);border-color:#EEDCC6}
+.hn{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--tx3);
+  margin-left:5px;white-space:normal}
 
 .notes{background:#fff;border:1px solid var(--ui);border-radius:7px;padding:4px 0}
 .notes table td{font-size:13px}
@@ -98,6 +102,16 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   Everything unmarked is custom, from <code>tmux/.tmux.conf</code>,
   <code>tmux/bin/</code>, or <code>alacritty.toml</code>.
 </p>
+<p style="font-size:13px;color:var(--tx2);margin:8px 0 0">
+  <b>Herdr migration.</b> The keymap is ported in
+  <code>herdr/.config/herdr/config.toml</code>, so anything unmarked works the
+  same way there, on the same key.
+  <span class="src hx">no herdr</span> is what herdr cannot do at all;
+  <span class="src hd">herdr</span> is what it does differently, with the
+  difference spelled out next to it. Herdr's prefix is <kbd class="p">C-j</kbd>
+  only: it takes exactly one prefix key, and it never sees a Cmd chord.
+  Herdr calls a tmux window a <b>tab</b> and a tmux session a <b>workspace</b>.
+</p>
 
 <h2>Panes <em>— prefix keys</em></h2>
 <div class="grid">
@@ -107,11 +121,11 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>v</kbd></td><td class="d">Vertical split (side-by-side) in the current path</td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>h</kbd></td><td class="d">Horizontal split (top-bottom) in the current path</td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>b</kbd></td><td class="d">Break the pane out into its own window here, and follow it</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>B</kbd></td><td class="d">Break the pane out into a brand-new session, and follow it</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>G</kbd></td><td class="d">Gather the current window back into the default (<code>tmp</code>) session</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>{</kbd> <kbd>}</kbd></td><td class="d">Swap the pane with the previous / next one<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>E</kbd></td><td class="d">Spread panes out evenly<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-1</kbd>..<kbd>M-7</kbd></td><td class="d">Preset layouts: even-h, even-v, main-h, main-v, tiled, +2 mirrored<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>B</kbd></td><td class="d">Break the pane out into a brand-new session, and follow it<span class="src hx">no herdr</span><i class="hn">no one-command workspace break-out</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>G</kbd></td><td class="d">Gather the current window back into the default (<code>tmp</code>) session<span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>{</kbd> <kbd>}</kbd></td><td class="d">Swap the pane with the previous / next one<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">prefix ⇧H ⇧J ⇧K ⇧L, by direction</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>E</kbd></td><td class="d">Spread panes out evenly<span class="src tm">tmux</span><span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-1</kbd>..<kbd>M-7</kbd></td><td class="d">Preset layouts: even-h, even-v, main-h, main-v, tiled, +2 mirrored<span class="src tm">tmux</span><span class="src hx">no herdr</span><i class="hn">no named layouts; drag borders or prefix ⇧R</i></td></tr>
     </table>
   </div>
   <div class="card">
@@ -119,12 +133,12 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
     <table>
       <tr><td class="k"><kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd></td><td class="d"><b>No prefix.</b> Move left / up / right. There is no <kbd>C-j</kbd> — see the gotcha below</td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>←↑↓→</kbd></td><td class="d">Move in any direction, including down. Repeatable<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>q</kbd></td><td class="d">Show pane index numbers; press a number to jump</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>q</kbd></td><td class="d">Show pane index numbers; press a number to jump<span class="src hd">herdr</span><i class="hn">opens herdr’s goto picker (also prefix g)</i></td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>;</kbd></td><td class="d">Last pane<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-←↑↓→</kbd></td><td class="d">Resize by 5 cells, repeatable (<kbd>C-←↑↓→</kbd> for 1)<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>x</kbd></td><td class="d">Kill the pane, after a <code>y/n</code> confirm. Survivors rebalance</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>X</kbd></td><td class="d">Kill every <b>other</b> pane in the window, after a <code>y/n</code> confirm</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>y</kbd></td><td class="d">Toggle synchronize-panes (type into every pane at once)</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-←↑↓→</kbd></td><td class="d">Resize by 5 cells, repeatable (<kbd>C-←↑↓→</kbd> for 1)<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">C-S-M-arrows for one step, prefix ⇧R for resize mode</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>x</kbd></td><td class="d">Kill the pane, after a <code>y/n</code> confirm. Survivors rebalance<span class="src hd">herdr</span><i class="hn">closes at once, no y/n</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>X</kbd></td><td class="d">Kill every <b>other</b> pane in the window, after a <code>y/n</code> confirm<span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>y</kbd></td><td class="d">Toggle synchronize-panes (type into every pane at once)<span class="src hx">no herdr</span></td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>C</kbd></td><td class="d">Set or edit this pane's label, shown in its border</td></tr>
     </table>
   </div>
@@ -132,9 +146,9 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
     <h3>Zoom <i>no prefix</i></h3>
     <table>
       <tr><td class="k"><kbd>C-z</kbd> / <kbd>C-Up</kbd></td><td class="d"><b>Full zoom</b> toggle. Two keys for one action, so a phone keyboard can reach it</td></tr>
-      <tr><td class="k"><kbd>C-x</kbd></td><td class="d"><b>Half zoom:</b> fill the column (full height)</td></tr>
-      <tr><td class="k"><kbd>C-y</kbd></td><td class="d"><b>Half zoom:</b> fill the row (full width)</td></tr>
-      <tr><td class="k"></td><td class="d">Half zoom is per-axis and per-pane, so a left and a right pane can both be maxed. Press the same key again to restore</td></tr>
+      <tr><td class="k"><kbd>C-x</kbd></td><td class="d"><b>Half zoom:</b> fill the column (full height)<span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd>C-y</kbd></td><td class="d"><b>Half zoom:</b> fill the row (full width)<span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"></td><td class="d">Half zoom is per-axis and per-pane, so a left and a right pane can both be maxed. Press the same key again to restore<span class="src hx">no herdr</span><i class="hn">herdr has full zoom only, so C-x and C-y go back to the shell</i></td></tr>
     </table>
   </div>
 </div>
@@ -148,34 +162,34 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>w</kbd> / <kbd>C-Down</kbd></td><td class="d">Choose a window from a tree</td></tr>
       <tr><td class="k"><kbd>S-Left</kbd> <kbd>S-Right</kbd></td><td class="d">Previous / next window</td></tr>
       <tr><td class="k"><kbd>C-p</kbd> <kbd>C-n</kbd></td><td class="d">Previous / next window</td></tr>
-      <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘8</kbd></td><td class="d">Jump to window index 0-7</td></tr>
-      <tr><td class="k"><kbd class="c">⌘9</kbd></td><td class="d">Jump to the last window</td></tr>
+      <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘8</kbd></td><td class="d">Jump to window index 0-7<span class="src hd">herdr</span><i class="hn">prefix 1..9; Cmd never reaches herdr</i></td></tr>
+      <tr><td class="k"><kbd class="c">⌘9</kbd></td><td class="d">Jump to the last window<span class="src hx">no herdr</span></td></tr>
       <tr><td class="k"><kbd>C-S-Left</kbd> <kbd>C-S-Right</kbd></td><td class="d">Reorder this window left / right</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>l</kbd></td><td class="d">Last window<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>l</kbd></td><td class="d">Last window<span class="src tm">tmux</span><span class="src hx">no herdr</span><i class="hn">no last-tab action</i></td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>,</kbd> / <kbd>&amp;</kbd></td><td class="d">Rename / kill this window<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>f</kbd></td><td class="d">Find a window by name or content<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>f</kbd></td><td class="d">Find a window by name or content<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">prefix g filters by name, not by pane content</i></td></tr>
     </table>
   </div>
   <div class="card">
     <h3>Sessions</h3>
     <table>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>n</kbd></td><td class="d">Next session. Repeatable, so hold the prefix and keep tapping</td></tr>
-      <tr><td class="k"><kbd class="c">⌘⇧N</kbd> <kbd class="c">⌘⇧P</kbd></td><td class="d">Next / previous session. The only two-way pair on a single chord</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>(</kbd> <kbd>)</kbd></td><td class="d">Previous / next session<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="c">⌘⇧N</kbd> <kbd class="c">⌘⇧P</kbd></td><td class="d">Next / previous session. The only two-way pair on a single chord<span class="src hd">herdr</span><i class="hn">prefix n / prefix ⇧P</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>(</kbd> <kbd>)</kbd></td><td class="d">Previous / next session<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">prefix ⇧P / prefix n</i></td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>s</kbd></td><td class="d">Choose a session from a tree<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>L</kbd></td><td class="d">Last session<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>$</kbd></td><td class="d">Rename this session<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>L</kbd></td><td class="d">Last session<span class="src tm">tmux</span><span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>$</kbd></td><td class="d">Rename this session<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">prefix ⇧W</i></td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>d</kbd></td><td class="d">Detach<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>D</kbd></td><td class="d">Choose a client to detach<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k">shell: <code>tx</code></td><td class="d">Attach or create the default session (<code>tmp</code>); <code>tx &lt;name&gt;</code> for a named one, <code>txl</code> to list, <code>txk</code> to kill</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>D</kbd></td><td class="d">Choose a client to detach<span class="src tm">tmux</span><span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k">shell: <code>tx</code></td><td class="d">Attach or create the default session (<code>tmp</code>); <code>tx &lt;name&gt;</code> for a named one, <code>txl</code> to list, <code>txk</code> to kill<span class="src hd">herdr</span><i class="hn"><code>herdr --session &lt;name&gt;</code>, <code>herdr session list|stop</code>; the aliases still point at tmux</i></td></tr>
     </table>
   </div>
   <div class="card">
-    <h3>Nested tmux <i>e.g. over SSH</i></h3>
+    <h3>Nested tmux <i>e.g. over SSH</i><span class="src hx">no herdr</span></h3>
     <table>
       <tr><td class="k"><kbd>F12</kbd></td><td class="d">Put the <b>local (outer)</b> server to sleep, so every key — prefix, arrows, copy mode, mouse — reaches the inner session</td></tr>
       <tr><td class="k"><kbd>F12</kbd> again</td><td class="d">Wake it back up. <kbd>F12</kbd> stays bound while asleep, so you can always get out</td></tr>
-      <tr><td class="k"></td><td class="d">A chip on the left status line marks the sleeping state</td></tr>
+      <tr><td class="k"></td><td class="d">A chip on the left status line marks the sleeping state<span class="src hx">no herdr</span><i class="hn">herdr has no key-passthrough toggle; use <code>herdr --remote</code> or one server per host</i></td></tr>
     </table>
   </div>
 </div>
@@ -187,14 +201,14 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
     <table>
       <tr><td class="k"><kbd>Space</kbd> / <kbd>v</kbd></td><td class="d">Start a selection / toggle block selection<span class="src tm">tmux</span></td></tr>
       <tr><td class="k"><kbd>y</kbd> or <kbd>Enter</kbd></td><td class="d">Copy the selection verbatim. Stays in copy mode</td></tr>
-      <tr><td class="k"><kbd>Y</kbd></td><td class="d">Copy <b>joined into one line</b> — drops TUI left padding and soft-wrap breaks. Use this for anything you'll paste elsewhere</td></tr>
+      <tr><td class="k"><kbd>Y</kbd></td><td class="d">Copy <b>joined into one line</b> — drops TUI left padding and soft-wrap breaks. Use this for anything you'll paste elsewhere<span class="src hx">no herdr</span><i class="hn">herdr copies verbatim only; unwrap after the fact with ⌘⇧Y</i></td></tr>
       <tr><td class="k">Mouse drag</td><td class="d">Copy on drag release</td></tr>
       <tr><td class="k">Double / triple click</td><td class="d">Copy the word / line<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>]</kbd></td><td class="d">Paste the tmux buffer<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>]</kbd></td><td class="d">Paste the tmux buffer<span class="src tm">tmux</span><span class="src hx">no herdr</span><i class="hn">no paste buffer; copies go straight to the system clipboard</i></td></tr>
     </table>
   </div>
   <div class="card">
-    <h3>Grab what's on the line <i>tmux-spoony</i><span class="src pl">plugin</span></h3>
+    <h3>Grab what's on the line <i>tmux-spoony</i><span class="src pl">plugin</span><span class="src hx">no herdr</span></h3>
     <table>
       <tr><td class="k"><kbd>u</kbd></td><td class="d">Select the <b>URL</b> on this line</td></tr>
       <tr><td class="k"><kbd>p</kbd></td><td class="d">Select the <b>path</b> on this line</td></tr>
@@ -208,14 +222,14 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Move and search</h3>
     <table>
-      <tr><td class="k"><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd> <kbd>w</kbd> <kbd>b</kbd> <kbd>e</kbd> <kbd>0</kbd> <kbd>$</kbd> <kbd>^</kbd></td><td class="d">The usual vi motions<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd>g</kbd> / <kbd>G</kbd></td><td class="d">Top / bottom of the scrollback<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd> <kbd>w</kbd> <kbd>b</kbd> <kbd>e</kbd> <kbd>0</kbd> <kbd>$</kbd> <kbd>^</kbd></td><td class="d">The usual vi motions<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">h j k l w b e plus W B E and { }; no 0 $ ^</i></td></tr>
+      <tr><td class="k"><kbd>g</kbd> / <kbd>G</kbd></td><td class="d">Top / bottom of the scrollback<span class="src tm">tmux</span><span class="src hx">no herdr</span></td></tr>
       <tr><td class="k"><kbd>/</kbd> <kbd>?</kbd> then <kbd>n</kbd> <kbd>N</kbd></td><td class="d">Search down / up, then repeat forward / back<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd>:</kbd></td><td class="d">Go to line number<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>:</kbd></td><td class="d">Go to line number<span class="src tm">tmux</span><span class="src hx">no herdr</span></td></tr>
       <tr><td class="k"><kbd>C-b</kbd> / <kbd>NPage</kbd></td><td class="d">Page up / page down<span class="src tm">tmux</span></td></tr>
       <tr><td class="k"><kbd>C-u</kbd> / <kbd>C-d</kbd></td><td class="d">Half page up / down<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd>H</kbd> <kbd>M</kbd> <kbd>L</kbd> <kbd>z</kbd></td><td class="d">Top / middle / bottom line, centre the cursor line<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd></td><td class="d">Move between panes without leaving the scrollback</td></tr>
+      <tr><td class="k"><kbd>H</kbd> <kbd>M</kbd> <kbd>L</kbd> <kbd>z</kbd></td><td class="d">Top / middle / bottom line, centre the cursor line<span class="src tm">tmux</span><span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd></td><td class="d">Move between panes without leaving the scrollback<span class="src hx">no herdr</span></td></tr>
     </table>
   </div>
 </div>
@@ -225,14 +239,14 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Triggers</h3>
     <table>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>F</kbd></td><td class="d"><b>File picker</b> popup (fzf). Pastes the chosen path into the pane, which is how Claude Code and Codex attach a file. Starts in <code>~/box</code>; set <code>ATTACH_ROOT</code> to change that</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>P</kbd></td><td class="d"><b>Photo picker</b> popup over the macOS Photos library, which no file browser can walk. Previews are block art</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>V</kbd></td><td class="d">Attach the <b>clipboard image</b>. If the pane is on a machine you SSH'd into, it fetches the image back over the tailnet</td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>m</kbd></td><td class="d">Render the copy-mode selection as a <b>Mermaid diagram</b> in the browser. Select the fence in copy mode first; your clipboard is left untouched</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>F</kbd></td><td class="d"><b>File picker</b> popup (fzf). Pastes the chosen path into the pane, which is how Claude Code and Codex attach a file. Starts in <code>~/box</code>; set <code>ATTACH_ROOT</code> to change that<span class="src hx">no herdr</span><i class="hn">not ported: the script pastes with <code>tmux paste-buffer</code>; needs <code>herdr pane send-text $HERDR_ACTIVE_PANE_ID</code></i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>P</kbd></td><td class="d"><b>Photo picker</b> popup over the macOS Photos library, which no file browser can walk. Previews are block art<span class="src hx">no herdr</span><i class="hn">not ported, same reason</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>V</kbd></td><td class="d">Attach the <b>clipboard image</b>. If the pane is on a machine you SSH'd into, it fetches the image back over the tailnet<span class="src hx">no herdr</span><i class="hn">not ported; <code>herdr --remote</code> has its own C-v image paste</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>m</kbd></td><td class="d">Render the copy-mode selection as a <b>Mermaid diagram</b> in the browser. Select the fence in copy mode first; your clipboard is left untouched<span class="src hx">no herdr</span><i class="hn">not ported: reads the tmux copy buffer</i></td></tr>
     </table>
   </div>
   <div class="card">
-    <h3>Inside the file picker <i>prefix F</i></h3>
+    <h3>Inside the file picker <i>prefix F</i><span class="src hx">no herdr</span></h3>
     <table>
       <tr><td class="k"><kbd>Enter</kbd></td><td class="d">On a directory, descend into it. On a file, attach it</td></tr>
       <tr><td class="k"><kbd>C-h</kbd></td><td class="d">Go up one directory</td></tr>
@@ -241,7 +255,7 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
     </table>
   </div>
   <div class="card">
-    <h3>Inside the photo picker <i>prefix P</i></h3>
+    <h3>Inside the photo picker <i>prefix P</i><span class="src hx">no herdr</span></h3>
     <table>
       <tr><td class="k"><kbd>Enter</kbd></td><td class="d">Attach the photo</td></tr>
       <tr><td class="k"><kbd>C-o</kbd></td><td class="d">Ask Photos to fetch the <b>true original</b> first. Raises a one-time permission prompt</td></tr>
@@ -257,9 +271,9 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Triggers</h3>
     <table>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>p</kbd></td><td class="d"><b>Open PR list</b> popup for this repo<span class="src pl">plugin</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>o</kbd></td><td class="d">Open <b>this pane's PR</b> in the browser. Resolves the branch in the pane's directory, else a PR number leading the pane label or window name, else the repo's own page</td></tr>
-      <tr><td class="k"></td><td class="d">When the tmux server itself is remote, <kbd>prefix o</kbd> and <kbd>prefix m</kbd> copy the URL to your <i>local</i> clipboard instead of opening a browser on the far end</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>p</kbd></td><td class="d"><b>Open PR list</b> popup for this repo<span class="src pl">plugin</span><span class="src hd">herdr</span><i class="hn">bound to a herdr popup, but the plugin reads its options with <code>tmux show-option</code>, so the list arrives unfiltered</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>o</kbd></td><td class="d">Open <b>this pane's PR</b> in the browser. Resolves the branch in the pane's directory, else a PR number leading the pane label or window name, else the repo's own page<span class="src hx">no herdr</span><i class="hn">not ported: <code>open-pr.sh</code> resolves its target with <code>tmux display-message</code></i></td></tr>
+      <tr><td class="k"></td><td class="d">When the tmux server itself is remote, <kbd>prefix o</kbd> and <kbd>prefix m</kbd> copy the URL to your <i>local</i> clipboard instead of opening a browser on the far end<span class="src hx">no herdr</span></td></tr>
     </table>
   </div>
   <div class="card">
@@ -290,21 +304,21 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Plugins <i>via TPM</i></h3>
     <table>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>I</kbd></td><td class="d">Install plugins<span class="src pl">tpm</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>U</kbd></td><td class="d">Update plugins<span class="src pl">tpm</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-u</kbd></td><td class="d">Remove plugins no longer in the config<span class="src pl">tpm</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>C-s</kbd> / <kbd>C-r</kbd></td><td class="d">Save / restore the session layout, including pane contents. <b>Manual</b> — nothing autosaves<span class="src pl">resurrect</span></td></tr>
-      <tr><td class="k">installed</td><td class="d"><code>tmux-resurrect</code>, <code>tmux-open-usage</code> (the usage block), <code>tmux-spoony</code> (copy-mode grabs), <code>tmux-gh-pr</code> (the PR popup)</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>I</kbd></td><td class="d">Install plugins<span class="src pl">tpm</span><span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>U</kbd></td><td class="d">Update plugins<span class="src pl">tpm</span><span class="src hx">no herdr</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-u</kbd></td><td class="d">Remove plugins no longer in the config<span class="src pl">tpm</span><span class="src hx">no herdr</span><i class="hn">herdr plugins are local manifests, not TPM</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>C-s</kbd> / <kbd>C-r</kbd></td><td class="d">Save / restore the session layout, including pane contents. <b>Manual</b> — nothing autosaves<span class="src pl">resurrect</span><span class="src hd">herdr</span><i class="hn">herdr's server keeps the layout live and resumes agent sessions after a restart, so there is nothing to save</i></td></tr>
+      <tr><td class="k">installed</td><td class="d"><code>tmux-resurrect</code>, <code>tmux-open-usage</code> (the usage block), <code>tmux-spoony</code> (copy-mode grabs), <code>tmux-gh-pr</code> (the PR popup)<span class="src hd">herdr</span><i class="hn">under herdr only the two popup/status scripts are reused, called directly from <code>config.toml</code></i></td></tr>
     </table>
   </div>
   <div class="card">
     <h3>Ask tmux itself</h3>
     <table>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>?</kbd></td><td class="d">List every binding in every table<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>/</kbd></td><td class="d">Press a key, and it tells you what that key is bound to<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>i</kbd></td><td class="d">Info about the current pane<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>~</kbd></td><td class="d">Server messages, useful when a binding misbehaves<span class="src tm">tmux</span></td></tr>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>:</kbd></td><td class="d">tmux command prompt<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>?</kbd></td><td class="d">List every binding in every table<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">one flat list, with <kbd>/</kbd> to filter it</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>/</kbd></td><td class="d">Press a key, and it tells you what that key is bound to<span class="src tm">tmux</span><span class="src hx">no herdr</span><i class="hn">filter the help panel instead</i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>i</kbd></td><td class="d">Info about the current pane<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn"><code>herdr pane current</code></i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>~</kbd></td><td class="d">Server messages, useful when a binding misbehaves<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn"><code>~/.config/herdr/herdr-server.log</code>, and <code>herdr config check</code></i></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>:</kbd></td><td class="d">tmux command prompt<span class="src tm">tmux</span><span class="src hd">herdr</span><i class="hn">the <code>herdr</code> CLI over the socket API</i></td></tr>
     </table>
   </div>
 </div>
@@ -319,16 +333,16 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
       <tr><td class="k"><kbd class="c">⌘⇧Y</kbd></td><td class="d">Join the clipboard into one line. Run it <i>after</i> a vi-mode <kbd>y</kbd>; Alacritty can't filter a yank as it happens</td></tr>
       <tr><td class="k"><kbd class="c">⌘⇧U</kbd> <kbd class="c">⌘⇧D</kbd> <kbd class="c">⌘⇧J</kbd> <kbd class="c">⌘⇧K</kbd></td><td class="d">Scroll the Claude Code transcript</td></tr>
       <tr><td class="k"><kbd class="c">⌘0</kbd></td><td class="d">Reset the font size<span class="src tm">alacritty</span></td></tr>
-      <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘9</kbd>, <kbd class="c">⌘⇧N/P</kbd></td><td class="d">Passed through to tmux for windows and sessions — see above</td></tr>
+      <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘9</kbd>, <kbd class="c">⌘⇧N/P</kbd></td><td class="d">Passed through to tmux for windows and sessions — see above<span class="src hx">no herdr</span><i class="hn">nothing catches them under herdr</i></td></tr>
     </table>
   </div>
   <div class="card">
     <h3>Good to know</h3>
     <table>
-      <tr><td class="k">Theme</td><td class="d">Flexoki Light / TokyoNight Storm, switched by <kbd class="p">prefix</kbd> <kbd>t</kbd> (or <code>scripts/theme-toggle.sh</code> outside tmux). Alacritty reloads its config live, so the change is instant</td></tr>
+      <tr><td class="k">Theme</td><td class="d">Flexoki Light / TokyoNight Storm, switched by <kbd class="p">prefix</kbd> <kbd>t</kbd> (or <code>scripts/theme-toggle.sh</code> outside tmux). Alacritty reloads its config live, so the change is instant<span class="src hd">herdr</span><i class="hn">herdr has no Flexoki: it runs tokyo-night / tokyo-night-day and follows the terminal through <code>theme.auto_switch</code></i></td></tr>
       <tr><td class="k">Clipboard</td><td class="d">OSC 52 both ways, which is what makes copy work from a remote tmux</td></tr>
-      <tr><td class="k">Cmd chords</td><td class="d">Cmd never reaches the terminal program, so these are emitted as private escape sequences and caught in <code>.tmux.conf</code> as <code>user-keys</code>. <b>The two files must be kept in sync.</b></td></tr>
-      <tr><td class="k">Scrollback</td><td class="d">10000 lines, matching tmux's <code>history-limit</code></td></tr>
+      <tr><td class="k">Cmd chords</td><td class="d">Cmd never reaches the terminal program, so these are emitted as private escape sequences and caught in <code>.tmux.conf</code> as <code>user-keys</code>. <b>The two files must be kept in sync.</b><span class="src hx">no herdr</span><i class="hn">herdr has no user-keys table, so every Cmd chord is dead weight there</i></td></tr>
+      <tr><td class="k">Scrollback</td><td class="d">10000 lines, matching tmux's <code>history-limit</code><span class="src hd">herdr</span><i class="hn">herdr caps scrollback by bytes instead: <code>advanced.scrollback_limit_bytes</code>, 10 MB</i></td></tr>
     </table>
   </div>
 </div>
@@ -341,7 +355,8 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <kbd class="p">prefix</kbd> <kbd>↓</kbd> rather than <kbd>C-j</kbd>, and why copy mode uses
   <kbd>NPage</kbd>/<kbd>C-d</kbd> for page-down instead of the usual <kbd>C-f</kbd>.</p>
   <p><b>Reloading adds bindings but never removes them.</b> <kbd class="p">prefix</kbd> <kbd>r</kbd> picks up
-  new and changed keys, but a binding you <i>deleted</i> from the config stays live until the server restarts.</p>
+  new and changed keys, but a binding you <i>deleted</i> from the config stays live until the server restarts.
+  <span class="src hd">herdr</span> <i class="hn">herdr rebuilds the whole keymap on reload, so a deleted binding really goes away</i></p>
   <p><b>These Ctrl keys never reach your shell.</b> <kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd> <kbd>C-n</kbd>
   <kbd>C-p</kbd> <kbd>C-x</kbd> <kbd>C-y</kbd> <kbd>C-z</kbd> <kbd>C-j</kbd> <kbd>C-Right</kbd> are all claimed
   by tmux, so readline loses clear-screen, kill-line, yank, history and suspend at the prompt.
@@ -351,12 +366,28 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <p><b>Ctrl with the <code>-</code> key is one key, spelled three ways.</b> <kbd>C--</kbd>, <kbd>C-_</kbd> and
   <kbd>C-/</kbd> all send the same byte (<code>0x1F</code>, ASCII US), which tmux names <kbd>C-_</kbd> — the same
   reason Emacs undo answers to both <kbd>C-/</kbd> and <kbd>C-_</kbd>. So copy mode has one binding, not three.</p>
+  <p><b>Under herdr, one prefix and no Cmd.</b> <kbd>C-j</kbd> is the prefix; <kbd>C-f</kbd> and
+  <kbd>C-Right</kbd> are gone, so both go back to the shell along with <kbd>C-x</kbd> and <kbd>C-y</kbd>
+  (no half zoom). Every <kbd class="c">⌘</kbd> chord in this sheet is dead: Alacritty sends them as private
+  escape sequences that only tmux's <code>user-keys</code> table could decode. herdr takes arrays instead
+  (<code>zoom = ["ctrl+z", "ctrl+up"]</code>), which is how the phone-reachable duplicates survive.</p>
+  <p><b>The popup scripts split into two groups.</b> The ones that only print
+  (<code>clock-popup.sh</code>, <code>status-usage.sh</code>, the usage and PR plugins) are wired straight into
+  <code>config.toml</code> as <code>[[keys.command]]</code> popups and <code>tab_bar_right</code> entries.
+  The ones that <i>write back into the pane</i> (file, photo and image attach, mermaid, open-pr) still call
+  <code>tmux paste-buffer</code> / <code>tmux display-message</code> and need a port to
+  <code>herdr pane send-text $HERDR_ACTIVE_PANE_ID</code> before they can be bound.</p>
+  <p><b>tmux status markup is not herdr markup.</b> Both status scripts emit
+  <code>#[fg=...]</code>, which herdr prints literally, so the config pipes them through a
+  <code>sed</code> that strips it. The fields survive, the colours do not.</p>
 </div>
 
 <footer>
   Generated from <code>tmux/.tmux.conf</code>, <code>tmux/bin/</code> and
   <code>alacritty/.config/alacritty/alacritty.toml</code>. Mirrors the Tmux and Alacritty
   sections of <code>CHEATSHEET.md</code>. Prints to two columns.
+  Herdr marks are checked against herdr 0.9.0 and
+  <code>herdr/.config/herdr/config.toml</code>.
 </footer>
 
 </div>

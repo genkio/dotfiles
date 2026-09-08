@@ -1,15 +1,15 @@
 {
   "hooks": {
-    "UserPromptSubmit": [
+    "PermissionRequest": [
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+            "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh",
+            "type": "command"
           },
           {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event UserPromptSubmit || true"
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event PermissionRequest || true",
+            "type": "command"
           }
         ]
       }
@@ -18,26 +18,23 @@
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
+            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh",
+            "type": "command"
           },
           {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event PreToolUse || true"
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event PreToolUse || true",
+            "type": "command"
           }
         ]
       }
     ],
-    "PermissionRequest": [
+    "SessionStart": [
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh"
-          },
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event PermissionRequest || true"
+            "command": "bash \"$HOME/.codex/herdr-agent-state.sh\" session",
+            "timeout": 10,
+            "type": "command"
           }
         ]
       }
@@ -46,12 +43,26 @@
       {
         "hooks": [
           {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
+            "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh",
+            "type": "command"
           },
           {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event Stop || true"
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event Stop || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh",
+            "type": "command"
+          },
+          {
+            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook --agent codex --event UserPromptSubmit || true",
+            "type": "command"
           }
         ]
       }

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tmux + Alacritty cheatsheet</title>
+<style>
+:root{
+  --bg:#FFFCF0; --bg2:#F2F0E5; --ui:#E6E4D9; --ui2:#DAD8CE;
+  --tx:#100F0F; --tx2:#6F6E69; --tx3:#B7B5AC;
+  --red:#AF3029; --orange:#BC5215; --green:#66800B;
+  --cyan:#24837B; --blue:#205EA6; --purple:#5E409D; --magenta:#A02F6F;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font:14.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:30px 20px 70px}
+.wrap{max-width:1240px;margin:0 auto}
+
+header{border-bottom:2px solid var(--tx);padding-bottom:14px;margin-bottom:8px}
+h1{font-size:25px;margin:0 0 8px;letter-spacing:-.4px}
+.lede{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13px;color:var(--tx2)}
+.lede b{color:var(--tx)}
+
+h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--tx);
+  margin:34px 0 12px;padding-bottom:5px;border-bottom:1px solid var(--ui2);font-weight:700}
+h2 em{font-style:normal;text-transform:none;letter-spacing:0;color:var(--tx3);font-weight:400;font-size:12.5px}
+
+code{font-family:var(--mono);font-size:.92em;background:var(--bg2);
+  padding:1px 4px;border-radius:3px}
+kbd{font-family:var(--mono);background:#fff;border:1px solid var(--ui2);
+  border-bottom-width:2px;border-radius:4px;padding:1px 5px;font-size:12px;
+  white-space:nowrap;color:var(--tx)}
+kbd.p{background:#E6EDF7;border-color:#C2D3EA;color:var(--blue)}
+kbd.c{background:#F7EAF1;border-color:#EACFDE;color:var(--magenta)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;align-items:start}
+.card{background:#fff;border:1px solid var(--ui);border-radius:7px;overflow:hidden;
+  break-inside:avoid}
+.card>h3{margin:0;padding:8px 13px;font-size:11.5px;letter-spacing:.7px;
+  text-transform:uppercase;background:var(--bg2);border-bottom:1px solid var(--ui);
+  color:var(--tx2);font-weight:700;display:flex;justify-content:space-between;gap:10px}
+.card>h3 i{font-style:normal;font-family:var(--mono);text-transform:none;
+  letter-spacing:0;color:var(--tx3);font-weight:400}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:5px 13px;vertical-align:top;border-top:1px solid var(--bg2)}
+tr:first-child td{border-top:none}
+td.k{width:150px;white-space:nowrap;line-height:1.9}
+td.d{color:var(--tx2)}
+td.d b{color:var(--tx);font-weight:600}
+tr:hover td{background:#FDFCF6}
+.src{font-family:var(--mono);font-size:9.5px;padding:1px 5px;border-radius:3px;
+  background:var(--bg2);color:var(--tx3);margin-left:5px;white-space:nowrap;
+  border:1px solid var(--ui)}
+.src.pl{background:#F7EAF1;color:var(--magenta);border-color:#EACFDE}
+.src.tm{background:#F0F3E4;color:var(--green);border-color:#DDE3C8}
+
+.notes{background:#fff;border:1px solid var(--ui);border-radius:7px;padding:4px 0}
+.notes table td{font-size:13px}
+.notes td.k{width:190px}
+
+.gotcha{background:#FDF8F2;border:1px solid #EEDCC6;border-radius:7px;
+  padding:12px 16px;font-size:13px;color:var(--tx);margin-top:12px}
+.gotcha p{margin:0 0 8px} .gotcha p:last-child{margin:0}
+.gotcha b{font-family:var(--mono);font-size:12.5px;color:var(--orange)}
+
+footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
+  font-size:12px;color:var(--tx3)}
+
+@media print{
+  body{padding:0;font-size:10.5px;background:#fff}
+  header{border-color:#000}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .card{border-color:#ccc}
+  tr:hover td{background:none}
+  h2{margin:16px 0 8px}
+  footer{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>tmux + Alacritty cheatsheet</h1>
+  <div class="lede">
+    <span>Prefix: <kbd class="p">C-j</kbd> or <kbd class="p">C-f</kbd> or <kbd class="p">C-Right</kbd></span>
+    <span>Copy mode: vi keys</span>
+    <span>Reload: <kbd class="p">prefix</kbd> <kbd>r</kbd></span>
+    <span>Describe a key: <kbd class="p">prefix</kbd> <kbd>/</kbd></span>
+    <span>All keys: <kbd class="p">prefix</kbd> <kbd>?</kbd></span>
+  </div>
+</header>
+<p style="font-size:13px;color:var(--tx2);margin:12px 0 0">
+  <span class="src tm">tmux</span> is a stock tmux default worth knowing.
+  <span class="src pl">plugin</span> comes from a TPM plugin.
+  Everything unmarked is custom, from <code>tmux/.tmux.conf</code>,
+  <code>tmux/bin/</code>, or <code>alacritty.toml</code>.
+</p>
+
+<h2>Panes <em>— prefix keys</em></h2>
+<div class="grid">
+  <div class="card">
+    <h3>Create, split, move</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>v</kbd></td><td class="d">Vertical split (side-by-side) in the current path</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>h</kbd></td><td class="d">Horizontal split (top-bottom) in the current path</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>b</kbd></td><td class="d">Break the pane out into its own window here, and follow it</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>B</kbd></td><td class="d">Break the pane out into a brand-new session, and follow it</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>G</kbd></td><td class="d">Gather the current window back into the default (<code>tmp</code>) session</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>{</kbd> <kbd>}</kbd></td><td class="d">Swap the pane with the previous / next one<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>E</kbd></td><td class="d">Spread panes out evenly<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-1</kbd>..<kbd>M-7</kbd></td><td class="d">Preset layouts: even-h, even-v, main-h, main-v, tiled, +2 mirrored<span class="src tm">tmux</span></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Navigate, resize, close</h3>
+    <table>
+      <tr><td class="k"><kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd></td><td class="d"><b>No prefix.</b> Move left / up / right. There is no <kbd>C-j</kbd> — see the gotcha below</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>←↑↓→</kbd></td><td class="d">Move in any direction, including down. Repeatable<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>q</kbd></td><td class="d">Show pane index numbers; press a number to jump</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>;</kbd></td><td class="d">Last pane<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-←↑↓→</kbd></td><td class="d">Resize by 5 cells, repeatable (<kbd>C-←↑↓→</kbd> for 1)<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>x</kbd></td><td class="d">Kill the pane, after a <code>y/n</code> confirm. Survivors rebalance</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>X</kbd></td><td class="d">Kill every <b>other</b> pane in the window, after a <code>y/n</code> confirm</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>y</kbd></td><td class="d">Toggle synchronize-panes (type into every pane at once)</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>C</kbd></td><td class="d">Set or edit this pane's label, shown in its border</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Zoom <i>no prefix</i></h3>
+    <table>
+      <tr><td class="k"><kbd>C-z</kbd> / <kbd>C-Up</kbd></td><td class="d"><b>Full zoom</b> toggle. Two keys for one action, so a phone keyboard can reach it</td></tr>
+      <tr><td class="k"><kbd>C-x</kbd></td><td class="d"><b>Half zoom:</b> fill the column (full height)</td></tr>
+      <tr><td class="k"><kbd>C-y</kbd></td><td class="d"><b>Half zoom:</b> fill the row (full width)</td></tr>
+      <tr><td class="k"></td><td class="d">Half zoom is per-axis and per-pane, so a left and a right pane can both be maxed. Press the same key again to restore</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Windows and sessions</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Windows</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>c</kbd></td><td class="d">New window — prompts for a name, inherits the current path</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>w</kbd> / <kbd>C-Down</kbd></td><td class="d">Choose a window from a tree</td></tr>
+      <tr><td class="k"><kbd>S-Left</kbd> <kbd>S-Right</kbd></td><td class="d">Previous / next window</td></tr>
+      <tr><td class="k"><kbd>C-p</kbd> <kbd>C-n</kbd></td><td class="d">Previous / next window</td></tr>
+      <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘8</kbd></td><td class="d">Jump to window index 0-7</td></tr>
+      <tr><td class="k"><kbd class="c">⌘9</kbd></td><td class="d">Jump to the last window</td></tr>
+      <tr><td class="k"><kbd>C-S-Left</kbd> <kbd>C-S-Right</kbd></td><td class="d">Reorder this window left / right</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>l</kbd></td><td class="d">Last window<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>,</kbd> / <kbd>&amp;</kbd></td><td class="d">Rename / kill this window<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>f</kbd></td><td class="d">Find a window by name or content<span class="src tm">tmux</span></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Sessions</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>n</kbd></td><td class="d">Next session. Repeatable, so hold the prefix and keep tapping</td></tr>
+      <tr><td class="k"><kbd class="c">⌘⇧N</kbd> <kbd class="c">⌘⇧P</kbd></td><td class="d">Next / previous session. The only two-way pair on a single chord</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>(</kbd> <kbd>)</kbd></td><td class="d">Previous / next session<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>s</kbd></td><td class="d">Choose a session from a tree<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>L</kbd></td><td class="d">Last session<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>$</kbd></td><td class="d">Rename this session<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>d</kbd></td><td class="d">Detach<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>D</kbd></td><td class="d">Choose a client to detach<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k">shell: <code>tx</code></td><td class="d">Attach or create the default session (<code>tmp</code>); <code>tx &lt;name&gt;</code> for a named one, <code>txl</code> to list, <code>txk</code> to kill</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Nested tmux <i>e.g. over SSH</i></h3>
+    <table>
+      <tr><td class="k"><kbd>F12</kbd></td><td class="d">Put the <b>local (outer)</b> server to sleep, so every key — prefix, arrows, copy mode, mouse — reaches the inner session</td></tr>
+      <tr><td class="k"><kbd>F12</kbd> again</td><td class="d">Wake it back up. <kbd>F12</kbd> stays bound while asleep, so you can always get out</td></tr>
+      <tr><td class="k"></td><td class="d">A chip on the left status line marks the sleeping state</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Copy mode <em>— vi keys; enter with <kbd>C--</kbd> (or <kbd>C-_</kbd> / <kbd>C-/</kbd>, same key to the terminal), leave with <kbd>q</kbd></em></h2>
+<div class="grid">
+  <div class="card">
+    <h3>Yank <i>everything goes to the OS clipboard via OSC 52, so it works over SSH</i></h3>
+    <table>
+      <tr><td class="k"><kbd>Space</kbd> / <kbd>v</kbd></td><td class="d">Start a selection / toggle block selection<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>y</kbd> or <kbd>Enter</kbd></td><td class="d">Copy the selection verbatim. Stays in copy mode</td></tr>
+      <tr><td class="k"><kbd>Y</kbd></td><td class="d">Copy <b>joined into one line</b> — drops TUI left padding and soft-wrap breaks. Use this for anything you'll paste elsewhere</td></tr>
+      <tr><td class="k">Mouse drag</td><td class="d">Copy on drag release</td></tr>
+      <tr><td class="k">Double / triple click</td><td class="d">Copy the word / line<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>]</kbd></td><td class="d">Paste the tmux buffer<span class="src tm">tmux</span></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Grab what's on the line <i>tmux-spoony</i><span class="src pl">plugin</span></h3>
+    <table>
+      <tr><td class="k"><kbd>u</kbd></td><td class="d">Select the <b>URL</b> on this line</td></tr>
+      <tr><td class="k"><kbd>p</kbd></td><td class="d">Select the <b>path</b> on this line</td></tr>
+      <tr><td class="k"><kbd>c</kbd></td><td class="d">Select the <b>command</b> on this line</td></tr>
+      <tr><td class="k"><kbd>i</kbd></td><td class="d">Select the <b>IP address</b> on this line</td></tr>
+      <tr><td class="k"><kbd>x</kbd></td><td class="d">Select the whole line, indentation trimmed</td></tr>
+      <tr><td class="k"><kbd>o</kbd></td><td class="d"><b>Open</b> the selection (URL, file, ...) and leave copy mode</td></tr>
+      <tr><td class="k"></td><td class="d">These six are advertised in the corner of the copy-mode indicator, so you don't have to remember them</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Move and search</h3>
+    <table>
+      <tr><td class="k"><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd> <kbd>w</kbd> <kbd>b</kbd> <kbd>e</kbd> <kbd>0</kbd> <kbd>$</kbd> <kbd>^</kbd></td><td class="d">The usual vi motions<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>g</kbd> / <kbd>G</kbd></td><td class="d">Top / bottom of the scrollback<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>/</kbd> <kbd>?</kbd> then <kbd>n</kbd> <kbd>N</kbd></td><td class="d">Search down / up, then repeat forward / back<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>:</kbd></td><td class="d">Go to line number<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>C-b</kbd> / <kbd>NPage</kbd></td><td class="d">Page up / page down<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>C-u</kbd> / <kbd>C-d</kbd></td><td class="d">Half page up / down<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>H</kbd> <kbd>M</kbd> <kbd>L</kbd> <kbd>z</kbd></td><td class="d">Top / middle / bottom line, centre the cursor line<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd></td><td class="d">Move between panes without leaving the scrollback</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Attaching files, images and diagrams <em>— what makes a coding agent in a pane usable</em></h2>
+<div class="grid">
+  <div class="card">
+    <h3>Triggers</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>F</kbd></td><td class="d"><b>File picker</b> popup (fzf). Pastes the chosen path into the pane, which is how Claude Code and Codex attach a file. Starts in <code>~/box</code>; set <code>ATTACH_ROOT</code> to change that</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>P</kbd></td><td class="d"><b>Photo picker</b> popup over the macOS Photos library, which no file browser can walk. Previews are block art</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>V</kbd></td><td class="d">Attach the <b>clipboard image</b>. If the pane is on a machine you SSH'd into, it fetches the image back over the tailnet</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>m</kbd></td><td class="d">Render the copy-mode selection as a <b>Mermaid diagram</b> in the browser. Select the fence in copy mode first; your clipboard is left untouched</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Inside the file picker <i>prefix F</i></h3>
+    <table>
+      <tr><td class="k"><kbd>Enter</kbd></td><td class="d">On a directory, descend into it. On a file, attach it</td></tr>
+      <tr><td class="k"><kbd>C-h</kbd></td><td class="d">Go up one directory</td></tr>
+      <tr><td class="k"><kbd>Tab</kbd></td><td class="d">Mark several files, then <kbd>Enter</kbd> to attach them all</td></tr>
+      <tr><td class="k"><kbd>Esc</kbd></td><td class="d">Cancel</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Inside the photo picker <i>prefix P</i></h3>
+    <table>
+      <tr><td class="k"><kbd>Enter</kbd></td><td class="d">Attach the photo</td></tr>
+      <tr><td class="k"><kbd>C-o</kbd></td><td class="d">Ask Photos to fetch the <b>true original</b> first. Raises a one-time permission prompt</td></tr>
+      <tr><td class="k"><kbd>Tab</kbd></td><td class="d">Mark several</td></tr>
+      <tr><td class="k">the <code>☁</code> mark</td><td class="d">Not stored on this Mac. With iCloud "Optimize Storage" many recent rows have only a small thumbnail locally — the preview names the resolution <kbd>Enter</kbd> would really attach, and <kbd>C-o</kbd> gets the full one</td></tr>
+      <tr><td class="k"></td><td class="d">Lists the 500 most recent photos; <code>ATTACH_PHOTO_LIMIT</code> changes that. The terminal needs Full Disk Access</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Git and GitHub</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Triggers</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>p</kbd></td><td class="d"><b>Open PR list</b> popup for this repo<span class="src pl">plugin</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>o</kbd></td><td class="d">Open <b>this pane's PR</b> in the browser. Resolves the branch in the pane's directory, else a PR number leading the pane label or window name, else the repo's own page</td></tr>
+      <tr><td class="k"></td><td class="d">When the tmux server itself is remote, <kbd>prefix o</kbd> and <kbd>prefix m</kbd> copy the URL to your <i>local</i> clipboard instead of opening a browser on the far end</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Inside the PR list <i>prefix p</i><span class="src pl">plugin</span></h3>
+    <table>
+      <tr><td class="k"><kbd>j</kbd> <kbd>k</kbd> or <kbd>↑↓</kbd></td><td class="d">Move through the list</td></tr>
+      <tr><td class="k"><kbd>Enter</kbd></td><td class="d">Show the PR's detail view (<kbd>j</kbd>/<kbd>k</kbd> scrolls, <kbd>o</kbd> opens that PR in the browser, <kbd>q</kbd> goes back)</td></tr>
+      <tr><td class="k"><kbd>/</kbd></td><td class="d">Filter the list; <kbd>Esc</kbd> clears the filter</td></tr>
+      <tr><td class="k"><kbd>o</kbd></td><td class="d">Open the whole list on github.com</td></tr>
+      <tr><td class="k"><kbd>r</kbd></td><td class="d">Refresh (keeps showing the stale list if <code>gh</code> fails)</td></tr>
+      <tr><td class="k"><kbd>q</kbd></td><td class="d">Clear the filter, or quit if there isn't one</td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Theme, status line and plugins</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Theme and status</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>t</kbd></td><td class="d"><b>Toggle light/dark everywhere</b> at once: tmux, Neovim, LazyGit, and the terminal itself. Works local or over SSH</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>T</kbd></td><td class="d">Date / time / uptime / calendar popup. The status line deliberately has no clock</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>u</kbd></td><td class="d">Show or hide the coding-agent usage block on the right. Hiding it also stops the fetch</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>r</kbd></td><td class="d">Reload the tmux config</td></tr>
+      <tr><td class="k">automatic</td><td class="d">Pane borders and window titles are colour-coded by agent state: <b style="color:var(--red)">red</b> needs your approval, <b style="color:var(--orange)">orange</b> is working, <b style="color:var(--green)">green</b> finished while you were away</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Plugins <i>via TPM</i></h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>I</kbd></td><td class="d">Install plugins<span class="src pl">tpm</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>U</kbd></td><td class="d">Update plugins<span class="src pl">tpm</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>M-u</kbd></td><td class="d">Remove plugins no longer in the config<span class="src pl">tpm</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>C-s</kbd> / <kbd>C-r</kbd></td><td class="d">Save / restore the session layout, including pane contents. <b>Manual</b> — nothing autosaves<span class="src pl">resurrect</span></td></tr>
+      <tr><td class="k">installed</td><td class="d"><code>tmux-resurrect</code>, <code>tmux-open-usage</code> (the usage block), <code>tmux-spoony</code> (copy-mode grabs), <code>tmux-gh-pr</code> (the PR popup)</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Ask tmux itself</h3>
+    <table>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>?</kbd></td><td class="d">List every binding in every table<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>/</kbd></td><td class="d">Press a key, and it tells you what that key is bound to<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>i</kbd></td><td class="d">Info about the current pane<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>~</kbd></td><td class="d">Server messages, useful when a binding misbehaves<span class="src tm">tmux</span></td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>:</kbd></td><td class="d">tmux command prompt<span class="src tm">tmux</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Alacritty <em>— transparent titlebar, OSC 52 clipboard, <code>option</code> as <code>alt</code>. No splits or tabs; tmux does that</em></h2>
+<div class="grid">
+  <div class="card">
+    <h3>Keys</h3>
+    <table>
+      <tr><td class="k"><kbd class="c">⇧Enter</kbd></td><td class="d">Insert a newline instead of submitting, for a multi-line prompt</td></tr>
+      <tr><td class="k"><kbd class="c">⌘⇧Space</kbd></td><td class="d">Toggle Alacritty's own vi mode. Not the default <kbd>C-⇧Space</kbd>, which a CJK input method eats</td></tr>
+      <tr><td class="k"><kbd class="c">⌘⇧Y</kbd></td><td class="d">Join the clipboard into one line. Run it <i>after</i> a vi-mode <kbd>y</kbd>; Alacritty can't filter a yank as it happens</td></tr>
+      <tr><td class="k"><kbd class="c">⌘⇧U</kbd> <kbd class="c">⌘⇧D</kbd> <kbd class="c">⌘⇧J</kbd> <kbd class="c">⌘⇧K</kbd></td><td class="d">Scroll the Claude Code transcript</td></tr>
+      <tr><td class="k"><kbd class="c">⌘0</kbd></td><td class="d">Reset the font size<span class="src tm">alacritty</span></td></tr>
+      <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘9</kbd>, <kbd class="c">⌘⇧N/P</kbd></td><td class="d">Passed through to tmux for windows and sessions — see above</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Good to know</h3>
+    <table>
+      <tr><td class="k">Theme</td><td class="d">Flexoki Light / TokyoNight Storm, switched by <kbd class="p">prefix</kbd> <kbd>t</kbd> (or <code>scripts/theme-toggle.sh</code> outside tmux). Alacritty reloads its config live, so the change is instant</td></tr>
+      <tr><td class="k">Clipboard</td><td class="d">OSC 52 both ways, which is what makes copy work from a remote tmux</td></tr>
+      <tr><td class="k">Cmd chords</td><td class="d">Cmd never reaches the terminal program, so these are emitted as private escape sequences and caught in <code>.tmux.conf</code> as <code>user-keys</code>. <b>The two files must be kept in sync.</b></td></tr>
+      <tr><td class="k">Scrollback</td><td class="d">10000 lines, matching tmux's <code>history-limit</code></td></tr>
+    </table>
+  </div>
+</div>
+
+<h2>Gotchas worth knowing</h2>
+<div class="gotcha">
+  <p><b>The prefix beats every other binding.</b> tmux checks "is this the prefix?" before it looks in the
+  current key table or the root table. Because the prefix here is <kbd>C-j</kbd> (and <kbd>C-f</kbd>), no
+  binding on those keys can ever fire: that's why pane-down is <kbd>C-k</kbd>'s neighbour
+  <kbd class="p">prefix</kbd> <kbd>↓</kbd> rather than <kbd>C-j</kbd>, and why copy mode uses
+  <kbd>NPage</kbd>/<kbd>C-d</kbd> for page-down instead of the usual <kbd>C-f</kbd>.</p>
+  <p><b>Reloading adds bindings but never removes them.</b> <kbd class="p">prefix</kbd> <kbd>r</kbd> picks up
+  new and changed keys, but a binding you <i>deleted</i> from the config stays live until the server restarts.</p>
+  <p><b>These Ctrl keys never reach your shell.</b> <kbd>C-h</kbd> <kbd>C-k</kbd> <kbd>C-l</kbd> <kbd>C-n</kbd>
+  <kbd>C-p</kbd> <kbd>C-x</kbd> <kbd>C-y</kbd> <kbd>C-z</kbd> <kbd>C-j</kbd> <kbd>C-Right</kbd> are all claimed
+  by tmux, so readline loses clear-screen, kill-line, yank, history and suspend at the prompt.
+  That's the price of prefix-free pane navigation.</p>
+  <p><b><kbd class="p">prefix</kbd> <kbd>p</kbd> is the PR popup, not "previous".</b> Previous session is
+  <kbd class="c">⌘⇧P</kbd> or <kbd class="p">prefix</kbd> <kbd>(</kbd>. Previous window is <kbd>C-p</kbd>.</p>
+  <p><b>Ctrl with the <code>-</code> key is one key, spelled three ways.</b> <kbd>C--</kbd>, <kbd>C-_</kbd> and
+  <kbd>C-/</kbd> all send the same byte (<code>0x1F</code>, ASCII US), which tmux names <kbd>C-_</kbd> — the same
+  reason Emacs undo answers to both <kbd>C-/</kbd> and <kbd>C-_</kbd>. So copy mode has one binding, not three.</p>
+</div>
+
+<footer>
+  Generated from <code>tmux/.tmux.conf</code>, <code>tmux/bin/</code> and
+  <code>alacritty/.config/alacritty/alacritty.toml</code>. Mirrors the Tmux and Alacritty
+  sections of <code>CHEATSHEET.md</code>. Prints to two columns.
+</footer>
+
+</div>
+</body>
+</html>

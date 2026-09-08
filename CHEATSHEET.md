@@ -6,6 +6,10 @@ Leader key is `<Space>` in Neovim. Tmux prefix is `C-j` or `C-f`.
 Everything here comes from this repo's configuration. For the full Neovim
 behavior reference see `nvim/.config/nvim/README.md`.
 
+`CHEATSHEET-tmux-alacritty.html` is a standalone, printable version of the Tmux
+and Alacritty sections below. It also spells out the stock tmux defaults this
+file leaves out, so it reads on its own without knowing this config.
+
 ---
 
 ## Zsh Aliases & Functions
@@ -87,25 +91,28 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `prefix w` | Choose a window from a tree |
 | `prefix v` | Vertical split (side-by-side) in current path |
 | `prefix h` | Horizontal split (top-bottom) in current path |
-| `prefix x` | Kill pane (auto-rebalance) |
-| `prefix X` | Kill all other panes in window |
+| `prefix x` | Kill pane, after a `y/n` confirm (auto-rebalance) |
+| `prefix X` | Kill all other panes in the window, after a `y/n` confirm |
 | `prefix y` | Toggle synchronize-panes |
 | `prefix b` | Break pane out into its own window here (auto-rebalance) |
 | `prefix B` | Break pane out into a brand-new session |
 | `prefix G` | Gather current window back into the default (`tmp`) session |
-| `prefix p` / `prefix n` | Previous / next session (repeatable, so hold the prefix and keep tapping) |
+| `prefix n` | Next session (repeatable, so hold the prefix and keep tapping). No `prefix p` twin, that key is the PR popup: go backwards with `Cmd+Shift+p` or tmux's own `prefix (` |
+| `prefix p` | GitHub PR list popup (`tmux-gh-pr`, on a single key via `@gh-pr-key 'p'` instead of its default `pr` sequence). `j`/`k` move, `Enter` opens the detail view (`o` there opens that PR on github.com, `q` goes back), `/` filters, `o` opens the list on github.com, `r` refreshes, `q` quits |
 | `prefix t` | Toggle light/dark theme (tmux + nvim + lazygit + the terminal) |
 | `prefix T` | Date/time/uptime/calendar popup |
 | `prefix u` | Show/hide the coding-agent usage block on the right status line (hidden also stops the usage fetch) |
 | `prefix C` | Set/edit pane label |
 | `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
-| `prefix F` | fzf file picker (starts in `~/box`); pastes the chosen path into the pane to attach it to Claude Code / Codex |
-| `prefix P` | Same for the macOS Photos library: fzf over recent photos with viu previews (`^o` fetches an iCloud original) |
+| `prefix F` | fzf file picker (starts in `~/box`, or `ATTACH_ROOT`); pastes the chosen path into the pane to attach it to Claude Code / Codex. `Enter` descends into a directory or attaches a file, `^h` goes up, `Tab` marks several, `Esc` cancels |
+| `prefix P` | Same for the macOS Photos library: fzf over recent photos with viu previews. `Enter` attaches, `^o` fetches the iCloud original first, `Tab` marks several, `☁` marks a photo that is not on this mac |
 | `prefix V` | Attach the clipboard image to the pane: pulls it over the tailnet when the pane is on a machine you ssh'd into |
 | `prefix m` | Render the copy-mode selection as a Mermaid diagram in the browser (select in copy mode first; clipboard untouched) |
 | `prefix C-s` / `prefix C-r` | Save / restore tmux state (`tmux-resurrect`) |
-| `prefix I` | Install tmux plugins (`tpm`) |
+| `prefix I` / `prefix U` / `prefix M-u` | Install / update / clean tmux plugins (`tpm`) |
 | `prefix q` | Show pane index numbers (press a number to jump) |
+| `prefix ↑↓←→` | Move between panes in any direction, including down (tmux default; covers the missing `C-j`) |
+| `prefix ?` / `prefix /` | List every binding / press a key to see what it is bound to (tmux defaults, handy given how much is rebound here) |
 
 **No prefix needed**
 
@@ -113,7 +120,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 |---|---|
 | `C-z` / `C-Up` | Toggle pane zoom |
 | `C-x` / `C-y` | Half zoom: fill the column (full height) / fill the row (full width). Per-axis and per-pane, so a left and a right pane can both be maxed |
-| `C-h/j/k/l` | Navigate between panes |
+| `C-h/k/l` | Navigate between panes. No `C-j`: tmux resolves the prefix before any key table, so a `C-j` binding is unreachable while `C-j` is the prefix. `prefix Down` for the rest |
 | `C-Down` | Choose a window from a tree (same as `prefix w`) |
 | `S-Left` / `S-Right` | Previous / next window |
 | `C-p` / `C-n` | Previous / next window |
@@ -122,7 +129,7 @@ behavior reference see `nvim/.config/nvim/README.md`.
 | `Cmd+9` | Jump to the last window (`Cmd+0` is left to Alacritty's font-size reset) |
 | `Cmd+Shift+n` / `Cmd+Shift+p` | Next / previous session |
 | `C-Right` | Arm the prefix, for one-tap leader on a phone keyboard |
-| `C-/` (or `C-_`) | Toggle copy-mode |
+| `C--` (or `C-_`, or `C-/`) | Toggle copy-mode. One binding, `C-_`: Ctrl with the `-`/`_` key sends byte `0x1F`, and so does `Ctrl+/` in most terminals, which is the name tmux gives that byte |
 | `F12` | Nested tmux: put the local (outer) server to sleep so every key reaches the inner session; `F12` again wakes it (a chip on status-left marks the sleeping state) |
 
 Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage`, `genkio/tmux-spoony`, `genkio/tmux-gh-pr`. Resurrect captures pane contents; save/restore is manual via `prefix C-s` / `prefix C-r`. open-usage's own status injection is off (`@tmux_open_usage_enabled off`) because `tmux/bin/apply-theme.sh` inlines its script into `status-right` instead, to pick up the theme colour; `prefix u` hides that block.
@@ -135,6 +142,18 @@ Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage`, `genkio/tmux-spoo
 | `Y` | Copy selection joined into one line (drops TUI padding + soft-wrap breaks) |
 | `Enter` | Copy selection (stays in copy mode, OSC52) |
 | Mouse drag | Copy on drag end (OSC52) |
+| `C-h/k/l` | Navigate between panes without leaving scrollback |
+| `NPage` / `C-d` | Page / half-page down. Not `C-f`: it is prefix2, and the prefix wins over every key table, so copy mode never sees it. `C-b` (page up) is fine |
+
+**Copy mode: grab what is on the line** (`tmux-spoony`; these six are advertised
+in the corner of the copy-mode indicator)
+
+| Key | Action |
+|---|---|
+| `u` / `p` | Select the URL / path on this line |
+| `c` / `i` | Select the command / IP address on this line |
+| `x` | Select the whole line, indentation trimmed |
+| `o` | Open the selection (URL, file, ...) and leave copy mode |
 
 The Mermaid renderer is `prefix m`, not a bare `m` (the prefix table stays
 reachable from copy mode, and default `m`, mark-pane, is unbound). When the tmux

@@ -18,9 +18,15 @@
 # goes, the remaining clients are rescanned, preferring a desktop one: a phone
 # wins a rescan only when it is the last client standing.
 #
-# A client is "mobile" when its login tty came in over SSH (`who` prints the
-# peer) and that peer is an iOS/Android node in `tailscale status`, or is listed
-# in @theme_mobile_peers (ip or hostname) for clients off the tailnet.
+# A client is "mobile" when its login tty really came in over SSH - an sshd in
+# the tty's process ancestry, not merely a host field in utmpx, see
+# has_sshd_ancestor - and the peer `who` reports for it is an iOS/Android node in
+# `tailscale status`, or is listed in @theme_mobile_peers (ip or hostname) for
+# clients off the tailnet.
+#
+# Known gap: a phone that reaches tmux through a helper running locally on this
+# Mac (UURemote) has no sshd and no utmpx record, so it reads as a desktop and
+# gets the light theme. Fixing that needs a different signal than `who`.
 #
 # tmux colours are server-global, so this is a whole-session flip, not a
 # per-client one: the phone taking over repaints the Mac too. prefix+t still
@@ -100,8 +106,34 @@ is_mobile_peer() {
     grep -qE '^(ios|android)$'
 }
 
+# Is any process on this tty descended from sshd? utmpx on its own cannot be
+# trusted: macOS reuses pty numbers and `login -flp` leaves the PREVIOUS
+# session's host field in the record, so `who` reports a long-dead SSH peer for a
+# purely local Alacritty window. That read as "the phone is here" and flipped the
+# whole session dark on every detach/reattach.
+# OpenSSH >= 9.8 (10.2 here) runs the per-session process as sshd-session, so
+# matching only "sshd" would never fire on this machine.
+# Unreadable ps output falls through to "local", i.e. the desktop theme - the
+# failure direction we want, since a spurious dark is what sent us here.
+has_sshd_ancestor() {
+  local start pid depth cmd
+  for start in $(ps -t "${1#/dev/}" -o pid= 2> /dev/null | tr -d ' '); do
+    pid="$start"
+    depth=0
+    while [ -n "$pid" ] && [ "$pid" -gt 1 ] && [ "$depth" -lt 8 ]; do
+      cmd="$(ps -o comm= -p "$pid" 2> /dev/null | tr -d ' ')" || cmd=""
+      [ -n "$cmd" ] || break
+      case "${cmd##*/}" in sshd | sshd-session) return 0 ;; esac
+      pid="$(ps -o ppid= -p "$pid" 2> /dev/null | tr -d ' ')" || pid=""
+      depth=$((depth + 1))
+    done
+  done
+  return 1
+}
+
 is_mobile_tty() {
   local peer
+  has_sshd_ancestor "$1" || return 1
   peer="$(peer_of "$1")"
   [ -n "$peer" ] || return 1
   is_mobile_peer "$peer"

@@ -96,6 +96,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `prefix y` | Toggle synchronize-panes |
 | `prefix b` | Break pane out into its own window here (auto-rebalance) |
 | `prefix B` | Break pane out into a brand-new session |
+| `prefix A` | Break pane out into a new session and open an Alacritty window on it (this client stays put) |
 | `prefix G` | Gather current window back into the default (`tmp`) session |
 | `prefix n` | Next session (repeatable, so hold the prefix and keep tapping). No `prefix p` twin, that key is the PR popup: go backwards with `Cmd+Shift+p` or tmux's own `prefix (` |
 | `prefix p` | GitHub PR list popup (`tmux-gh-pr`, on a single key via `@gh-pr-key 'p'` instead of its default `pr` sequence). `j`/`k` move, `Enter` opens the detail view (`o` there opens that PR on github.com, `q` goes back), `/` filters, `o` opens the list on github.com, `r` refreshes, `q` quits |

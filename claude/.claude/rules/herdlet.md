@@ -39,3 +39,15 @@ pointer line, or with `herdlet send --id <id> --file <path>`.
 Approving a worker's remaining prompt is the orchestrator's call, not the
 owner's: `herdlet approve --id <id> --option <n>` (option 1 = Yes). Use
 `--wait` on it to resume waiting in the same call.
+
+Peer channel (0.8.0+): `herdlet pair --id <a> --with <b> --topic <file>` links
+two workers; `herdlet unpair` removes it. A worker (`$HERDLET_ID` set) may
+`send` only to a paired peer; other targets exit 3 with "not paired with <id>;
+raise it in your report to the master". A peer send appends one line under
+`## Thread` in the topic file and emits a `peer_send` event on `herdlet watch`;
+it never touches the master's record, so master waits do not fire. The master
+(no `$HERDLET_ID`) is unrestricted. `herdlet spawn` adds the child to the
+SPAWNER's peers only (topic = the brief, else `plans/<id with / as ->-thread.md`),
+so a nested master can `send` to what it spawned while children never gain a
+path upward; only an explicit `pair` is symmetric. `remove`, `ack` of an ended
+worker and the prune sweep drop dangling peer links.

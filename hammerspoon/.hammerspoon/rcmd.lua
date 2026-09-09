@@ -15,6 +15,7 @@
 --   2. While held, single-character hotkeys are enabled
 --   3. Releasing right-Command disables the hotkeys
 --   4. Apps are launched/focused and only sent to macOS fullscreen when configured
+--   5. A cold launch is tiled to the left half unless the binding is fullscreen
 
 local M = {}
 
@@ -796,7 +797,24 @@ local function fullscreenWindow(window)
   window:setFullScreen(true)
 end
 
-local function focusApp(app, shouldFullscreen, retriesRemaining)
+local function moveWindowToUnit(window, unitRect)
+  -- Leaving fullscreen animates, so tile only once the window has settled.
+  if window:isFullScreen() then
+    window:setFullScreen(false)
+    hs.timer.doAfter(0.4, function()
+      if window:id() then
+        window:moveToUnit(unitRect, 0)
+        window:focus()
+      end
+    end)
+    return
+  end
+
+  window:moveToUnit(unitRect, 0)
+  window:focus()
+end
+
+local function focusApp(app, shouldFullscreen, placeLeft, retriesRemaining)
   local frontmostApp = hs.application.frontmostApplication()
   local appWasFrontmost = frontmostApp ~= nil and frontmostApp:pid() == app:pid()
 
@@ -826,6 +844,8 @@ local function focusApp(app, shouldFullscreen, retriesRemaining)
   if window then
     if shouldFullscreen and not windowIsSnapped(window) then
       fullscreenWindow(window)
+    elseif placeLeft and not shouldFullscreen then
+      moveWindowToUnit(window, hs.layout.left50)
     else
       focusWindow(window)
     end
@@ -839,7 +859,7 @@ local function focusApp(app, shouldFullscreen, retriesRemaining)
   end
 
   hs.timer.doAfter(0.2, function()
-    focusApp(app, shouldFullscreen, retriesRemaining - 1)
+    focusApp(app, shouldFullscreen, placeLeft, retriesRemaining - 1)
   end)
 end
 
@@ -1014,10 +1034,13 @@ openBoundApp = function(appBinding)
   local appTarget = appTargetValue(appBinding)
   local shouldFullscreen = type(appBinding) == "table" and appBinding.fullscreen == true
   local lookupTarget = lookupTargetFor(appTarget)
+  -- A cold launch has no window placement of its own yet, so rcmd tiles it left
+  -- (unless the binding wants fullscreen). Focusing a running app never moves it.
+  local placeLeft = hs.application.get(lookupTarget) == nil
   local app = hs.application.open(appTarget)
 
   if app then
-    focusApp(app, shouldFullscreen, 15)
+    focusApp(app, shouldFullscreen, placeLeft, 15)
     return
   end
 
@@ -1029,7 +1052,7 @@ openBoundApp = function(appBinding)
 
     if runningApp then
       poller:stop()
-      focusApp(runningApp, shouldFullscreen, 15)
+      focusApp(runningApp, shouldFullscreen, placeLeft, 15)
       return
     end
 
@@ -1048,19 +1071,7 @@ local function moveFocusedWindow(unitRect, missingWindowMessage)
     return
   end
 
-  if window:isFullScreen() then
-    window:setFullScreen(false)
-    hs.timer.doAfter(0.4, function()
-      if window:id() then
-        window:moveToUnit(unitRect, 0)
-        window:focus()
-      end
-    end)
-    return
-  end
-
-  window:moveToUnit(unitRect, 0)
-  window:focus()
+  moveWindowToUnit(window, unitRect)
 end
 
 local function windowSideOnScreen(window)

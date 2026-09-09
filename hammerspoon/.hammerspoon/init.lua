@@ -37,6 +37,17 @@ for _, directory in ipairs(initDirectories()) do
   addLuaSearchPath(directory)
 end
 
+local function reloadOnLuaChange(paths)
+  for _, path in ipairs(paths) do
+    if path:sub(-4) == ".lua" then
+      return hs.reload()
+    end
+  end
+end
+
+-- global: a local would be collected and the watcher would stop firing
+configWatcher = hs.pathwatcher.new(hs.fs.pathToAbsolute(hs.configdir), reloadOnLuaChange):start()
+
 require("rcmd").start()
 require("raycast").start()
 require("selection_ocr").start()

@@ -34,8 +34,8 @@ Git ignores the log directory. Its mode is `700`. Each Mac keeps its own logs.
 The monitor writes two lines per observed connection, using logfmt. The following names and addresses are synthetic examples:
 
 ```text
-time=2025-01-15T10:00:00+01:00 level=info msg=connect peers="phone@192.0.2.10" terminal=true
-time=2025-01-15T10:00:26+01:00 level=info msg=disconnect peers="phone@192.0.2.10" terminal=true duration_seconds=26 connected_at=2025-01-15T10:00:00+01:00
+time=2025-01-15T10:00:00+01:00 peers="phone@192.0.2.10" level=info msg=connect terminal=true
+time=2025-01-15T10:00:26+01:00 peers="phone@192.0.2.10" level=info msg=disconnect terminal=true duration_seconds=26 connected_at=2025-01-15T10:00:00+01:00
 ```
 
 Open the active file with lnav:

@@ -27,7 +27,7 @@ local function emit(event, data)
     end
     local fields = {
       'time=' .. (event == 'connect' and session.connected_at or localTimestamp()),
-      'level=info', 'msg=' .. event, 'peers=' .. logValue(table.concat(peers, ', ')),
+      'peers=' .. logValue(table.concat(peers, ', ')), 'level=info', 'msg=' .. event,
     }
     if data.terminal then table.insert(fields, 'terminal=true') end
     if data.monitoring_gap then table.insert(fields, 'monitoring_gap=true') end

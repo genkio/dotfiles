@@ -402,7 +402,36 @@ unzip() {
 }
 
 alias x="clear"
-alias xx="exit"
+
+# xx: exit, except when this shell is the last pane of its tmux session and
+# other sessions are alive. Plain exit there takes the session down with it and
+# detaches the client, dumping you back to a bare terminal; instead hop to the
+# most recently used other session, open the window chooser (same view as
+# prefix+w), and only then kill the session we came from - so the terminal
+# stays in tmux and you pick where to land.
+# Not a hook on session-closed: that fires for every session anywhere, so a
+# background one ending would pop the chooser over whatever you were doing.
+xx() {
+  if [[ -n $TMUX ]]; then
+    local cur other
+    cur=$(tmux display -p '#{session_id}')
+    if [[ $(tmux list-panes -s -t "$cur" | wc -l) -eq 1 ]]; then
+      other=$(tmux list-sessions -F '#{session_last_attached} #{session_id}' \
+        | grep -v " $cur\$" | sort -rn | head -1 | cut -d' ' -f2)
+      if [[ -n $other ]]; then
+        # every client, not just this one: the mac and the phone can both be on
+        # this session, and any left behind would be detached by the kill.
+        tmux list-clients -t "$cur" -F '#{client_name}' | while read -r client; do
+          tmux switch-client -c "$client" -t "$other"
+        done
+        tmux choose-tree -Zw -F '#{E:@tree_format}' -t "$other:"
+        tmux kill-session -t "$cur"
+        return
+      fi
+    fi
+  fi
+  exit
+}
 alias ff="fastfetch"
 alias ls="eza --group-directories-first"
 alias ll="eza --group-directories-first --all -lh"

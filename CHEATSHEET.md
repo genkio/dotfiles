@@ -28,7 +28,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `lq [-r]` | Open lazysql on this repo's database: finds the repo's running postgres/mysql/mssql container and builds the URL from its port binding and env creds, else a sqlite file in the repo, else the bare picker (`-r` read-only) |
 | `box` | `maestral` (Dropbox client; sign in with `box auth link`) |
 | `x` | `clear` |
-| `xx` | `exit` |
+| `xx` | `exit`, except as the last pane of a tmux session with other sessions alive: hops the client to the most recent other session, opens the window chooser (`prefix w`), then kills the one you left, so you stay in tmux instead of dropping to a bare terminal |
 | `ff` | `fastfetch` |
 | `ls` | `eza --group-directories-first` |
 | `ll` | `eza --group-directories-first --all -lh` |

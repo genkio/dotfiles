@@ -93,7 +93,14 @@ busy_hex="${busy#\#}"
 # status-usage.sh owns the whole left block and prints nothing while the machine
 # is healthy - it only names the signals worth a look (cpu, ram, net, dropbox,
 # battery). Pass the palette so its tints track the theme.
-tmux set-option -g status-left "#[fg=$muted]#(\$HOME/dotfiles/tmux/bin/status-usage.sh $muted_hex $attention_hex $busy_hex)#[default]"
+#
+# @status_show_all is the prefix+S toggle: gated in the format for the same
+# reason as @usage_hidden below, so a theme flip re-running this script keeps
+# whichever mode the bar is in. The two branches are two distinct #() command
+# strings, i.e. two tmux jobs, so flipping shows the other one's output on its
+# first run rather than a stale line.
+usage_cmd="\$HOME/dotfiles/tmux/bin/status-usage.sh $muted_hex $attention_hex $busy_hex"
+tmux set-option -g status-left "#[fg=$muted]#{?@status_show_all,#($usage_cmd all),#($usage_cmd)}#[default]"
 # No clock here: it cost 8 permanent columns to answer a question asked a few
 # times a day, and prefix + C now opens a popup with the date and calendar too.
 # open_usage_status.sh inlined, not the plugin's auto-inject (@tmux_open_usage_enabled

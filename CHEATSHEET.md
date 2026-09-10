@@ -103,6 +103,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `prefix t` | Toggle light/dark theme (tmux + nvim + lazygit + the terminal) |
 | `prefix T` | Date/time/uptime/calendar popup |
 | `prefix u` | Show/hide the coding-agent usage block on the right status line (hidden also stops the usage fetch) |
+| `prefix S` | Show every field of the left status block, healthy or not (`[c16/r74/b78/net/dbx]`); press again to go back to by-exception. Leaves the right-side usage block alone, `prefix u` owns that |
 | `prefix C` | Set/edit pane label |
 | `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
 | `prefix F` | fzf file picker (starts in `~/box`, or `ATTACH_ROOT`); pastes the chosen path into the pane to attach it to Claude Code / Codex. `Enter` descends into a directory or attaches a file, `^h` goes up, `Tab` marks several, `Esc` cancels |
@@ -132,6 +133,8 @@ file leaves out, so it reads on its own without knowing this config.
 | `C-Right` | Arm the prefix, for one-tap leader on a phone keyboard |
 | `C--` (or `C-_`, or `C-/`) | Toggle copy-mode. One binding, `C-_`: Ctrl with the `-`/`_` key sends byte `0x1F`, and so does `Ctrl+/` in most terminals, which is the name tmux gives that byte |
 | `F12` | Nested tmux: put the local (outer) server to sleep so every key reaches the inner session; `F12` again wakes it (a chip on status-left marks the sleeping state) |
+
+Status-left (`tmux/bin/status-usage.sh`) is by exception: nothing at all while the machine is healthy, and one bracket naming only what needs a look, e.g. `[c91/r94/b18/45m/net/dbx]` - `c` cpu %, `r` ram %, `b` battery % and time left while unplugged, `net` no route out, `dbx` Dropbox syncing or wedged. cpu and ram appear at 85/90% and only clear below 70/85%, and cpu must read high twice running, so a passing compile doesn't blink the block. `prefix S` forces every field to print (healthy ones muted) when you want the actual numbers.
 
 Plugins (via TPM): `tmux-resurrect`, `genkio/tmux-open-usage`, `genkio/tmux-spoony`, `genkio/tmux-gh-pr`. Resurrect captures pane contents; save/restore is manual via `prefix C-s` / `prefix C-r`. open-usage's own status injection is off (`@tmux_open_usage_enabled off`) because `tmux/bin/apply-theme.sh` inlines its script into `status-right` instead, to pick up the theme colour; `prefix u` hides that block.
 

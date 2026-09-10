@@ -2,16 +2,20 @@
 #
 # The left status block, by exception: it prints nothing at all while the
 # machine is healthy, and only names the signals that need a look. Fields are
-# joined with "/" inside one pair of brackets, e.g. [c91/r94/net/dbx/b85/5h]:
+# joined with "/" inside one pair of brackets, e.g. [c91/r94/b85/5h/net/dbx]:
 #
 #   c<pct>  cpu is pegged            r<pct>  ram is pegged
 #   net     no route to the internet  dbx     dropbox syncing or wedged
 #   b<pct>/<left>  running on battery
 #
+# 4th arg "all" is the prefix+S override: print every field whatever its value,
+# healthy ones muted, so the bar can be inspected instead of only warned by.
+#
 # hex from apply-theme so tinted segments track the active theme, not fixed values
 muted="${1:-5c5c5c}"
 red="${2:-af3029}"
 yellow="${3:-ad8301}"
+show_all="${4:-}"
 bin_dir="${0%/*}"
 
 # Thresholds are asymmetric on purpose: a field appears at *_HIGH and only goes
@@ -81,6 +85,15 @@ fi
 mkdir -p "$state_dir" 2>/dev/null
 printf '%s %s %s\n' "$cpu_shown" "$ram_shown" "$cpu_hits" > "$state_file" 2>/dev/null
 
+# override AFTER the state write, so a spell in show-all mode doesn't teach the
+# latch that cpu/ram were high and leave them stuck on when it ends.
+cpu_latched="$cpu_shown"
+ram_latched="$ram_shown"
+if [ "$show_all" = all ]; then
+  cpu_shown=1
+  ram_shown=1
+fi
+
 # scutil reachability = routing path, no packets, fast. not a real internet probe.
 case "$(scutil -r 8.8.8.8 2>/dev/null)" in
   Reachable*) net_down=0 ;;
@@ -90,9 +103,12 @@ esac
 dbx=$("$bin_dir/maestral-state.sh" 2>/dev/null)
 
 # Battery only exists as a field while unplugged; on AC there is nothing to say.
-battery=$(pmset -g batt 2>/dev/null | awk -v muted="$muted" -v red="$red" '
+# In show-all mode the charge prints on AC too, but without the time left: pmset
+# reports "0:00 remaining" while charged, which would read as a dead battery.
+battery=$(pmset -g batt 2>/dev/null | awk -v muted="$muted" -v red="$red" -v all="$show_all" '
 NR == 1 && /Battery Power/ { on_battery = 1 }
-NR > 1 && on_battery {
+NR == 1 && all == "all" { show = 1 }
+NR > 1 && (on_battery || show) {
   if (match($0, /[0-9]+%/)) {
     pct = substr($0, RSTART, RLENGTH - 1)
   }
@@ -105,7 +121,7 @@ NR > 1 && on_battery {
   if (pct != "") {
     if (pct + 0 < 20) printf "#[fg=#%s]b%02d#[fg=#%s]", red, pct, muted
     else printf "b%02d", pct
-    if (hours != "") {
+    if (hours != "" && on_battery) {
       if (hours + 0 == 0) printf "/%dm", mins + 0
       else printf "/%dh", hours + 0
     }
@@ -116,19 +132,36 @@ NR > 1 && on_battery {
 fields=""
 add() { [ -n "$fields" ] && fields="$fields/$1" || fields="$1"; }
 
-if [ "$cpu_shown" = 1 ]; then
-  [ "$cpu" -ge 95 ] 2>/dev/null && tint="$red" || tint="$yellow"
+# a field the latch put on is always worth a colour, even mid-decay; one that
+# only shows because of prefix+S stays muted until it crosses its own threshold.
+tint_for() { # value red_at high_at latched
+  if [ "$1" -ge "$2" ] 2>/dev/null; then printf '%s' "$red"
+  elif [ "$4" = 1 ] || [ "$1" -ge "$3" ] 2>/dev/null; then printf '%s' "$yellow"
+  else printf '%s' "$muted"
+  fi
+}
+
+if [ "$cpu_shown" = 1 ] && [ -n "$cpu" ]; then
+  tint=$(tint_for "$cpu" 95 "$cpu_high" "$cpu_latched")
   add "#[fg=#$tint]c$cpu#[fg=#$muted]"
 fi
-if [ "$ram_shown" = 1 ]; then
-  [ "$ram" -ge 96 ] 2>/dev/null && tint="$red" || tint="$yellow"
+if [ "$ram_shown" = 1 ] && [ -n "$ram" ]; then
+  tint=$(tint_for "$ram" 96 "$ram_high" "$ram_latched")
   add "#[fg=#$tint]r$ram#[fg=#$muted]"
 fi
-[ "$net_down" = 1 ] && add "#[fg=#$red]net#[fg=#$muted]"
+# battery sits with cpu/ram: the numeric fields read as one group, the word
+# fields (net/dbx) as another.
+[ -n "$battery" ] && add "$battery"
+
+if [ "$net_down" = 1 ]; then
+  add "#[fg=#$red]net#[fg=#$muted]"
+elif [ "$show_all" = all ]; then
+  add "net"
+fi
 case "$dbx" in
   error) add "#[fg=#$red]dbx#[fg=#$muted]" ;;
   sync)  add "#[fg=#$yellow]dbx#[fg=#$muted]" ;;
+  *)     [ "$show_all" = all ] && add "dbx" ;;
 esac
-[ -n "$battery" ] && add "$battery"
 
 [ -n "$fields" ] && printf '[%s]' "$fields"

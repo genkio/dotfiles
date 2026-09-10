@@ -13,9 +13,12 @@ yourself on the third file in a row, stop and delegate.
 ## Workers
 
 Workers are herdlet agents in tmux panes (the `herdlet` skill; load it before
-the first spawn). Spawn each one with `herdlet spawn`; `rules/herdlet.md` has
-the flags and why each default exists. One worker per independent unit of work;
-several in parallel when the units don't share files.
+the first spawn, it owns every flag, exit code and menu rule). Spawn each one
+with `herdlet spawn`. One worker per independent unit of work; several in
+parallel when the units don't share files. Claude workers by default; codex
+workers only when the user asks for codex this session (otherwise codex is the
+one-shot `codex exec` reviewer the review skills already run), on medium
+effort unless the unit would put Claude on high.
 
 Every worker gets a written brief at `plans/<topic>-brief.md` before it starts:
 the goal, the decisions already made (so it doesn't re-litigate them), what is
@@ -24,11 +27,13 @@ deliverable (a report written to `plans/<topic>-report.md`, suggested commit
 messages, no commits). Pass it as `--brief plans/<topic>-brief.md`, which sends
 the pointer line once the worker is up. Wait in the background, never a sleep
 loop: `herdlet wait --id <id> --state done,blocked,limited --timeout 560
---timeout-ok`. A `blocked` worker is yours to unblock with `herdlet approve`; it
-is not the user's. A `limited` worker is parked on a usage-limit banner with its
-context intact: re-check usage, wait again, never respawn it. Read what came
-back with `herdlet peek --transcript --id <id>` plus the report file, not by
-scraping the pane.
+--timeout-ok`. A `blocked` worker is yours to unblock (`herdlet approve
+--choice always`, never a digit); it is not the user's, and a prompt the user
+has to answer for you is a failure to report. A `limited` worker is parked on
+a usage-limit banner with its context intact: re-check usage, wait again,
+never respawn it. Read what came back from the report file first and `herdlet
+peek --transcript` second, never by scraping the pane. Send follow-ups with
+`send --ack` so a message that did not land is your error, not a silent stall.
 
 Shared contracts are written before the fan-out, not discovered after it.
 Before spawning two or more workers in parallel, list every interface more than
@@ -103,6 +108,12 @@ Then adjust by the unit, and say why:
 - mechanical roles (formatters, seeders, one-fact lookups): `sonnet` or `haiku`
   via the Agent tool, never a pane.
 
+Codex has its own pool and its own cache file,
+`~/Library/Caches/tmux-open-usage/codex.json` (`weekly.pct` USED, `reset_at`;
+refresh with `--refresh codex`). Read it before every codex spawn and at every
+codex `limited` wake, exactly like the Claude one; the user resets codex by
+hand when it nears 5% left, so say the number when you spawn.
+
 Re-read the cache before EVERY spawn, and again after any `limited` wake or
 session reset. A 12-hour run crosses several windows; a row picked in the
 morning is stale by the afternoon. Say which source decided (user, project,
@@ -134,9 +145,10 @@ the `NOW` block, then `herdlet resume` any `stale` or `ended` worker (their
 session refs are kept) and nudge it back to its brief. Never respawn a worker
 that can be resumed. Then continue from the "next command" line.
 
-Workers compact too. `herdlet get --id <id>` shows `compacts`; a worker that
-compacted mid-task has lost detail, so send it a short "where were we" nudge
-pointing back at its brief before trusting its next answer.
+Workers compact too (`C<n>` in `herdlet list`, `wait --on-compact`); a worker
+that compacted mid-task has lost detail, so send it a short "where were we"
+nudge pointing back at its brief before trusting its next answer. Retire a
+finished worker with `ack --kill-pane`; idle panes hold memory.
 
 ## Plans directory hygiene
 

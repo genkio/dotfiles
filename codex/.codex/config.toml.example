@@ -9,6 +9,8 @@ suppress_unstable_features_warning = true
 approval_policy = "never"
 sandbox_mode = "workspace-write"
 approvals_reviewer = "auto_review"
+# herdlet reads codex state through ~/.codex/hooks.json; off means no hook fires
+hooks = true
 
 [analytics]
 enabled = false
@@ -24,3 +26,13 @@ goals = true
 
 [mcp_servers.openaiDeveloperDocs]
 url = "https://developers.openai.com/mcp"
+
+# Trusted repos. In any other cwd codex stops on a trust menu, and a herdlet
+# worker typed into that menu dies. restore-codex-config.sh merges these into an
+# existing config and expands ~ to $HOME. Public repos only; add private ones
+# on the machine itself.
+[projects."~/dotfiles"]
+trust_level = "trusted"
+
+[projects."~/code/herdlet"]
+trust_level = "trusted"

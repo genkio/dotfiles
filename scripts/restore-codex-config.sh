@@ -26,10 +26,23 @@ else
   warn "GNU stow not found; skipping stow of codex package (config.toml will still be seeded)."
 fi
 
-if [[ -e "$TARGET_FILE" ]]; then
-  echo "Skipping Codex config restore: $TARGET_FILE already exists."
+if [[ ! -e "$TARGET_FILE" ]]; then
+  sed "s#\"~/#\"$HOME/#g" "$SOURCE_FILE" > "$TARGET_FILE"
+  echo "Seeded $TARGET_FILE from $SOURCE_FILE"
   exit 0
 fi
 
-cp "$SOURCE_FILE" "$TARGET_FILE"
-echo "Seeded $TARGET_FILE from $SOURCE_FILE"
+# Existing config: merge only what herdlet needs, hooks on and trusted repos.
+# Top-level keys must sit before the first [table], so hooks goes to line 1.
+if ! grep -q '^hooks = true' "$TARGET_FILE"; then
+  printf 'hooks = true\n%s\n' "$(cat "$TARGET_FILE")" > "$TARGET_FILE"
+  echo "Enabled hooks in $TARGET_FILE"
+fi
+while IFS= read -r project; do
+  project="${project/#\~/$HOME}"
+  if ! grep -qF "[projects.\"$project\"]" "$TARGET_FILE"; then
+    printf '\n[projects."%s"]\ntrust_level = "trusted"\n' "$project" >> "$TARGET_FILE"
+    echo "Trusted $project in $TARGET_FILE"
+  fi
+done < <(sed -n 's/^\[projects\."\(.*\)"\]$/\1/p' "$SOURCE_FILE")
+echo "Merged herdlet settings into existing $TARGET_FILE"

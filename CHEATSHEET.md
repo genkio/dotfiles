@@ -88,7 +88,8 @@ file leaves out, so it reads on its own without knowing this config.
 |---|---|
 | `prefix r` | Reload tmux config |
 | `prefix c` | Prompt for name, create new window in current path |
-| `prefix w` | Choose a window from a tree |
+| `prefix w` | Window chooser popup (fzf): rows are this session's windows with the agent-state dot, preview tails every pane of the highlighted window and re-polls every second, so it doubles as a monitor of the Claude Code panes. `j`/`k` move between windows, `Up`/`Down` pick the pane inside the highlighted window (marked `▶` in the preview), `Enter` lands on it, `s` opens a search line to filter the rows (`Esc` there clears it and goes back to nav), `q`/`Esc` close, `C-r` forces a refresh. Pane headers are bars in the pane's agent colour, and the popup reopens itself at the new size when the client resizes (phone keyboard). Replaces `choose-tree`, whose preview crops Claude Code panes from the top because they hide the cursor |
+| `prefix s` | Same chooser across every session (`session:index name` rows), instead of tmux's session tree |
 | `prefix v` | Vertical split (side-by-side) in current path |
 | `prefix h` | Horizontal split (top-bottom) in current path |
 | `prefix x` | Kill pane, after a `y/n` confirm (auto-rebalance) |
@@ -123,7 +124,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `C-z` / `C-Up` | Toggle pane zoom |
 | `C-x` / `C-y` | Half zoom: fill the column (full height) / fill the row (full width). Per-axis and per-pane, so a left and a right pane can both be maxed |
 | `C-h/k/l` | Navigate between panes. No `C-j`: tmux resolves the prefix before any key table, so a `C-j` binding is unreachable while `C-j` is the prefix. `prefix Down` for the rest |
-| `C-Down` | Choose a window from a tree (same as `prefix w`) |
+| `C-Down` | Window chooser popup (same as `prefix w`) |
 | `S-Left` / `S-Right` | Previous / next window |
 | `C-p` / `C-n` | Previous / next window |
 | `C-S-Left` / `C-S-Right` | Reorder window left / right |

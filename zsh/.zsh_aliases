@@ -421,10 +421,17 @@ xx() {
       if [[ -n $other ]]; then
         # every client, not just this one: the mac and the phone can both be on
         # this session, and any left behind would be detached by the kill.
-        tmux list-clients -t "$cur" -F '#{client_name}' | while read -r client; do
+        local clients client
+        clients=$(tmux list-clients -t "$cur" -F '#{client_activity} #{client_name}' | sort -rn | cut -d' ' -f2)
+        for client in ${(f)clients}; do
           tmux switch-client -c "$client" -t "$other"
         done
-        tmux choose-tree -Zw -F '#{E:@tree_format}' -t "$other:"
+        # popup, not inline: this pane's session is about to die and no client
+        # is looking at it any more. Most recently active client = the one xx
+        # was typed on. Blocks until a window is picked or the popup is closed.
+        client=${clients%%$'\n'*}
+        [[ -n $client ]] && tmux display-popup -E -c "$client" -w 95% -h 95% -T " windows " \
+          "$HOME/dotfiles/tmux/bin/window-chooser.sh '$other' '$client'"
         tmux kill-session -t "$cur"
         return
       fi

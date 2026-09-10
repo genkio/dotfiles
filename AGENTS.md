@@ -1,6 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working in this repository.
+`CLAUDE.md` is a symlink to it, so Claude Code and any agent reading
+`AGENTS.md` get the same instructions with nothing to keep in sync.
 
 ## Overview
 
@@ -79,6 +81,13 @@ Yazi config is stowed separately under `yazi/.config/` for shell `yazi`, with `y
 A recurring pattern across tools: clipboard integration uses OSC52 escape sequences so copy works over SSH and inside tmux.
 - `tmux/bin/osc52-copy.sh` - tmux copy helper
 - Alacritty config sets `[terminal] osc52 = "CopyPaste"` (read+write clipboard allow)
+
+## Cheatsheets
+
+`CHEATSHEET.md` and `CHEATSHEET-tmux-alacritty.html` document the tmux and
+Alacritty setup. They are two renderings of the same knowledge, so any change to
+tmux or Alacritty config (a keybinding, a status-line element, a theme hook)
+must update **both** in the same commit, not one and a promise about the other.
 
 ## Commit Message Convention
 

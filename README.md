@@ -32,7 +32,7 @@ Install stow:
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
 - Optional app packages: `stow hammerspoon`, then `make sublime` to enable Sublime's Package Control and auto-install packages
 - Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh && bash scripts/restore-pi-settings.sh`
-  - All three restore scripts also stow the shared `skills/` package into `~/.claude/skills/`, `~/.codex/skills/`, and `~/.pi/agent/skills` so coding-agent skills are kept in one place. The Pi script also links the tmux agent-state extension into `~/.pi/agent/extensions/`.
+  - All three restore scripts also stow the shared `skills/` package into `~/.claude/skills/`, `~/.codex/skills/`, and `~/.pi/agent/skills` so coding-agent skills are kept in one place. The Pi script also links `settings.json` (fullscreen TUI and other choices), the transcript keybindings, the tmux agent-state extension, `quiet-tools.ts` (renders every tool row and thinking row at zero height until `Ctrl+O`, keeping one `✗ <tool> failed` line for errors), `deny-guard.ts` (deny-only gate: the commands and paths from the Claude `permissions.deny` list are blocked, everything else runs), and `usage-footer.ts` (one-line footer: model, context usage, cwd, session cost; DeepSeek off-peak requests are priced at half, which pi's model catalog does not do) into `~/.pi/agent/`, installs the `pi-web-access` package through `pi install`, and seeds `~/.pi/agent/web-search.json` (browser curator off) from the tracked example.
 - Yazi: `stow yazi`
 
 ## Remove symlinks
@@ -77,7 +77,7 @@ The live settings file is seeded, not stowed: Package Control rewrites it at run
 - `brew update && brew upgrade` for everything already installed. No `brew bundle`: that would install every entry of every Brewfile and quietly converge a base machine to `--include-all`. A package added to a Brewfile reaches other machines when you run `make apps` / `make dev` there.
 - Re-runs `scripts/install-alacritty.sh`, a no-op unless its pinned `VERSION` changed, so a deliberate bump on one machine reaches the others after a pull.
 - Restows every package, reporting only links that genuinely appeared, vanished, or conflicted.
-- Refreshes the generated Alacritty theme cache, and seeds `~/.gitconfig.local` / `~/.codex/config.toml` when missing. When they already exist it only reports which keys the `.example` has gained since; those files hold machine-local state, so merging is left to you.
+- Refreshes the generated Alacritty theme cache, and seeds `~/.gitconfig.local` / `~/.codex/config.toml` / `~/.pi/agent/web-search.json` when missing. When they already exist it only reports which keys the `.example` has gained since; those files hold machine-local state, so merging is left to you.
 - Runs `scripts/check-pins.sh` (below).
 - Warns when the checkout is behind its upstream, but never pulls: an automatic pull into a dirty tree is a worse surprise than a stale run.
 

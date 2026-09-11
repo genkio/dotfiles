@@ -318,10 +318,10 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Keys</h3>
     <table>
-      <tr><td class="k"><kbd class="c">⇧Enter</kbd></td><td class="d">Insert a newline instead of submitting, for a multi-line prompt</td></tr>
+      <tr><td class="k"><kbd class="c">⇧Enter</kbd></td><td class="d">Insert a newline instead of submitting, for a multi-line prompt in Claude Code, pi and Codex. Alacritty emits <code>\x1b\r</code>; Claude Code and Codex read it as shift+enter, while pi reads it as alt+enter and remaps that key to newline. Pi's follow-up queue moves to <kbd>C-q</kbd></td></tr>
       <tr><td class="k"><kbd class="c">⌘⇧Space</kbd></td><td class="d">Toggle Alacritty's own vi mode. Not the default <kbd>C-⇧Space</kbd>, which a CJK input method eats</td></tr>
       <tr><td class="k"><kbd class="c">⌘⇧Y</kbd></td><td class="d">Join the clipboard into one line. Run it <i>after</i> a vi-mode <kbd>y</kbd>; Alacritty can't filter a yank as it happens</td></tr>
-      <tr><td class="k"><kbd class="c">⌘⇧U</kbd> <kbd class="c">⌘⇧D</kbd> <kbd class="c">⌘⇧J</kbd> <kbd class="c">⌘⇧K</kbd></td><td class="d">Scroll the Claude Code transcript</td></tr>
+      <tr><td class="k"><kbd class="c">⌘⇧U</kbd> <kbd class="c">⌘⇧D</kbd> <kbd class="c">⌘⇧J</kbd> <kbd class="c">⌘⇧K</kbd></td><td class="d">Transcript navigation in Claude Code and pi fullscreen: on <kbd class="c">U</kbd>/<kbd class="c">D</kbd> Claude scrolls half a page while pi jumps to the previous/next message; <kbd class="c">K</kbd>/<kbd class="c">J</kbd> jump to first/latest in both. Sent as the xterm modifyOtherKeys encoding; tmux <code>extended-keys</code> re-encodes it as csi-u, which both apps parse</td></tr>
       <tr><td class="k"><kbd class="c">⌘0</kbd></td><td class="d">Reset the font size<span class="src tm">alacritty</span></td></tr>
       <tr><td class="k"><kbd class="c">⌘1</kbd>..<kbd class="c">⌘9</kbd>, <kbd class="c">⌘⇧N/P</kbd></td><td class="d">Passed through to tmux for windows and sessions — see above</td></tr>
     </table>

@@ -285,7 +285,7 @@ fi
 
 # ---------------------------------------------------------------- seeds
 
-# Three files the repo cannot own outright, each stale in its own way.
+# Four files the repo cannot own outright, each stale in its own way.
 
 SEED_LINES=()
 seed_say() { SEED_LINES+=("  $*"); }
@@ -338,6 +338,12 @@ toml_keys() {
   ' "$1" | sort -u
 }
 
+# Leaf scalar paths from a JSON object, dotted so a nested key reads as
+# section.key. Enough for the flat pi web-search config.
+json_keys() {
+  jq -r 'paths(scalars) | map(tostring) | join(".")' "$1" 2>/dev/null | sort -u
+}
+
 # seed_or_diff <target> <example> <lister> <hint>
 seed_or_diff() {
   local target="$1" example="$2" lister="$3" hint="$4" missing
@@ -367,6 +373,8 @@ seed_or_diff "$HOME/.gitconfig.local" "$REPO_ROOT/git/.gitconfig.local.example" 
   git_keys "edit ~/.gitconfig.local: it still holds the example identity."
 seed_or_diff "$HOME/.codex/config.toml" "$REPO_ROOT/codex/.codex/config.toml.example" \
   toml_keys "review ~/.codex/config.toml: it was just seeded from the example."
+seed_or_diff "$HOME/.pi/agent/web-search.json" "$REPO_ROOT/pi/.pi/agent/web-search.json.example" \
+  json_keys "review ~/.pi/agent/web-search.json: it was just seeded from the example."
 
 if [[ "${#SEED_LINES[@]}" -gt 0 ]]; then
   section "seeds"

@@ -22,7 +22,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `ccx` | `claude --dangerously-skip-permissions` |
 | `ccf` / `cco` | `cc` on Fable 5.1 / the same plus the orchestrator system prompt (`cc -o`, which dispatches herdlet workers) |
 | `cx` / `cxx` | `codex` / `codex --dangerously-bypass-approvals-and-sandbox` |
-| `lr` | List the coding-agent sessions started in this directory (Claude + Codex), newest first, with title and age; `Enter` resumes one |
+| `lr` | List the coding-agent sessions started in this directory (Claude, Codex + Pi), newest first, with title and age; `Enter` resumes one |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |
 | `lq [-r]` | Open lazysql on this repo's database: finds the repo's running postgres/mysql/mssql container and builds the URL from its port binding and env creds, else a sqlite file in the repo, else the bare picker (`-r` read-only) |
@@ -88,7 +88,7 @@ file leaves out, so it reads on its own without knowing this config.
 |---|---|
 | `prefix r` | Reload tmux config |
 | `prefix c` | Prompt for name, create new window in current path |
-| `prefix w` | Window chooser popup (fzf): rows are this session's windows with the agent-state dot, preview tails every pane of the highlighted window and re-polls every second, so it doubles as a monitor of the Claude Code panes. `j`/`k` move between windows, `Up`/`Down` pick the pane inside the highlighted window (marked `▶` in the preview), `Enter` lands on it, `s` opens a search line to filter the rows (`Esc` there clears it and goes back to nav), `q`/`Esc` close, `C-r` forces a refresh. Pane headers are bars in the pane's agent colour, and the popup reopens itself at the new size when the client resizes (phone keyboard). Replaces `choose-tree`, whose preview crops Claude Code panes from the top because they hide the cursor |
+| `prefix w` | Window chooser popup (fzf): rows are this session's windows with the agent-state dot, preview tails every pane of the highlighted window and re-polls every second, so it doubles as a monitor of the agent panes. `j`/`k` move between windows, `Up`/`Down` pick the pane inside the highlighted window (marked `▶` in the preview), `Enter` lands on it, `s` opens a search line to filter the rows (`Esc` there clears it and goes back to nav), `q`/`Esc` close, `C-r` forces a refresh. Pane headers are bars in the pane's agent colour, and the popup reopens itself at the new size when the client resizes (phone keyboard). Replaces `choose-tree`, whose preview crops agent panes from the top because they hide the cursor |
 | `prefix s` | Same chooser across every session (`session:index name` rows), instead of tmux's session tree |
 | `prefix v` | Vertical split (side-by-side) in current path |
 | `prefix h` | Horizontal split (top-bottom) in current path |

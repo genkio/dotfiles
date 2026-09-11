@@ -22,7 +22,7 @@ Install stow:
 ## Add a new coding-agent skill
 
 - Drop the skill at `skills/<skill-name>/SKILL.md` (folder name must match the `name:` field).
-- Link it into both targets: `cd ~/dotfiles && stow -R -t ~/.claude/skills skills && stow -R -t ~/.codex/skills skills`
+- Link it into all three targets: `cd ~/dotfiles && stow -R -t ~/.claude/skills skills && stow -R -t ~/.codex/skills skills && stow -R -t ~/.pi/agent/skills skills`
 
 ## Restore on a new machine
 
@@ -31,8 +31,8 @@ Install stow:
 - Core packages: `mkdir -p ~/.ssh ~/.config/mpv && chmod 700 ~/.ssh && stow brew git mpv nvim tmux vim yazi zsh ssh`
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
 - Optional app packages: `stow hammerspoon`, then `make sublime` to enable Sublime's Package Control and auto-install packages
-- Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh`
-  - Both restore scripts also stow the shared `skills/` package into `~/.claude/skills/` and `~/.codex/skills/` so coding-agent skills are kept in one place.
+- Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-codex-config.sh && bash scripts/restore-pi-settings.sh`
+  - All three restore scripts also stow the shared `skills/` package into `~/.claude/skills/`, `~/.codex/skills/`, and `~/.pi/agent/skills` so coding-agent skills are kept in one place. The Pi script also links the tmux agent-state extension into `~/.pi/agent/extensions/`.
 - Yazi: `stow yazi`
 
 ## Remove symlinks
@@ -102,7 +102,7 @@ Run the automated script:
 - Non-fatal warnings are prefixed `SETUP_WARN:` (yellow) and fatal errors `SETUP_ERROR:` (red) across every script `make` runs, so they stand out in a long run by default (see below).
 - `--include-all` to install both GUI apps and dev tools.
 - `--include-apps` to install GUI apps, stow `hammerspoon`, and set up Sublime Text (Package Control + auto-installed packages).
-- `--include-dev` to install dev tools (mise, codex, claude-code, etc.), restore `~/.claude`, and seed `~/.codex/config.toml` when missing.
+- `--include-dev` to install dev tools (mise, codex, pi, claude-code, etc.), restore `~/.claude`, `~/.codex`, and `~/.pi`, and seed `~/.codex/config.toml` when missing.
 
 ### Spotting warnings and errors
 

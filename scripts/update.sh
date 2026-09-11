@@ -217,9 +217,10 @@ fi
 
 # ---------------------------------------------------------------- stow
 
-# The unfolded packages (~/.claude/skills, ~/.codex/skills, ~/.config/mpv) get
-# per-file symlinks rather than one folded dir, so a file added upstream is
-# invisible on this machine until something restows.
+# The unfolded packages (~/.claude/skills, ~/.codex/skills,
+# ~/.pi/agent/skills, ~/.config/mpv) get per-file symlinks rather than one
+# folded dir, so a file added upstream is invisible on this machine until
+# something restows.
 #
 # `stow -R` relinks everything it owns on every run, and with -v says so: an
 # UNLINK+LINK pair per link, each tagged "(reverts previous action)". That is
@@ -227,9 +228,9 @@ fi
 # what remains is links that genuinely appeared, vanished, or conflicted.
 #
 # Buffered per invocation rather than over the whole run, because paths repeat
-# across targets: `skills` is stowed to both ~/.claude/skills and
-# ~/.codex/skills under identical names, so a global "this path was a no-op"
-# flag would hide a genuinely missing link in the second target. restow.sh's
+# across targets: `skills` is stowed to ~/.claude/skills, ~/.codex/skills, and
+# ~/.pi/agent/skills under identical names, so a global "this path was a no-op"
+# flag would hide a genuinely missing link in another target. restow.sh's
 # "Restowing ..." lines mark the boundaries.
 stow_changes() {
   awk '

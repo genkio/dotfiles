@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Fired by Claude Code on UserPromptSubmit, PreToolUse and PostToolUse
-# (and Codex equivalents). Marks this agent's pane as actively working:
-# orange border. The window-level @agent_attention / @agent_busy flags
-# for the status overlay are derived from all panes by
+# (and the Codex and Pi equivalents; Pi's extension calls this on
+# agent_start, turn_start, and ui_prompt_end). Marks this agent's pane as
+# actively working: orange border. The window-level @agent_attention /
+# @agent_busy flags for the status overlay are derived from all panes by
 # agent-pane-state.sh, so the window title stays red while a DIFFERENT
 # pane in the window is still waiting on the user.
 #

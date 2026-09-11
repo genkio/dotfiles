@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Fired by Claude Code's Notification hook (filtered via matcher to
-# permission_prompt | elicitation_dialog) and Codex's PermissionRequest
-# hook. Marks this pane as waiting on the user's input: red border, and
+# permission_prompt | elicitation_dialog), Codex's PermissionRequest
+# hook, and Pi's ui_prompt_start event. Marks this pane as waiting on
+# the user's input: red border, and
 # a red window title via the derived flags in agent-pane-state.sh. The
 # red sticks until THIS pane transitions -- the user responds, stops
 # the agent, or kills the pane -- no matter what the window's other

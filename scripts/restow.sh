@@ -40,10 +40,12 @@ cd "$REPO_ROOT"
 
 # Pre-create dirs that need to exist before stow runs so stow doesn't fold
 # them as symlinks (mpv writes runtime state into its config dir; skills
-# stow into nested per-agent dirs).
+# stow into nested per-agent dirs; pi and herdr both drop extensions into
+# ~/.pi/agent/extensions).
 mkdir -p "$HOME/.config/mpv"
 mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
 mkdir -p "$HOME/.codex" "$HOME/.codex/skills"
+mkdir -p "$HOME/.pi/agent" "$HOME/.pi/agent/extensions" "$HOME/.pi/agent/skills"
 
 # Progress goes to stderr, where `stow -v` also writes, so the two stay
 # interleaved in a combined capture. A caller filtering that output needs to
@@ -59,7 +61,7 @@ run_stow() {
 }
 
 # Packages that stow straight to $HOME with no guards.
-HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon mise claude codex vim)
+HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon mise claude codex pi vim)
 run_stow "$HOME" "into ~: ${HOME_PKGS[*]}" "${HOME_PKGS[@]}"
 
 # ssh and git: skip when a real file already exists at the target so we
@@ -81,5 +83,6 @@ fi
 # Skills are stowed into nested per-agent dirs, each needs its own -t.
 run_stow "$HOME/.claude/skills" "skills into ~/.claude/skills" skills
 run_stow "$HOME/.codex/skills" "skills into ~/.codex/skills" skills
+run_stow "$HOME/.pi/agent/skills" "skills into ~/.pi/agent/skills" skills
 
 echo "Done." >&2

@@ -6,7 +6,7 @@ This file provides guidance to coding agents working in this repository.
 
 ## Overview
 
-Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). Most tool directories are stow packages, but this repo should use explicit package commands instead of `stow */` because `claude` and `codex` need special handling.
+Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). Most tool directories are stow packages, but this repo should use explicit package commands instead of `stow */` because `claude`, `codex`, and `pi` need special handling.
 
 ## Stow Commands
 
@@ -24,6 +24,7 @@ cd ~/dotfiles && stow hammerspoon
 cd ~/dotfiles && stow alacritty && bash scripts/apply-alacritty-theme.sh
 cd ~/dotfiles && bash scripts/restore-claude-settings.sh
 cd ~/dotfiles && bash scripts/restore-codex-config.sh
+cd ~/dotfiles && bash scripts/restore-pi-settings.sh
 
 # Remove symlinks for a package
 cd ~/dotfiles && stow -D zsh
@@ -34,12 +35,12 @@ cd ~/dotfiles && stow -D zsh
 - `brew/Brewfile` - meta file that sources both base and apps
 - `brew/Brewfile.base` - CLI tools (always installed)
 - `brew/Brewfile.apps` - GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` - dev tools (gh, mise, codex, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`
+- `brew/Brewfile.dev` - dev tools (gh, mise, codex, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`. Pi installs as the `pi-coding-agent` formula; the formula pins the npm tarball and sets `PI_SKIP_VERSION_CHECK=1`, so update it with `brew upgrade`, never `pi update` (a self-update writes a second copy into Homebrew's `node_modules` and breaks the formula)
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps, stow `hammerspoon`, and run `scripts/setup-sublime.sh` (Package Control + auto-installed packages, see below). Pass `--include-dev` to install dev tools (alacritty, mise, codex, etc.), stow `alacritty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, and seed `~/.codex/config.toml` from the tracked example when missing. Pass `--include-all` to enable both flows together. With `--bootstrap-macos` it runs `scripts/macos-bootstrap.sh` with `DOTFILES_DEFER_TOUCHID=1` and calls `scripts/touchid-sudo.sh` itself as the final step, after killing the sudo keepalive: once `pam_tid` is in the sudo policy, sudo wants a fingerprint and stops accepting the piped password, so nothing that sudos may run after it.
+`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps, stow `hammerspoon`, and run `scripts/setup-sublime.sh` (Package Control + auto-installed packages, see below). Pass `--include-dev` to install dev tools (alacritty, mise, codex, etc.), stow `alacritty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, seed `~/.codex/config.toml` from the tracked example when missing, and run `scripts/restore-pi-settings.sh` to link the Pi extension and shared skills into `~/.pi/agent/`. Pass `--include-all` to enable both flows together. With `--bootstrap-macos` it runs `scripts/macos-bootstrap.sh` with `DOTFILES_DEFER_TOUCHID=1` and calls `scripts/touchid-sudo.sh` itself as the final step, after killing the sudo keepalive: once `pam_tid` is in the sudo policy, sudo wants a fingerprint and stops accepting the piped password, so nothing that sudos may run after it.
 
 ## Sublime Text
 
@@ -68,6 +69,8 @@ Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-subli
 | `alacritty` | `~/.config/alacritty/` | Terminal emulator (Flexoki Light / TokyoNight Storm). Run `scripts/apply-alacritty-theme.sh` after stow to seed the active theme; light/dark is driven by `theme-toggle.sh` (tmux `prefix + t`), which rewrites the active theme and repaints the running terminal via OSC |
 | `mise` | `~/.config/mise/` | Polyglot version manager (node/python/go/uv + global npm CLIs) |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; the whole package is linked (`settings.json`, `statusline-command.sh`, `keybindings.json`, plus the `rules/` and `hooks/` dirs) |
+| `codex` | `~/.codex/` | Use `scripts/restore-codex-config.sh`; links `hooks.json` (tmux agent-state calls + herdlet), seeds machine-local `config.toml` from the tracked example |
+| `pi` | `~/.pi/agent/extensions/` | Use `scripts/restore-pi-settings.sh`; links `tmux-agent-state.ts`, which drives the same tmux agent-state hooks as the Claude/Codex configs. Pi's `settings.json`/`trust.json` are machine-local, not stowed |
 | `vim` | `~/.vimrc` | Config for the OS-shipped `/usr/bin/vim`; `vi` is shadowed to nvim via `zsh/.zsh_aliases` |
 
 ## Neovim Config
@@ -108,3 +111,4 @@ Local overrides not tracked by git go in:
 - `~/.local/bin/env` - sourced at end of .zshrc
 - `~/.gitconfig.local` - included from `.gitconfig` for private Git identity; seeded from `git/.gitconfig.local.example`, not stowed
 - `~/.codex/config.toml` - machine-local Codex config; seeded from `codex/.codex/config.toml.example`, not stowed, because Codex persists project trust and permission state there
+- `~/.pi/agent/settings.json` - machine-local Pi config (provider/model, packages, changelog cursor) and `trust.json`; not stowed. Pi's extension and skills are linked by `scripts/restore-pi-settings.sh`

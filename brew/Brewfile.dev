@@ -10,6 +10,12 @@ brew "lazygit"
 brew "lazysql"
 brew "mise"
 
+# Pi coding agent, installed from the pinned npm tarball and wrapped with
+# PI_SKIP_VERSION_CHECK=1 by the formula. Update it with `brew upgrade`, never
+# `pi update`: a self-update drops a second copy into Homebrew's node_modules
+# and breaks the formula.
+brew "pi-coding-agent"
+
 # alacritty: cask disabled upstream 2026-09-01 (fails_gatekeeper_check) because
 # the dmg is ad-hoc signed and not notarized. scripts/install-alacritty.sh
 # installs it from the pinned upstream release instead; restore the cask here

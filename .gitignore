@@ -7,6 +7,8 @@ nvim.log
 # Codex stow package: keep tracked content despite global .codex/ ignore
 !codex/.codex/
 !codex/.codex/**
+# Repo-local Pi state (trust, sessions) when pi runs in this repo
+/.pi/
 # Claude Code runtime state inside the package directory
 claude/.claude/**
 !claude/.claude/

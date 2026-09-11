@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Cut AI tells from writing. Use when drafting or editing any prose - READMEs, docs, commit messages, PR descriptions, comments, blog posts, Slack messages - or when asked to unslop, de-slop, or make text sound human. Detects 30 patterns: puffery, AI vocabulary, "not just X but Y", rule of three, colon overuse, inline-header lists, sycophancy, hedging, abstract metaphor nouns, passive voice.
+description: 'Cut AI tells from writing. Use when drafting or editing any prose - READMEs, docs, commit messages, PR descriptions, comments, blog posts, Slack messages - or when asked to unslop, de-slop, or make text sound human. Detects 30 patterns: puffery, AI vocabulary, "not just X but Y", rule of three, colon overuse, inline-header lists, sycophancy, hedging, abstract metaphor nouns, passive voice.'
 ---
 
 # Unslop

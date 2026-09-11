@@ -25,6 +25,8 @@ osc52 = "CopyPaste"
 
 [keyboard]
 bindings = [
+  # Shift+Enter -> newline, not submit. Claude Code and Codex read this as
+  # shift+enter; pi reads it as alt+enter and remaps that key in keybindings.json.
   { key = "Enter", mods = "Shift", chars = "\u001B\r" },
   # Default ViMode toggle is ctrl+shift+space, but the CJK input method eats
   # that chord before Alacritty sees it. Cmd chords bypass the IME and never
@@ -52,12 +54,15 @@ bindings = [
   { key = "7", mods = "Command", chars = "\u001B[128~" },
   { key = "8", mods = "Command", chars = "\u001B[129~" },
   { key = "9", mods = "Command", chars = "\u001B[130~" },
-  # Cmd+Shift+u/d/j/k -> Claude Code transcript scroll. Cmd never reaches the
-  # pty and tmux has extended-keys off, so emit the alt+shift encoding
-  # (ESC + letter): tmux forwards it untouched, Claude binds alt+shift+*.
-  { key = "U", mods = "Command|Shift", chars = "\u001BU" },
-  { key = "D", mods = "Command|Shift", chars = "\u001BD" },
-  { key = "J", mods = "Command|Shift", chars = "\u001BJ" },
-  { key = "K", mods = "Command|Shift", chars = "\u001BK" },
+  # Cmd+Shift+u/d/j/k -> transcript navigation in Claude Code and pi fullscreen.
+  # Cmd never reaches the pty, so emit the xterm modifyOtherKeys encoding for
+  # shift+alt+<key> (CSI 27;4;<codepoint>~). tmux has extended-keys on, parses
+  # these, and re-encodes them as csi-u (its configured format); both Claude
+  # and pi parse that. pi's bindings live in the stowed
+  # pi/.pi/agent/keybindings.json (prev/next message u/d, top/latest k/j).
+  { key = "U", mods = "Command|Shift", chars = "\u001B[27;4;117~" },
+  { key = "D", mods = "Command|Shift", chars = "\u001B[27;4;100~" },
+  { key = "J", mods = "Command|Shift", chars = "\u001B[27;4;106~" },
+  { key = "K", mods = "Command|Shift", chars = "\u001B[27;4;107~" },
 ]
 

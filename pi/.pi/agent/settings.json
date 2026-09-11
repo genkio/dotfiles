@@ -1,0 +1,13 @@
+{
+  "lastChangelogVersion": "0.85.1",
+  "theme": "light",
+  "defaultProvider": "deepseek",
+  "defaultModel": "deepseek-flash",
+  "defaultThinkingLevel": "max",
+  "hideThinkingBlock": true,
+  "showCacheMissNotices": true,
+  "packages": [
+    "npm:pi-web-access"
+  ],
+  "tuiMode": "fullscreen"
+}

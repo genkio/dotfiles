@@ -1,0 +1,8 @@
+{
+  "tui.input.newLine": ["shift+enter", "ctrl+j", "alt+enter"],
+  "app.message.followUp": ["ctrl+q"],
+  "tui.altScreen.previousPrompt": ["ctrl+shift+up", "ctrl+up", "alt+shift+u"],
+  "tui.altScreen.nextPrompt": ["ctrl+shift+down", "ctrl+down", "alt+shift+d"],
+  "tui.altScreen.top": ["home", "alt+shift+k"],
+  "tui.altScreen.bottom": ["end", "alt+shift+j"]
+}

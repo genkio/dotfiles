@@ -192,10 +192,10 @@ Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
 
 | Key | Action |
 |---|---|
-| `Shift+Enter` | Insert newline (multi-line prompt) |
+| `Shift+Enter` | Insert newline (multi-line prompt) in Claude Code, pi and Codex. Alacritty emits `\x1b\r`; Claude Code and Codex read it as shift+enter, while Pi reads it as alt+enter and remaps that key to newline. Pi's follow-up queue moves to `C-q` |
 | `Cmd+Shift+Space` | Toggle vi mode (not the default `C-S-Space`, which a CJK input method eats) |
 | `Cmd+Shift+Y` | Join the clipboard into one line (after a vi-mode `y`, strips TUI padding + soft-wrap breaks) |
-| `Cmd+Shift+u/d/j/k` | Scroll the Claude Code transcript (sent as the alt+shift encoding, which tmux forwards untouched) |
+| `Cmd+Shift+u/d/j/k` | Transcript navigation in Claude Code and pi fullscreen: on u/d Claude scrolls half a page while pi jumps to the previous/next message; k/j jump to first/latest in both. Sent as the xterm modifyOtherKeys encoding; tmux extended-keys re-encodes it as csi-u, which both apps parse |
 
 Cmd never reaches the pty, so the window and session chords (`Cmd+1`..`Cmd+9`,
 `Cmd+Shift+n/p`) are emitted here as private escapes and caught in `.tmux.conf`

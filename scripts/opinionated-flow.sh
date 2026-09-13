@@ -220,13 +220,15 @@ brew tap genkio/tap >/dev/null 2>&1 || true
 brew trust genkio/tap || true
 
 brew_bundle_install brew/Brewfile.base
-# The Brewfile skips the formulae Homebrew can no longer bottle for Intel; this
-# installs upstream darwin-amd64 builds of them. No-op on Apple Silicon. Mole is
-# the one deliberate exception: its release splits a shell tree and two helper
-# binaries across multiple artifacts, so there is no self-contained archive to
-# pin here; install it separately with upstream's installer if it is needed.
-bash scripts/install-intel-prebuilt.sh base \
-  || warn "some prebuilt Intel binaries failed; rerun scripts/install-intel-prebuilt.sh base."
+# Intel: bootstrap mise from its pinned upstream tarball (Apple Silicon got it
+# from Brewfile.base). Everything mise owns - the CLIs and the language
+# runtimes - installs from mise.lock next, so both architectures run the same
+# versions instead of one pouring bottles and the other compiling toolchains.
+# No-op on Apple Silicon.
+bash scripts/install-intel-prebuilt.sh bootstrap \
+  || warn "mise bootstrap failed; install mise by hand, then rerun this script."
+bash scripts/mise-tools.sh \
+  || warn "mise tools failed; rerun scripts/mise-tools.sh."
 # sudo: run as root LaunchDaemon for always-on server (no user login required).
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 # Non-fatal: if tailscale itself failed in the bundle above, don't abort the rest.
@@ -244,7 +246,18 @@ fi
 # echo "net.inet.ip.forwarding=1" | sudo tee -a /etc/sysctl.conf
 # echo "net.inet6.ip6.forwarding=1" | sudo tee -a /etc/sysctl.conf
 mkdir -p "$HOME/.config/mpv"
-stow -t "$HOME" brew mpv nvim tmux vim yazi zsh
+# mise is in this set so the CLIs it installed are on PATH for interactive
+# shells on a fresh machine. A machine that already has a hand-written
+# ~/.config/mise/config.toml keeps it: stow would abort the whole run on the
+# conflict, and the file is worth keeping until it is stowed deliberately.
+STOW_PACKAGES=(brew mpv nvim tmux vim yazi zsh)
+if [[ -e "$HOME/.config/mise/config.toml" && ! -L "$HOME/.config/mise/config.toml" ]]; then
+  echo "Skipping mise stow: ~/.config/mise/config.toml already exists and is not a symlink."
+  echo "Move it aside and run 'cd $DOTFILES_DIR && stow mise' when you're ready."
+else
+  STOW_PACKAGES+=(mise)
+fi
+stow -t "$HOME" "${STOW_PACKAGES[@]}"
 
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"

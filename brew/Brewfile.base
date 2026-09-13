@@ -3,26 +3,29 @@ in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
 
 on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 
-# Homebrew stopped bottling macOS x86_64, and `go`/`rust` are among the
-# formulae with no Intel bottle left, so these would each build a whole
-# toolchain from source. scripts/install-intel-prebuilt.sh installs an upstream
-# darwin-amd64 builds instead. Mole is the documented exception on Intel.
+# The CLIs that self-publish macOS binaries (fastfetch, fzf, lnav, neovim,
+# sevenzip, yazi) come from mise on both architectures now, so Intel and Apple
+# Silicon run the same versions: mise/.config/mise/config.toml, pinned by
+# mise.lock. Homebrew stopped bottling macOS x86_64, and keeping them here
+# meant one machine poured a bottle while the other compiled a whole Rust or Go
+# toolchain. `mise` itself still comes from brew on Apple Silicon; Intel
+# bootstraps it from a pinned tarball (install-intel-prebuilt.sh bootstrap),
+# because the mise formula would build Rust from source there. Mole stays off
+# Intel: its release ships several artifacts rather than one self-contained
+# archive.
 
 brew "bat"
 brew "eza"
-brew "fastfetch" if on_silicon
 brew "fd"
 brew "ffmpeg" unless in_vm
-brew "fzf" if on_silicon
 brew "genkio/tap/carbonyl"
 brew "genkio/tap/cc-imessage"
 brew "genkio/tap/herdlet"
 brew "htop"
 brew "jq"
-brew "lnav" if on_silicon
+brew "mise" if on_silicon
 brew "mole" if on_silicon
 brew "mpv" unless in_vm
-brew "neovim" if on_silicon
 # lets pam_tid (Touch ID for sudo) work inside tmux; macos-bootstrap.sh installs
 # it itself (it runs before this bundle) and needs it on disk before referencing
 # it in /etc/pam.d/sudo_local; listed here so it stays managed and upgraded
@@ -31,7 +34,6 @@ brew "pam-reattach" unless in_vm
 # falls back to osascript, which is slower and re-encodes, when it is missing
 brew "pngpaste" unless in_vm
 brew "ripgrep"
-brew "sevenzip" if on_silicon
 brew "stow"
 brew "tailscale" if on_silicon
 # Intel: no bottle, and upstream ships no CLI tarball for macOS. The signed
@@ -44,5 +46,4 @@ brew "tmux"
 brew "tmuxp"
 brew "unar"
 brew "viu"
-brew "yazi" if on_silicon
 brew "zoxide"

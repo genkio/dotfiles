@@ -215,28 +215,48 @@ else
   report alacritty 'already installed, skipping'
 fi
 
-# ---------------------------------------------------------------- prebuilt
+# ---------------------------------------------------------------- mise
 
-# Intel only, and only for tools this machine already has - same contract as
-# skipping `brew bundle` above. --upgrade makes this the counterpart of the brew
-# step: the tools brew can no longer bottle on Intel follow their upstream
-# releases here instead of freezing at whatever the repo was pinned to. A no-op
-# on Apple Silicon.
-#
-# It is the one step that can write to the repo: a tool it upgrades gets its
-# version and hash rewritten in scripts/intel-prebuilt.tsv, so the bump is a
-# reviewable diff that carries to the other machines on the next pull. Surfaced
-# in the summary, because an uncommitted repin only helps this machine.
+# Intel only: the pinned mise bootstrap. The manifest is down to that one
+# record now (Apple Silicon gets mise from Brewfile.base). --upgrade follows
+# upstream and rewrites the pin, the same contract as the brew step. No-op on
+# Apple Silicon.
 if [[ "$DRY_RUN" == 1 ]]; then
   bash scripts/install-intel-prebuilt.sh --upgrade --dry-run >"$LOG" 2>&1
 else
   bash scripts/install-intel-prebuilt.sh --upgrade >"$LOG" 2>&1 ||
-    fail "some prebuilt Intel binaries failed to install."
+    fail "the mise bootstrap failed to update."
 fi
 if grep -q 'repinned in' "$LOG" 2>/dev/null; then
   note "scripts/intel-prebuilt.tsv was repinned; review and commit it."
 fi
-report "prebuilt (Intel)" 'bottles cover these|commit it so the other machines'
+report "mise bootstrap (Intel)" 'Apple Silicon: mise comes from Brewfile.base'
+
+# The CLIs and language runtimes are mise tools on both architectures now,
+# pinned by mise/.config/mise/mise.lock. --upgrade moves the `latest` selectors
+# forward, rewrites the lock and installs the result; concrete pins (fastfetch,
+# 7-Zip, lnav) stay, because those are the versions Intel still has an artifact
+# for. Like the old repin, this is the one step that can write to the repo, so a
+# change is surfaced: an uncommitted lock only helps this machine.
+if [[ "$DRY_RUN" == 1 ]]; then
+  bash scripts/mise-tools.sh --upgrade --dry-run >"$LOG" 2>&1
+else
+  bash scripts/mise-tools.sh --upgrade >"$LOG" 2>&1 ||
+    fail "mise tools failed to update."
+fi
+if grep -q 'mise.lock updated\|mise.lock would be updated' "$LOG" 2>/dev/null; then
+  note "mise/.config/mise/mise.lock changed; review and commit it."
+fi
+report "mise tools" '^mise: tools installed|mise.lock is current'
+
+# Advisory: when upstream drops the macos-x64 artifact, `mise lock` writes only
+# the arm64 entry and MISE_LOCKED=1 then fails on Intel - by design, but better
+# reported here than discovered there.
+if ! bash scripts/mise-tools.sh --check >"$LOG" 2>&1; then
+  report "mise lock"
+  note "mise.lock is missing a macOS artifact; Intel install fails until it is pinned."
+fi
+: >"$LOG"
 
 # ---------------------------------------------------------------- stow
 

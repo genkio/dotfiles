@@ -76,6 +76,7 @@ The live settings file is seeded, not stowed: Package Control rewrites it at run
 
 - `brew update && brew upgrade` for everything already installed. No `brew bundle`: that would install every entry of every Brewfile and quietly converge a base machine to `--include-all`. A package added to a Brewfile reaches other machines when you run `make apps` / `make dev` there.
 - Re-runs `scripts/install-alacritty.sh`, a no-op unless its pinned `VERSION` changed, so a deliberate bump on one machine reaches the others after a pull.
+- Bumps the mise lock (`scripts/mise-tools.sh --upgrade`): the `latest` selectors move forward, the Intel-held pins stay, and the new set installs. A changed lock is reported for review and commit, because the other machine follows only after a pull.
 - Restows every package, reporting only links that genuinely appeared, vanished, or conflicted.
 - Refreshes the generated Alacritty theme cache, and seeds `~/.gitconfig.local` / `~/.codex/config.toml` / `~/.pi/agent/web-search.json` when missing. When they already exist it only reports which keys the `.example` has gained since; those files hold machine-local state, so merging is left to you.
 - Runs `scripts/check-pins.sh` (below).
@@ -83,15 +84,15 @@ The live settings file is seeded, not stowed: Package Control rewrites it at run
 
 Anything needing a decision is collected into one block at the end. `tailscaled` runs as a root LaunchDaemon, so upgrading its formula needs no privileges but restarting the daemon and removing the superseded root-owned keg do; `make update` reports both commands instead of asking for a password.
 
-Deliberately left alone: mise toolchains and uv tools (a global bump buys nothing, and project-local pins resolve independently), Claude Code, Oh My Zsh, tmux and Neovim plugins (nvim's lockfile is tracked, so updating it is a repo change), Sublime packages, and macOS defaults. Rerun `scripts/macos-bootstrap.sh` deliberately for the last of those.
+Deliberately left alone: the uv-managed tools (maestral; a global bump buys nothing and its pins matter more), Claude Code, Oh My Zsh, tmux and Neovim plugins (nvim's lockfile is tracked, so updating it is a repo change), Sublime packages, and macOS defaults. Rerun `scripts/macos-bootstrap.sh` deliberately for the last of those.
 
 ## Opinionated flow
 
 Run the automated script:
 
 - `make` (equivalent to `./scripts/opinionated-flow.sh --bootstrap-macos --include-all`)
-- Other targets: `make bootstrap`, `make apps`, `make dev`, `make update`, `make ssh`, `make gpg`, `make sublime`, `make tailscale`
-- On Intel macs running Sonoma, tools that would make Homebrew compile Go or Rust toolchains are installed from pinned upstream x86_64 archives instead. `lnav` stays on the newest release with an Intel artifact; Fastfetch and 7-Zip stay on tested pins whose minimum macOS version is not newer than Sonoma. Mole is skipped on Intel because upstream does not publish one self-contained archive for it.
+- Other targets: `make bootstrap`, `make apps`, `make dev`, `make lock`, `make update`, `make ssh`, `make gpg`, `make sublime`, `make tailscale`
+- CLIs and language runtimes come from mise on both Intel and Apple Silicon, pinned by `mise/.config/mise/mise.lock`, so both machines run the same versions: `scripts/mise-tools.sh` installs them and `make lock` regenerates the lock. A few pins hold the versions Intel still has artifacts for (`lnav`, Fastfetch, 7-Zip); Mole is skipped on Intel because upstream does not publish one self-contained archive for it.
 - `make tailscale` logs this machine into the tailnet (`scripts/tailscale-up.sh`): starts the tailscaled service if it is not responding, then runs `sudo tailscale up --ssh --operator=<you>` and prints a URL to authorize in the browser. Idempotent: it reports the current status and exits when the node is already up. Exit nodes stay separate: advertise with `sudo tailscale set --advertise-exit-node`, consume one with `scripts/tailscale-exit.sh on <node>`.
 - `make ssh` defaults to GitHub; pass a host label to key it per service: `make ssh gitlab` (or `make ssh HOST=gitlab`) writes `~/.ssh/id_ed25519_gitlab` and appends a `gitlab.com` block to `~/.ssh/config`. `github`, `bitbucket`, and `gitlab` get a real hostname and paste URL; any other label is used verbatim as the hostname.
 - Identity is optional and passed the same way: `make ssh gitlab EMAIL=me@example.com NAME='Genkio Ji'`. Worth setting, because the script writes the email it used into `~/.gitconfig.local`, and its default is the GitHub noreply address. Only explicit `VAR=...` on the command line is honoured, so an exported `$EMAIL`/`$NAME` in your shell cannot leak in. For `--type` and `--passphrase`, call `./scripts/generate-ssh-key.sh` directly.

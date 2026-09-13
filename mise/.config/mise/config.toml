@@ -11,6 +11,36 @@ uv = "latest"
 "npm:@playwright/cli" = "0.1.18"
 "npm:typescript" = "latest"
 "npm:typescript-language-server" = "latest"
+# Pi is versioned like the rest of the npm tools now, not the Homebrew formula:
+# the formula depends on `node`, which has no Intel macOS bottle left, so on
+# Intel it built all of Node from source. Same package, same config; the shim
+# replaces the formula's wrapper, and [env] below keeps its version-check skip.
+"npm:@earendil-works/pi-coding-agent" = "latest"
+
+# CLIs that publish their own macOS artifacts. Installed by mise on both Intel
+# and Apple Silicon so both machines run the same versions: mise.lock holds the
+# per-platform checksums/URLs, and `MISE_LOCKED=1 mise install` fails instead of
+# silently substituting a different version. Regenerate with `make lock`.
+"aqua:neovim/neovim" = "latest"
+"aqua:sxyazi/yazi" = "latest"
+"aqua:junegunn/fzf" = "latest"
+"aqua:cli/cli" = "latest"
+"aqua:jesseduffield/lazygit" = "latest"
+"aqua:jorgerojas26/lazysql" = "latest"
+# Held back so Intel has an artifact too: newer fastfetch/7-Zip macOS builds
+# require macOS 15/26, and lnav stopped publishing x86_64 macOS builds after
+# 0.13.2 (that zip is Intel-only, so Apple Silicon runs it under Rosetta).
+"aqua:fastfetch-cli/fastfetch" = "2.51.0"
+"aqua:ip7z/7zip" = "25.01"
+"aqua:tstack/lnav" = "0.13.2"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node", "python", "java", "go"]
+# Lock both architectures so `mise lock` on either machine keeps the pair in
+# sync. Without this the default set also resolves four unused Linux platforms.
+lockfile_platforms = ["macos-x64", "macos-arm64"]
+
+[env]
+# The Homebrew formula wrapped `pi` with this to stop its self-updater from
+# writing a second copy; keep the same behaviour for the npm install.
+PI_SKIP_VERSION_CHECK = "1"

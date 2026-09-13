@@ -1,31 +1,24 @@
 #!/usr/bin/env bash
 #
-# Install upstream prebuilt binaries for the formulae that Homebrew can no
-# longer bottle for Intel macs.
+# Install the pinned upstream mise bootstrap on Intel macs.
 #
-# homebrew-core stopped building macOS x86_64 bottles, and `go` and `rust` are
-# among the formulae with none left. So a single Go or Rust CLI (yazi, fzf, gh,
-# mise, ...) drags in rustc or the Go toolchain from source, and rustc drags in
-# llvm: hours of compiling for a 3 MB binary. Every tool here publishes a
-# darwin-amd64 build of its own, which installs in seconds.
+# This script used to carry a darwin-amd64 build of every CLI that Homebrew can
+# no longer bottle for Intel. Those are mise tools now, on both architectures
+# (see mise/.config/mise/config.toml and mise.lock), which leaves one thing mise
+# cannot install for itself: on Intel, brew's mise formula would build Rust from
+# source first. So the `bootstrap` set is down to one pinned tarball, verified by
+# sha256, unpacked under ~/.local/opt/mise with ~/.local/bin/mise linked to it.
 #
-# The formulae are guarded with `if on_silicon` in the Brewfiles, so brew never
-# sees them on Intel and this script is the only installer. On Apple Silicon
-# nothing changes: the bottles are there and this script refuses to run.
-#
-# Handled elsewhere, not dropped:
-#   tailscale   no CLI tarball for macOS, so Brewfile.base installs the signed
-#               universal pkg (cask "tailscale-app") on Intel instead
-#   tmux, mpv   C builds whose deps are all bottled, so brew handles them fine
-#
-# Pins live in intel-prebuilt.tsv: a version and the sha256 of that exact
-# artifact, the same tradeoff as install-alacritty.sh - these are release
+# The manifest (intel-prebuilt.tsv) is the pin: a version and the sha256 of that
+# exact artifact, the same tradeoff as install-alacritty.sh - these are release
 # tarballs with no signature, so content integrity stands in for publisher
 # identity, and a hash only means something against a fixed version.
 #
+# On Apple Silicon nothing here runs: Brewfile.base installs mise and the mise
+# tools come from mise.lock.
+#
 # Usage:
-#   install-intel-prebuilt.sh base        install the base set at the pins
-#   install-intel-prebuilt.sh dev         install the dev set at the pins
+#   install-intel-prebuilt.sh bootstrap   install the pinned mise tarball
 #   install-intel-prebuilt.sh             reinstall pins that drifted, nothing new
 #   install-intel-prebuilt.sh --upgrade   follow upstream and rewrite the pins
 #   ... --dry-run                         report, touch nothing
@@ -39,8 +32,8 @@ MANIFEST="$SCRIPT_DIR/intel-prebuilt.tsv"
 
 # ~/.local/bin, not brew's prefix: a non-brew symlink in there trips
 # `brew doctor`, and .zshrc puts ~/.local/bin first on PATH. Trees live beside
-# it under ~/.local/opt because some of these are not lone binaries - nvim needs
-# its runtime/ next to the executable, gh and mise ship man pages.
+# it under ~/.local/opt because mise is not a lone binary - its runtime and man
+# pages sit next to the executable.
 OPT_DIR="$HOME/.local/opt"
 BIN_DIR="$HOME/.local/bin"
 
@@ -49,12 +42,12 @@ DRY_RUN=0
 UPGRADE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    base|dev) WANT_SET="$1" ;;
+    bootstrap|base|dev) WANT_SET="$1" ;;
     --dry-run|-n) DRY_RUN=1 ;;
     --upgrade|-u) UPGRADE=1 ;;
     -h|--help)
-      echo "Usage: $(basename "$0") [base|dev] [--upgrade|-u] [--dry-run|-n]"
-      echo "  base, dev   install that set; omit to reinstall drifted pins only"
+      echo "Usage: $(basename "$0") [bootstrap] [--upgrade|-u] [--dry-run|-n]"
+      echo "  bootstrap   install the pinned mise tarball; omit to reinstall drifted pins only"
       echo "  --upgrade   take the newest compatible release unless policy is pinned"
       exit 0
       ;;
@@ -64,10 +57,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 # DOTFILES_FORCE_PREBUILT exists so the manifest can be exercised on an Apple
-# Silicon machine (download, checksum, archive layout). The binaries it installs
-# are x86_64 and will not run there.
+# Silicon machine (download, checksum, archive layout). The binary it installs
+# is x86_64 and will not run there.
 if [[ "$(/usr/bin/uname -m)" == "arm64" && -z "${DOTFILES_FORCE_PREBUILT:-}" ]]; then
-  echo "Apple Silicon: Homebrew bottles cover these tools, nothing to do."
+  echo "Apple Silicon: mise comes from Brewfile.base, nothing to bootstrap."
   exit 0
 fi
 

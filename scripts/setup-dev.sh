@@ -31,12 +31,6 @@ brew_bundle_install() {
 
 # Install dev tools via Homebrew
 brew_bundle_install brew/Brewfile.dev
-# Intel: mise, gh, lazygit and lazysql have no bottle and would build a Go or
-# Rust toolchain from source first. Runs before the mise steps below, which need
-# the binary on PATH. No-op on Apple Silicon.
-export PATH="$HOME/.local/bin:$PATH"
-bash scripts/install-intel-prebuilt.sh dev \
-  || warn "some prebuilt Intel binaries failed; rerun scripts/install-intel-prebuilt.sh dev."
 # Not a cask: see the header of install-alacritty.sh. Non-fatal so a download
 # failure can't abort provisioning over one app.
 bash scripts/install-alacritty.sh \
@@ -48,17 +42,15 @@ stow -t "$HOME" alacritty mise
 DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-alacritty-theme.sh \
   || warn "Alacritty theme seed failed; theme-toggle.sh re-seeds on the next flip."
 
-# mise: node, python, java, go, uv + global npm tools (versions declared in mise/.config/mise/config.toml)
-# Install node first so `npm` exists when activate resolves `npm:*@latest` versions.
-# --quiet: mise repaints a live multi-progress UI several times a second, and a
-# captured setup log keeps every frame (~500 of 800 lines in one run). Errors and
-# warnings still print; --silent would swallow those too.
-echo "mise: installing toolchains and global npm tools (quiet, takes a few minutes)..."
-mise install --quiet node
+# mise: the CLIs and language runtimes declared in mise/.config/mise/config.toml
+# and pinned by mise.lock (see scripts/mise-tools.sh). opinionated-flow.sh
+# already ran this for the bootstrap step; repeat it so `make dev` alone
+# converges and a machine whose base step skipped it still gets the set.
+# ~/.local/bin first: on Intel the bootstrap put mise there.
+export PATH="$HOME/.local/bin:$PATH"
+bash scripts/mise-tools.sh \
+  || warn "mise tools failed; rerun scripts/mise-tools.sh."
 eval "$(mise activate bash)"
-# Non-fatal like brew_bundle_install above: one unresolvable npm tool (e.g. a
-# registry trust-policy rejection) shouldn't abort the rest of provisioning.
-mise install --quiet || warn "some toolchains/global npm tools failed to install; continuing setup."
 
 # Install Claude Code via official shell installer (self-updates via `claude update`)
 export PATH="$HOME/.local/bin:$PATH"

@@ -215,6 +215,29 @@ else
   report alacritty 'already installed, skipping'
 fi
 
+# ---------------------------------------------------------------- prebuilt
+
+# Intel only, and only for tools this machine already has - same contract as
+# skipping `brew bundle` above. --upgrade makes this the counterpart of the brew
+# step: the tools brew can no longer bottle on Intel follow their upstream
+# releases here instead of freezing at whatever the repo was pinned to. A no-op
+# on Apple Silicon.
+#
+# It is the one step that can write to the repo: a tool it upgrades gets its
+# version and hash rewritten in scripts/intel-prebuilt.tsv, so the bump is a
+# reviewable diff that carries to the other machines on the next pull. Surfaced
+# in the summary, because an uncommitted repin only helps this machine.
+if [[ "$DRY_RUN" == 1 ]]; then
+  bash scripts/install-intel-prebuilt.sh --upgrade --dry-run >"$LOG" 2>&1
+else
+  bash scripts/install-intel-prebuilt.sh --upgrade >"$LOG" 2>&1 ||
+    fail "some prebuilt Intel binaries failed to install."
+fi
+if grep -q 'repinned in' "$LOG" 2>/dev/null; then
+  note "scripts/intel-prebuilt.tsv was repinned; review and commit it."
+fi
+report "prebuilt (Intel)" 'bottles cover these|commit it so the other machines'
+
 # ---------------------------------------------------------------- stow
 
 # The unfolded packages (~/.claude/skills, ~/.codex/skills,

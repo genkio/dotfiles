@@ -1,21 +1,28 @@
 in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
         `/usr/sbin/sysctl -n hw.model 2>/dev/null`.strip.match?(/VirtualMac|VMware|Parallels|QEMU/i)
 
+on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
+
+# Homebrew stopped bottling macOS x86_64, and `go`/`rust` are among the
+# formulae with no Intel bottle left, so these would each build a whole
+# toolchain from source. scripts/install-intel-prebuilt.sh installs an upstream
+# darwin-amd64 builds instead. Mole is the documented exception on Intel.
+
 brew "bat"
 brew "eza"
-brew "fastfetch"
+brew "fastfetch" if on_silicon
 brew "fd"
 brew "ffmpeg" unless in_vm
-brew "fzf"
+brew "fzf" if on_silicon
 brew "genkio/tap/carbonyl"
 brew "genkio/tap/cc-imessage"
 brew "genkio/tap/herdlet"
 brew "htop"
 brew "jq"
-brew "lnav"
-brew "mole"
+brew "lnav" if on_silicon
+brew "mole" if on_silicon
 brew "mpv" unless in_vm
-brew "neovim"
+brew "neovim" if on_silicon
 # lets pam_tid (Touch ID for sudo) work inside tmux; macos-bootstrap.sh installs
 # it itself (it runs before this bundle) and needs it on disk before referencing
 # it in /etc/pam.d/sudo_local; listed here so it stays managed and upgraded
@@ -24,13 +31,18 @@ brew "pam-reattach" unless in_vm
 # falls back to osascript, which is slower and re-encodes, when it is missing
 brew "pngpaste" unless in_vm
 brew "ripgrep"
-brew "sevenzip"
+brew "sevenzip" if on_silicon
 brew "stow"
-brew "tailscale"
+brew "tailscale" if on_silicon
+# Intel: no bottle, and upstream ships no CLI tarball for macOS. The signed
+# universal pkg puts the same CLI at /usr/local/bin/tailscale and runs the
+# daemon as a system extension, so tailscale-up.sh and tailscale-exit.sh keep
+# working; only `brew services` does not apply.
+cask "tailscale-app" unless on_silicon
 brew "tldr"
 brew "tmux"
 brew "tmuxp"
 brew "unar"
 brew "viu"
-brew "yazi"
+brew "yazi" if on_silicon
 brew "zoxide"

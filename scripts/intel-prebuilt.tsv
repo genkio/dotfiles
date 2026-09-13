@@ -1,0 +1,21 @@
+# Pinned upstream prebuilt binaries for Intel macs. See install-intel-prebuilt.sh.
+#
+# set|name|repo|tag template|version|asset template|sha256|binaries in the tree|upgrade policy
+#
+# {v} is the version, {vnd} the version with the dots removed (7-Zip names its
+# archives 7z2603 for 26.03). The download URL is
+# https://github.com/<repo>/releases/download/<tag>/<asset>.
+#
+# `install-intel-prebuilt.sh --upgrade` rewrites the version and sha256 columns
+# in place when upstream has a newer release, so this file is the thing to
+# review and commit after an update run.
+base|neovim|neovim/neovim|v{v}|0.12.5|nvim-macos-x86_64.tar.gz|81f4518622cb059b450ee2e498c6a1082a222f6bd89589de5bbcf0c6a68aa3fd|bin/nvim
+base|yazi|sxyazi/yazi|v{v}|26.9.1|yazi-x86_64-apple-darwin.zip|36e09036fcc446488d876d139a5e303f2443b82cfb6ac7dfcb43892d6fe6fa20|yazi ya
+base|fzf|junegunn/fzf|v{v}|0.74.4|fzf-{v}-darwin_amd64.tar.gz|2d392b50be66e2ab104ccd52a6072df692b1f9b9c5b449a9c098de885f32c4c5|fzf
+base|fastfetch|fastfetch-cli/fastfetch|{v}|2.51.0|fastfetch-macos-amd64.tar.gz|09b326a047a6eb1eb9c1f04e312ce3491e6ab6320bafe453dc546e327a44152c|usr/bin/fastfetch|pinned
+base|sevenzip|ip7z/7zip|{v}|25.01|7z{vnd}-mac.tar.xz|26aa75bc262bb10bf0805617b95569c3035c2c590a99f7db55c7e9607b2685e0|7zz|pinned
+base|lnav|tstack/lnav|v{v}|0.13.2|lnav-{v}-x86_64-macos.zip|fdd9a65b8b8ff80eb053fbedc177a3eee736a37e287de47112f76b3b0f4e37f9|lnav
+dev|gh|cli/cli|v{v}|2.100.0|gh_{v}_macOS_amd64.zip|fcd7799e85eb575f3c7d2b1679bfbfedaefa1269d4bc7d096b51e10939b4812b|bin/gh
+dev|lazygit|jesseduffield/lazygit|v{v}|0.65.0|lazygit_{v}_darwin_x86_64.tar.gz|3848033450205f975aa6a587e76f01c9796bff3a3cc0e32060ac77b9423264e3|lazygit
+dev|lazysql|jorgerojas26/lazysql|v{v}|0.5.7|lazysql_Darwin_x86_64.tar.gz|4187fab5e7be6c6289a82c521cafbd5fe1caee84c9cc0a37f55c1d7c15e814ff|lazysql
+dev|mise|jdx/mise|v{v}|2026.9.6|mise-v{v}-macos-x64.tar.gz|9acaa836e0ab8f476aadb5d1ee90d92c08bf4163e3ad4e9e4ba8e2223cceed1f|bin/mise

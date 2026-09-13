@@ -31,6 +31,12 @@ brew_bundle_install() {
 
 # Install dev tools via Homebrew
 brew_bundle_install brew/Brewfile.dev
+# Intel: mise, gh, lazygit and lazysql have no bottle and would build a Go or
+# Rust toolchain from source first. Runs before the mise steps below, which need
+# the binary on PATH. No-op on Apple Silicon.
+export PATH="$HOME/.local/bin:$PATH"
+bash scripts/install-intel-prebuilt.sh dev \
+  || warn "some prebuilt Intel binaries failed; rerun scripts/install-intel-prebuilt.sh dev."
 # Not a cask: see the header of install-alacritty.sh. Non-fatal so a download
 # failure can't abort provisioning over one app.
 bash scripts/install-alacritty.sh \

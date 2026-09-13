@@ -130,15 +130,68 @@ fi
 
 cd "$DOTFILES_DIR"
 
+# Homebrew's official installer aborts on anything but arm64 ("Homebrew on macOS
+# is only supported on Apple Silicon processors!"), so an Intel mac cannot use
+# it at all. `brew` itself still runs from /usr/local and still knows about
+# x86_64 bottles, so install it the documented manual way instead: clone the
+# repo, own the prefix dirs, symlink bin/brew. What is gone is the bottles -
+# homebrew-core stopped building macOS x86_64 ones, so anything whose formula
+# has moved since builds from source (slow) or fails (brew_bundle_install
+# already keeps going and reports a summary at the end).
+install_homebrew_intel() {
+  local repo="/usr/local/Homebrew"
+  local dirs=(bin etc include lib sbin share var opt Cellar Caskroom Frameworks
+    etc/bash_completion.d share/zsh share/zsh/site-functions var/homebrew
+    var/homebrew/linked)
+
+  # Source builds need the CLT. It is usually already there (git triggered its
+  # install), but without it every formula fails in a confusing way.
+  if ! /usr/bin/xcode-select -p >/dev/null 2>&1; then
+    err "Xcode Command Line Tools are required on Intel (everything builds from source)."
+    err "Run 'xcode-select --install', finish the dialog, then rerun this script."
+    exit 1
+  fi
+
+  if [[ -e "$repo" && ! -d "$repo/.git" ]]; then
+    err "$repo exists but is not a git checkout. Move it aside and rerun."
+    exit 1
+  fi
+
+  local d
+  for d in "${dirs[@]}"; do
+    sudo_pw mkdir -p "/usr/local/$d"
+    sudo_pw chown "$(id -un):admin" "/usr/local/$d"
+    sudo_pw chmod ug=rwx "/usr/local/$d"
+  done
+  # compinit refuses to load a group-writable completion dir and nags on every
+  # new shell.
+  sudo_pw chmod go-w /usr/local/share/zsh /usr/local/share/zsh/site-functions
+
+  if [[ ! -d "$repo/.git" ]]; then
+    sudo_pw mkdir -p "$repo"
+    sudo_pw chown "$(id -un):admin" "$repo"
+    git clone https://github.com/Homebrew/brew "$repo"
+  fi
+  ln -sf "$repo/bin/brew" /usr/local/bin/brew
+}
+
 if ! command -v brew >/dev/null 2>&1; then
-  echo "Homebrew not found. Installing..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  if [[ "$(/usr/bin/uname -m)" == "arm64" ]]; then
+    echo "Homebrew not found. Installing..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  else
+    echo "Homebrew not found, and this is an Intel mac. Installing manually to /usr/local..."
+    warn "Homebrew no longer supports Intel macOS: no x86_64 bottles, so packages"
+    warn "build from source. Expect a long run and some failures."
+    install_homebrew_intel
+  fi
   # Add brew to PATH for this session (Apple Silicon vs Intel)
   if [[ -f /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   elif [[ -f /usr/local/bin/brew ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
   fi
+  brew update --force --quiet
 fi
 
 if ! command -v stow >/dev/null 2>&1; then
@@ -167,11 +220,22 @@ brew tap genkio/tap >/dev/null 2>&1 || true
 brew trust genkio/tap || true
 
 brew_bundle_install brew/Brewfile.base
+# The Brewfile skips the formulae Homebrew can no longer bottle for Intel; this
+# installs upstream darwin-amd64 builds of them. No-op on Apple Silicon. Mole is
+# the one deliberate exception: its release splits a shell tree and two helper
+# binaries across multiple artifacts, so there is no self-contained archive to
+# pin here; install it separately with upstream's installer if it is needed.
+bash scripts/install-intel-prebuilt.sh base \
+  || warn "some prebuilt Intel binaries failed; rerun scripts/install-intel-prebuilt.sh base."
 # sudo: run as root LaunchDaemon for always-on server (no user login required).
 # Tradeoff: brew upgrade/uninstall of tailscale needs manual `sudo rm` of its paths.
 # Non-fatal: if tailscale itself failed in the bundle above, don't abort the rest.
-sudo_pw brew services start tailscale \
-  || warn "could not start tailscale service; run 'sudo brew services start tailscale' later."
+# Skipped on Intel, which gets the tailscale-app pkg instead: its daemon is a
+# system extension the app manages, so there is no brew service to start.
+if brew list tailscale >/dev/null 2>&1; then
+  sudo_pw brew services start tailscale \
+    || warn "could not start tailscale service; run 'sudo brew services start tailscale' later."
+fi
 # After bootstrap, run separately (bundling exit-node into `up` can silently drop it):
 #   sudo tailscale up --ssh --operator=$USER # prints login URL, auth in browser
 #   sudo tailscale set --advertise-exit-node # then approve in admin console

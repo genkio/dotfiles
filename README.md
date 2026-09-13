@@ -74,7 +74,7 @@ The live settings file is seeded, not stowed: Package Control rewrites it at run
 
 `make update` (`scripts/update.sh`, `--dry-run` via `make update DRY_RUN=1`) keeps an already-provisioned machine current. It never installs a package the machine does not already have, never writes a macOS default, and never asks for `sudo`, so it is safe to run unattended whatever profile the machine was built with:
 
-- `brew update && brew upgrade` for everything already installed. No `brew bundle`: that would install every entry of every Brewfile and quietly converge a base machine to `--include-all`. A package added to a Brewfile reaches other machines when you run `make apps` / `make dev` there.
+- `brew update && brew upgrade` for everything already installed. No `brew bundle`: that would install every entry of every Brewfile and quietly converge a base machine to `--include-all`. A package added to a Brewfile reaches other machines when you run `make apps` / `make dev` there. On Intel, formulae with no compatible bottle are left behind and reported instead of upgrading (an upgrade would compile them from source there).
 - Re-runs `scripts/install-alacritty.sh`, a no-op unless its pinned `VERSION` changed, so a deliberate bump on one machine reaches the others after a pull.
 - Bumps the mise lock (`scripts/mise-tools.sh --upgrade`): the `latest` selectors move forward, the Intel-held pins stay, and the new set installs. A changed lock is reported for review and commit, because the other machine follows only after a pull.
 - Restows every package, reporting only links that genuinely appeared, vanished, or conflicted.

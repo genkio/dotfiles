@@ -121,6 +121,45 @@ fi
 
 # ---------------------------------------------------------------- brew
 
+# On Intel a formula with no compatible bottle silently compiles from source -
+# the "no bottle available" abort is arm-only - and one unbottled dependency
+# chain (mpv's jpeg-turbo/luajit/mujs, gnupg's libgcrypt) turns a routine
+# upgrade into tens of minutes. Keep the formulae brew can pour and collect the
+# rest for the summary. Uses brew's own pour decision, so the older-macOS
+# bottle fallback counts. Apple Silicon has its bottles: no-op there.
+BREW_HELD_BACK=""
+BREW_POURABLE=""
+filter_pourable() {
+  local formula rc
+  BREW_HELD_BACK=""
+  BREW_POURABLE=""
+  if [[ "$(/usr/bin/uname -m)" == "arm64" ]]; then
+    BREW_POURABLE="$(cat)"
+    return 0
+  fi
+  while IFS= read -r formula; do
+    [[ -n "$formula" ]] || continue
+    # stdin from /dev/null: brew must not consume the loop's here-string.
+    HOMEBREW_NO_AUTO_UPDATE=1 brew ruby -e '
+      begin
+        formula = Formulary.factory(ARGV.fetch(0))
+      rescue StandardError
+        exit 2
+      end
+      exit(formula.bottle_tag? ? 0 : 1)
+    ' "$formula" >/dev/null 2>&1 </dev/null
+    rc=$?
+    if [[ "$rc" == 1 ]]; then
+      BREW_HELD_BACK+="$formula "
+    else
+      # 0 is a bottle; 2 is not a loadable formula (a cask, say) and is left to
+      # `brew upgrade`, which never compiles one.
+      BREW_POURABLE+="$formula"$'\n'
+    fi
+  done
+  BREW_POURABLE="${BREW_POURABLE%$'\n'}"
+}
+
 # Upgrade only. `brew bundle` is absent on purpose: it would install every entry
 # of every Brewfile, which converges a base machine to --include-all the first
 # time you run this. A package added to a Brewfile reaches other machines when
@@ -130,6 +169,8 @@ if [[ "$DRY_RUN" == 1 ]]; then
   # No `brew update` first: it rewrites tap metadata, which is a change. So this
   # lists what was outdated as of the last update, not as of this second.
   outdated="$(brew outdated --quiet 2>/dev/null)"
+  filter_pourable <<<"$outdated"
+  outdated="$BREW_POURABLE"
   if [[ -n "$outdated" ]]; then
     # The names, not just a count: on a dry run the list is exactly what you are
     # deciding about. One row rather than one per row, folded on spaces so a
@@ -147,6 +188,8 @@ else
   brew update --quiet >"$LOG" 2>&1 || fail "brew update failed"
   report brew
   outdated="$(brew outdated --quiet 2>/dev/null)"
+  filter_pourable <<<"$outdated"
+  outdated="$BREW_POURABLE"
   if [[ -n "$outdated" ]]; then
     section "brew"
     # Unquoted on purpose: one package per word is exactly the intent. Streams
@@ -154,6 +197,10 @@ else
     # minutes still shows it is alive.
     brew upgrade $outdated || fail "brew upgrade failed"
   fi
+fi
+
+if [[ -n "$BREW_HELD_BACK" ]]; then
+  note "no Intel bottle, left by brew upgrade: ${BREW_HELD_BACK% }; MacPorts or 'brew install --build-from-source' when it needs to move."
 fi
 
 # tailscaled runs as a root LaunchDaemon (opinionated-flow.sh starts it that way

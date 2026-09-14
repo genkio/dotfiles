@@ -4,7 +4,7 @@ set -euo pipefail
 # prefix + V: attach the clipboard image to the agent pane, including when that
 # pane is on a machine you are ssh'd into (see .tmux.conf).
 #
-# Claude Code / Codex read the image from the pasteboard of the host the process
+# Claude Code reads the image from the pasteboard of the host the process
 # runs on, and an ssh pty can only carry text (bracketed paste, OSC 52), so a
 # remote C-v can never see the mac you are sitting at. The bytes have to travel
 # out of band: this pulls them over the tailnet instead, then pastes the local

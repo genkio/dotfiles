@@ -1,6 +1,6 @@
 // Pi bridge to the dotfiles tmux agent-state hooks.
 //
-// Claude Code (claude/.claude/settings.json) and Codex (codex/.codex/hooks.json)
+// Claude Code (claude/.claude/settings.json)
 // wire tmux/bin/agent-{busy,attention,idle}.sh through their hook configs. Pi has
 // no hook config file, so this extension is the hook: it runs the same scripts,
 // which set @agent_pane_state on Pi's pane and re-derive the window-level flags,

@@ -8,7 +8,7 @@ set -euo pipefail
 #      installs any listed-but-missing package on launch.
 #   3. Set Sublime as the default opener for text + code files, without the
 #      pile of Finder confirmation dialogs `duti -s` triggers (see below).
-# The settings file is seeded, not stowed (like ~/.codex/config.toml): Package
+# The settings file is seeded, not stowed (like ~/.gitconfig.local): Package
 # Control rewrites it at runtime (bootstrapped flag, in_process_packages,
 # GUI-added packages), so a symlink into the repo would churn. Re-run to push
 # newly-curated packages or file associations.

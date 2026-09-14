@@ -105,18 +105,35 @@ a subagent's final message is returned to you (the driver), not shown to
 the user. persist each one verbatim to `$WORK/findings-<x>.md` so there is a
 fact-check trail, then synthesize from the files.
 
-optional 4th reviewer for cross-model diversity: if `codex` is on PATH and
-authenticated, the driver runs it via Bash (`codex exec`, stdin closed with
-`< /dev/null`, wrapped in `timeout` - gtimeout on macOS, or skip the
-wrapper and poll; locally use `--sandbox read-only`, never the pod bypass
-flag). output to `$WORK/findings-codex.md` - it cannot be a subagent.
-prefer the canonical reviewer prompt at
-`~/pafin/skills/cryptact/prompts/codex-review.md` when present (substitute
-the real $WORK paths); else feed it the lens-b prompt. different model
-families catch different bugs. for HIGH-STAKES diffs (money/tax paths,
-migrations, verification/archival gates, security), escalate to the full
-cross-model panel instead: herd-review runs codex as a persistent agent
-and adds a cross-family rebuttal round.
+optional 4th reviewer for cross-model diversity: if `pi` is on PATH and its
+OpenAI provider is authenticated, the driver runs it via Bash - it cannot
+be a subagent:
+
+write the lens-b prompt to `$WORK/lens-pi.md` first (with absolute paths to
+`$WORK/context.md` and `$WORK/review.diff`), then:
+
+```bash
+pi --provider openai-codex --model gpt-5.6-sol --thinking medium \
+   -p -t read -ne "$(cat "$WORK/lens-pi.md")" \
+   < /dev/null > "$WORK/findings-pi.md"
+```
+
+redirect stdout ONLY. pi writes session notices to stderr (`--session-id` on a
+fresh id prints `Warning: No project session found with id ...`), and `2>&1`
+puts that line at the top of the findings file where the synthesis step reads
+it as a finding.
+
+`-t read` is what enforces the read-only contract, and it must be the
+allowlist: `-xt edit,write` drops those tools but leaves `bash`, and the
+reviewer just shells out and writes anyway (measured). `-ne` drops the
+web-access extension so the diff never leaves the machine. `-p` exits after
+one pass; it has no grep, so give it absolute paths. wrap in a timeout (macOS
+has no `timeout` - gtimeout, or skip the wrapper and poll) and budget minutes
+- a 783-line diff took 2m13s. feed it the lens-b prompt. different model families
+catch different bugs. for HIGH-STAKES diffs (money/tax paths, migrations,
+verification/archival gates, security), escalate to the full cross-model
+panel instead: herd-review runs the same model as a persistent agent and
+adds a cross-family rebuttal round.
 
 ## step 3 - synthesize (this is the value-add)
 

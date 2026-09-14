@@ -95,7 +95,5 @@ if ! claude plugin marketplace list 2>/dev/null | grep -q 'claude-plugins-offici
   claude plugin marketplace add https://github.com/anthropics/claude-plugins-official.git
 fi
 
-bash scripts/restore-codex-config.sh
-
 # Restore the Pi extension (tmux agent-state hooks) and shared skills.
 bash scripts/restore-pi-settings.sh

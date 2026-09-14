@@ -20,5 +20,5 @@ brew "pi-coding-agent"
 # the dmg is ad-hoc signed and not notarized. scripts/install-alacritty.sh
 # installs it from the pinned upstream release instead; restore the cask here
 # when Homebrew re-enables it.
-cask "codex"
+
 cask "orbstack" unless in_vm

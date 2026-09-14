@@ -21,8 +21,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `cc` | `claude`; `cc <text>` starts Claude with that prompt; `cc -<flag>` passes flags through; `cc -eh/-ex/-em` = `--effort high/xhigh/max` |
 | `ccx` | `claude --dangerously-skip-permissions` |
 | `ccf` / `cco` | `cc` on Fable 5.1 / the same plus the orchestrator system prompt (`cc -o`, which dispatches herdlet workers) |
-| `cx` / `cxx` | `codex` / `codex --dangerously-bypass-approvals-and-sandbox` |
-| `lr` | List the coding-agent sessions started in this directory (Claude, Codex + Pi), newest first, with title and age; `Enter` resumes one |
+| `lr` | List the coding-agent sessions started in this directory (Claude + Pi), newest first, with title and age; `Enter` resumes one |
 | `lg` | Open LazyGit (inside a throwaway nvim; `Q` quits back to the shell) |
 | `ld` | `lazydocker` |
 | `lq [-r]` | Open lazysql on this repo's database: finds the repo's running postgres/mysql/mssql container and builds the URL from its port binding and env creds, else a sqlite file in the repo, else the bare picker (`-r` read-only) |
@@ -107,7 +106,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `prefix S` | Show every field of the left status block, healthy or not (`[c16/r74/b78/net/dbx]`); press again to go back to by-exception. Leaves the right-side usage block alone, `prefix u` owns that |
 | `prefix C` | Set/edit pane label |
 | `prefix o` | Open this pane's GitHub PR in the browser (branch's PR, else the PR number leading the pane label / window name) |
-| `prefix F` | fzf file picker (starts in `~/box`, or `ATTACH_ROOT`); pastes the chosen path into the pane to attach it to Claude Code / Codex. `Enter` descends into a directory or attaches a file, `^h` goes up, `Tab` marks several, `Esc` cancels |
+| `prefix F` | fzf file picker (starts in `~/box`, or `ATTACH_ROOT`); pastes the chosen path into the pane to attach it to Claude Code. `Enter` descends into a directory or attaches a file, `^h` goes up, `Tab` marks several, `Esc` cancels |
 | `prefix P` | Same for the macOS Photos library: fzf over recent photos with viu previews. `Enter` attaches, `^o` fetches the iCloud original first, `Tab` marks several, `☁` marks a photo that is not on this mac |
 | `prefix V` | Attach the clipboard image to the pane: pulls it over the tailnet when the pane is on a machine you ssh'd into |
 | `prefix m` | Render the copy-mode selection as a Mermaid diagram in the browser (select in copy mode first; clipboard untouched) |
@@ -192,7 +191,7 @@ Primary terminal: transparent titlebar, OSC52 clipboard, `option`-as-`alt`.
 
 | Key | Action |
 |---|---|
-| `Shift+Enter` | Insert newline (multi-line prompt) in Claude Code, pi and Codex. Alacritty emits `\x1b\r`; Claude Code and Codex read it as shift+enter, while Pi reads it as alt+enter and remaps that key to newline. Pi's follow-up queue moves to `C-q` |
+| `Shift+Enter` | Insert newline (multi-line prompt) in Claude Code and pi. Alacritty emits `\x1b\r`; Claude Code reads it as shift+enter, while Pi reads it as alt+enter and remaps that key to newline. Pi's follow-up queue moves to `C-q` |
 | `Cmd+Shift+Space` | Toggle vi mode (not the default `C-S-Space`, which a CJK input method eats) |
 | `Cmd+Shift+Y` | Join the clipboard into one line (after a vi-mode `y`, strips TUI padding + soft-wrap breaks) |
 | `Cmd+Shift+u/d/j/k` | Transcript navigation in Claude Code and pi fullscreen: on u/d Claude scrolls half a page while pi jumps to the previous/next message; k/j jump to first/latest in both. Sent as the xterm modifyOtherKeys encoding; tmux extended-keys re-encodes it as csi-u, which both apps parse |

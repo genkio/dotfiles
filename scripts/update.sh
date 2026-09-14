@@ -217,8 +217,8 @@ fi
 
 # ---------------------------------------------------------------- stow
 
-# The unfolded packages (~/.claude/skills, ~/.codex/skills,
-# ~/.pi/agent/skills, ~/.config/mpv) get per-file symlinks rather than one
+# The unfolded packages (~/.claude/skills, ~/.pi/agent/skills, ~/.config/mpv)
+# get per-file symlinks rather than one
 # folded dir, so a file added upstream is invisible on this machine until
 # something restows.
 #
@@ -228,9 +228,9 @@ fi
 # what remains is links that genuinely appeared, vanished, or conflicted.
 #
 # Buffered per invocation rather than over the whole run, because paths repeat
-# across targets: `skills` is stowed to ~/.claude/skills, ~/.codex/skills, and
-# ~/.pi/agent/skills under identical names, so a global "this path was a no-op"
-# flag would hide a genuinely missing link in another target. restow.sh's
+# across targets: `skills` is stowed to ~/.claude/skills and ~/.pi/agent/skills
+# under identical names, so a global "this path was a no-op" flag would hide a
+# genuinely missing link in another target. restow.sh's
 # "Restowing ..." lines mark the boundaries.
 stow_changes() {
   awk '
@@ -315,28 +315,10 @@ else
 fi
 
 # The other two hold machine-local state the repo must not own - your git
-# identity, this machine's Codex tweaks - so the example is a starting point and
-# never a source of truth. Create it when missing; when it already exists, say
+# identity, this machine's pi search keys - so the example is a starting point
+# and never a source of truth. Create it when missing; when it already exists, say
 # which keys the example has gained since and leave the merge to you.
 git_keys() { git config -f "$1" --list --name-only 2>/dev/null | sort -u; }
-
-# Enough TOML for these two files: track the current [section] and qualify each
-# `key =` with it, so a key added under a new section reads as section.key.
-toml_keys() {
-  awk '
-    /^[[:space:]]*\[/ {
-      sec = $0
-      gsub(/^[[:space:]]*\[|\][[:space:]]*$/, "", sec)
-      next
-    }
-    /^[[:space:]]*[A-Za-z_][A-Za-z0-9_.-]*[[:space:]]*=/ {
-      k = $0
-      sub(/[[:space:]]*=.*/, "", k)
-      gsub(/^[[:space:]]+/, "", k)
-      print (sec == "" ? k : sec "." k)
-    }
-  ' "$1" | sort -u
-}
 
 # Leaf scalar paths from a JSON object, dotted so a nested key reads as
 # section.key. Enough for the flat pi web-search config.
@@ -371,8 +353,6 @@ seed_or_diff() {
 
 seed_or_diff "$HOME/.gitconfig.local" "$REPO_ROOT/git/.gitconfig.local.example" \
   git_keys "edit ~/.gitconfig.local: it still holds the example identity."
-seed_or_diff "$HOME/.codex/config.toml" "$REPO_ROOT/codex/.codex/config.toml.example" \
-  toml_keys "review ~/.codex/config.toml: it was just seeded from the example."
 seed_or_diff "$HOME/.pi/agent/web-search.json" "$REPO_ROOT/pi/.pi/agent/web-search.json.example" \
   json_keys "review ~/.pi/agent/web-search.json: it was just seeded from the example."
 

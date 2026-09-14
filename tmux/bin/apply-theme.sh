@@ -47,7 +47,7 @@ fi
 # when that style names a colour, and otherwise replays what the client terminal
 # reported at ATTACH time - a value it never re-queries. apply-terminal-colors.sh
 # repaints the live terminal by writing OSC straight to each client tty, so a flip
-# leaves that cache stale and TUIs that pick their palette from the query (Codex,
+# leaves that cache stale and TUIs that pick their palette from the query (pi,
 # delta, bat) render the wrong one: light-mode cream surfaces on a dark terminal.
 # Naming the real bg here keeps the answer honest across a flip and across clients
 # (Mac + phone SSH), and paints the colour the terminal already uses, so panes look

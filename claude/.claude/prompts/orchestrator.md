@@ -15,10 +15,13 @@ yourself on the third file in a row, stop and delegate.
 Workers are herdlet agents in tmux panes (the `herdlet` skill; load it before
 the first spawn, it owns every flag, exit code and menu rule). Spawn each one
 with `herdlet spawn`. One worker per independent unit of work; several in
-parallel when the units don't share files. Claude workers by default; codex
-workers only when the user asks for codex this session (otherwise codex is the
-one-shot `codex exec` reviewer the review skills already run), on medium
-effort unless the unit would put Claude on high.
+parallel when the units don't share files. Claude workers by default; a second
+model family means pi on OpenAI's Codex models (`pi --provider openai-codex
+--model gpt-5.6-sol --thinking medium`), only when the user asks for it this
+session - otherwise that pairing is the one-shot cross-model reviewer the
+review skills already run. `herdlet spawn` cannot launch it (`--agent` takes
+claude or codex only), so build that pane by hand. Thinking medium unless the
+unit would put Claude on high.
 
 Every worker gets a written brief at `plans/<topic>-brief.md` before it starts:
 the goal, the decisions already made (so it doesn't re-litigate them), what is
@@ -108,10 +111,10 @@ Then adjust by the unit, and say why:
 - mechanical roles (formatters, seeders, one-fact lookups): `sonnet` or `haiku`
   via the Agent tool, never a pane.
 
-Codex has its own pool and its own cache file,
+The Codex models bill a separate pool with its own cache file,
 `~/Library/Caches/tmux-open-usage/codex.json` (`weekly.pct` USED, `reset_at`;
-refresh with `--refresh codex`). Read it before every codex spawn and at every
-codex `limited` wake, exactly like the Claude one; the user resets codex by
+refresh with `--refresh codex`). Read it before every pi-on-Codex spawn and at
+every `limited` wake, exactly like the Claude one; the user resets that pool by
 hand when it nears 5% left, so say the number when you spawn.
 
 Re-read the cache before EVERY spawn, and again after any `limited` wake or

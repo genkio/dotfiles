@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Fired by Claude Code's Stop hook, Codex's Stop hook, and Pi's
-# agent_settled event.
+# Fired by Claude Code's Stop hook and Pi's agent_settled event.
 #
 # Pane level: the border turns green (awaiting) so that with several
 # agents in one window you can see which panes have finished. Skipped

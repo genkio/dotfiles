@@ -1,6 +1,6 @@
 ---
 name: herd-review
-description: "Cross-model review panel: subagent-review's in-session Claude lenses PLUS non-Claude coding agents (codex) as full reviewers in tmux panes, synthesized with model provenance and a cross-family rebuttal round. Use when explicitly named, or when the diff's stakes warrant a second model family (money/tax paths, migrations, verification/archival gates, security). Never a Claude-only pane fan-out - for normal review default to subagent-review. Never invoke the built-in /code-review; its finders inherit the calling session's model and usage limits."
+description: "Cross-model review panel: subagent-review's in-session Claude lenses PLUS a non-Claude model family (pi driving OpenAI Codex models) as full reviewers in tmux panes, synthesized with model provenance and a cross-family rebuttal round. Use when explicitly named, or when the diff's stakes warrant a second model family (money/tax paths, migrations, verification/archival gates, security). Never a Claude-only pane fan-out - for normal review default to subagent-review. Never invoke the built-in /code-review; its finders inherit the calling session's model and usage limits."
 ---
 
 # herd-review - cross-model review panel
@@ -19,8 +19,9 @@ finding only one family can see is the whole reason to pay for two.
 cross-model review roughly doubles the cost - gate it on blast radius,
 never on tmux being available: money/tax paths, migrations, verification
 and archival gates, security-adjacent changes, or an explicit ask. routine
-diffs stay on subagent-review alone (it already has a cheap ONE-SHOT codex
-slot; this skill is the full-agent version with a rebuttal round).
+diffs stay on subagent-review alone (it already has a cheap ONE-SHOT
+cross-model slot; this skill is the full-agent version with a rebuttal
+round).
 
 ## why not the built-in /code-review
 
@@ -85,25 +86,33 @@ different exploration, not a different logo on the same prompt.
   shared contract (context.md first, then the diff; repo checked out in
   cwd, read any file; never edit; one finding per line, severity first,
   blast radius on majors)
-- handback is a FILE, never pane scrollback: launch with output redirected
-  to `$WORK/findings-<agent>.md`; poll the file or process - never `tail`
-  (it buffers until exit)
-- codex: `codex exec` per `~/pafin/skills/shared/docs/codex.md`, but the
-  sandbox flag is environment-specific: worker pods must bypass codex's
-  sandbox (the doc explains why); LOCALLY use `--sandbox read-only` - it
-  works and enforces the read-only contract for free. close stdin
-  (`< /dev/null`); wrap in a timeout (macOS has no `timeout` - gtimeout,
-  or skip the wrapper and poll). prefer the canonical reviewer prompt at
-  `~/pafin/skills/cryptact/prompts/codex-review.md` when present
-  (substitute the real $WORK paths)
-- lifecycle via herdlet works for codex exec workers as-is: launch with
-  `HERDLET_ID=$PROJ/rev-codex`, the wired codex hooks register the worker,
-  track working/done, and record the SESSION id - verified empirically
-- step 4 re-enters that session: if the pane closed when exec exited,
-  spawn a fresh pane and `herdlet resume --id $PROJ/rev-codex --pane %N`
-  (types `codex resume <session>`), then `herdlet send` the rebuttal;
-  plain `tmux split-window` + file polling is the fallback when hooks
-  aren't wired (`herdlet setup` wires them)
+- handback is a FILE, never pane scrollback: launch with STDOUT ONLY
+  redirected to `$WORK/findings-<agent>.md`; poll the file or process - never
+  `tail` (it buffers until exit). not `2>&1`: pi writes session notices to
+  stderr (`--session-id` on a fresh id prints `Warning: No project session
+  found with id ...`) and that lands above the first finding
+- the OTHER family is pi pointed at OpenAI's Codex models:
+  `pi --provider openai-codex --model gpt-5.6-sol --thinking medium`.
+  read-only is `-t read -ne`, and it has to be the allowlist: `-xt edit,write`
+  drops those two tools but leaves `bash`, and a reviewer told not to write
+  still shells out and writes (measured). `-ne` also keeps the diff off the
+  network by dropping the web-access extension. run it non-interactively with
+  `-p`, stdin closed (`< /dev/null`), and wrap in a timeout (macOS has no
+  `timeout` - gtimeout, or skip the wrapper and poll); budget minutes, not
+  seconds - a 783-line diff took 2m13s
+- with only `read` it cannot grep, so hand it absolute paths: the diff file,
+  context.md, and the repo root to open files under
+- give the run a stable session id up front (`--session-id $PROJ-rev-pi`)
+  so step 4 can re-enter the SAME session instead of rebuilding context
+- `herdlet spawn` cannot launch it - `--agent` takes claude or codex only -
+  so build the pane by hand per the herdlet skill's non-Claude path: a
+  `tmux split-window` wrapper that keeps the pane alive and prints its own
+  done-marker after the CLI returns, plus `herdlet report` to publish state
+- step 4 re-enters the same pane with the FULL flag set again, never a bare
+  `--session`: `pi --provider openai-codex --model gpt-5.6-sol --thinking
+  medium -p -t read -ne --session $PROJ-rev-pi`. dropping `--model`/`--thinking`
+  falls back to pi's default model at max thinking. file polling is the
+  handback either way
 
 ## step 3 - synthesize (this is the value-add)
 
@@ -138,8 +147,8 @@ do NOT concatenate the findings files:
 ## step 4 - cross-family rebuttal (the panes earn their keep)
 
 before writing the findings file, hand each surviving major/blocker to the
-OTHER family for refutation: the codex pane gets the Claude-lens survivors,
-a fresh in-session subagent gets codex's - each prompted to REFUTE, not
+OTHER family for refutation: the pi pane gets the Claude-lens survivors,
+a fresh in-session subagent gets pi's - each prompted to REFUTE, not
 confirm. a finding that survives cross-examination by a different model
 family is as confirmed as a local review gets; one that dies here was
 plausible-but-wrong and would have wasted the implementer's time. the

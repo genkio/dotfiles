@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Browse files with fzf and paste the chosen path into the agent pane (Claude
-# Code / Codex). Both CLIs attach an image from a bare path pasted into the
+# Code). The CLI attaches an image from a bare path pasted into the
 # prompt, so this is drag-and-drop without the mouse or clipboard. Run inside
 # `display-popup -E` by `prefix + F` (see .tmux.conf). fzf, not yazi: yazi's
 # startup terminal probe never gets a reply through a popup overlay and wedges

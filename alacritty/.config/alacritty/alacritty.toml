@@ -25,7 +25,7 @@ osc52 = "CopyPaste"
 
 [keyboard]
 bindings = [
-  # Shift+Enter -> newline, not submit. Claude Code and Codex read this as
+  # Shift+Enter -> newline, not submit. Claude Code reads this as
   # shift+enter; pi reads it as alt+enter and remaps that key in keybindings.json.
   { key = "Enter", mods = "Shift", chars = "\u001B\r" },
   # Default ViMode toggle is ctrl+shift+space, but the CJK input method eats

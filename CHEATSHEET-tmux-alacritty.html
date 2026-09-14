@@ -227,7 +227,7 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Triggers</h3>
     <table>
-      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>F</kbd></td><td class="d"><b>File picker</b> popup (fzf). Pastes the chosen path into the pane, which is how Claude Code and Codex attach a file. Starts in <code>~/box</code>; set <code>ATTACH_ROOT</code> to change that</td></tr>
+      <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>F</kbd></td><td class="d"><b>File picker</b> popup (fzf). Pastes the chosen path into the pane, which is how Claude Code attaches a file. Starts in <code>~/box</code>; set <code>ATTACH_ROOT</code> to change that</td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>P</kbd></td><td class="d"><b>Photo picker</b> popup over the macOS Photos library, which no file browser can walk. Previews are block art</td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>V</kbd></td><td class="d">Attach the <b>clipboard image</b>. If the pane is on a machine you SSH'd into, it fetches the image back over the tailnet</td></tr>
       <tr><td class="k"><kbd class="p">prefix</kbd> <kbd>m</kbd></td><td class="d">Render the copy-mode selection as a <b>Mermaid diagram</b> in the browser. Select the fence in copy mode first; your clipboard is left untouched</td></tr>
@@ -318,7 +318,7 @@ footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--ui);
   <div class="card">
     <h3>Keys</h3>
     <table>
-      <tr><td class="k"><kbd class="c">⇧Enter</kbd></td><td class="d">Insert a newline instead of submitting, for a multi-line prompt in Claude Code, pi and Codex. Alacritty emits <code>\x1b\r</code>; Claude Code and Codex read it as shift+enter, while pi reads it as alt+enter and remaps that key to newline. Pi's follow-up queue moves to <kbd>C-q</kbd></td></tr>
+      <tr><td class="k"><kbd class="c">⇧Enter</kbd></td><td class="d">Insert a newline instead of submitting, for a multi-line prompt in Claude Code and pi. Alacritty emits <code>\x1b\r</code>; Claude Code reads it as shift+enter, while pi reads it as alt+enter and remaps that key to newline. Pi's follow-up queue moves to <kbd>C-q</kbd></td></tr>
       <tr><td class="k"><kbd class="c">⌘⇧Space</kbd></td><td class="d">Toggle Alacritty's own vi mode. Not the default <kbd>C-⇧Space</kbd>, which a CJK input method eats</td></tr>
       <tr><td class="k"><kbd class="c">⌘⇧Y</kbd></td><td class="d">Join the clipboard into one line. Run it <i>after</i> a vi-mode <kbd>y</kbd>; Alacritty can't filter a yank as it happens</td></tr>
       <tr><td class="k"><kbd class="c">⌘⇧U</kbd> <kbd class="c">⌘⇧D</kbd> <kbd class="c">⌘⇧J</kbd> <kbd class="c">⌘⇧K</kbd></td><td class="d">Transcript navigation in Claude Code and pi fullscreen: on <kbd class="c">U</kbd>/<kbd class="c">D</kbd> Claude scrolls half a page while pi jumps to the previous/next message; <kbd class="c">K</kbd>/<kbd class="c">J</kbd> jump to first/latest in both. Sent as the xterm modifyOtherKeys encoding; tmux <code>extended-keys</code> re-encodes it as csi-u, which both apps parse</td></tr>

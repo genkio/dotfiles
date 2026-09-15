@@ -114,11 +114,33 @@ function expandSkill(command: string): string {
 }
 ```
 
-- For a visual UI, layout, state comparison, or concept too dense for Mermaid, write one focused HTML file — a diagram, an infographic, or a short slide deck, whichever fits the point. Match the product's colors, type, spacing, and components; use real labels and data; support desktop and mobile. Theme it light unless the user asks for dark, even when the subject is a dark-themed product. Then open it for the user:
+- For a visual UI, layout, state comparison, or concept too dense for Mermaid, write one focused HTML file — a diagram, an infographic, or a short slide deck, whichever fits the point. Match the product's colors, type, spacing, and components; use real labels and data; support desktop and mobile. Theme it light unless the user asks for dark, even when the subject is a dark-themed product. Put the file under `plans/` when the project has that folder. End the body with the annotation runtime, then open it through the notes server (never plain `open`):
+
+```html
+<script src="http://127.0.0.1:4747/_show-me/annotate.js"></script>
+</body>
+```
 
 ```
-Bash(open path/to/show-me-{description}.html)
+Bash(~/.claude/skills/show-me/assets/open.sh plans/show-me-{description}.html)
 ```
+
+### notes (annotation threads)
+
+Every HTML artifact opened this way gets a Notes panel: the user hovers a block, presses `+`, and starts a thread. Threads live in `show-me-{description}.notes.json` next to the page. The page polls that file, so anything written to it shows up live.
+
+A page under `plans/` is a living artifact, not a throwaway: when the project keeps `plans/INDEX.md`, add one row for the page (`live, show-me page; threads in <name>.notes.json`, read by the human and by `/show-me reply`) the moment you write it.
+
+When the user asks to answer their notes (`/show-me reply`, "reply to my notes", "check the html"), or when a show-me page from this conversation has pending threads:
+
+0. Find the pages first; never ask the user which one. `ls -t plans/*.notes.json` (fall back to `**/*.notes.json` from the repo root), then `notes.mjs list` on each. Every page with a pending thread is in scope unless the user named one. No pending threads anywhere: say so in one line and stop.
+1. `node ~/.claude/skills/show-me/assets/notes.mjs list plans/show-me-{description}.html` prints pending threads: id, section, quoted block, messages.
+2. Answer each pending thread. Keep replies short, in the same voice as the page. Backticks, `**bold**` and fenced code render. Pipe the text through stdin so quoting never breaks:
+   `printf '%s' "$reply" | node ~/.claude/skills/show-me/assets/notes.mjs reply plans/show-me-{description}.html <threadId>`
+3. If a note asks for a change to the page, edit the HTML too, then reply describing the change. A block whose text changed shows the thread as detached; the user can re-attach it from the panel, so mention when that will happen.
+4. Do not write the notes JSON by hand and do not `resolve` threads yourself; resolving is the user's call. Summarize in chat what you answered, one line per thread.
+
+Block anchors are `tag:hash(text)`, so regenerating a page keeps threads attached wherever the block text is unchanged.
 
 ### guidance
 

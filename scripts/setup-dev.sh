@@ -35,6 +35,10 @@ brew_bundle_install brew/Brewfile.dev
 # failure can't abort provisioning over one app.
 bash scripts/install-alacritty.sh \
   || warn "Alacritty install failed; rerun scripts/install-alacritty.sh."
+# mise is in the list even though core already stowed it: a standalone `make dev`
+# on a machine that had Homebrew before this repo passes require_brew without
+# core ever running, and the bare `mise install` below reads ~/.config/mise. With
+# nothing linked there it installs nothing and exits 0. Re-stowing is a no-op.
 stow -t "$HOME" alacritty mise
 # Seed Alacritty's active theme file so its first launch has colors. Resolved
 # repo root so it works cloned outside ~/dotfiles; non-fatal so a cosmetic seed
@@ -42,20 +46,36 @@ stow -t "$HOME" alacritty mise
 DOTFILES_DIR="$REPO_ROOT" bash scripts/apply-alacritty-theme.sh \
   || warn "Alacritty theme seed failed; theme-toggle.sh re-seeds on the next flip."
 
-# mise: node, python, java, go, uv + global npm tools (versions declared in mise/.config/mise/config.toml)
+# mise and Claude Code both land here, and mise has to win over a leftover
+# `brew install mise` from before the switch. zsh/.zshrc puts it first too.
+export PATH="$HOME/.local/bin:$PATH"
+
+# The core phase installs mise, along with the CLI tools in conf.d/cli.toml and
+# the mise package that declares them. This is the standalone-`make dev` path:
+# fatal if it cannot be fixed, because everything below runs through mise.
+if ! command -v mise >/dev/null 2>&1; then
+  bash scripts/install-mise.sh
+fi
+
+# mise: the toolchains from config.toml (node, python, go, uv, typescript) and
+# gh, pi, ctx7, @playwright/cli from conf.d/dev.toml.
 # Install node first so `npm` exists when activate resolves `npm:*@latest` versions.
 # --quiet: mise repaints a live multi-progress UI several times a second, and a
 # captured setup log keeps every frame (~500 of 800 lines in one run). Errors and
 # warnings still print; --silent would swallow those too.
 echo "mise: installing toolchains and global npm tools (quiet, takes a few minutes)..."
 mise install --quiet node
-eval "$(mise activate bash)"
+# --shims, not the plain activation: that one resolves each tool's real bin dir
+# once and then refreshes on a prompt hook, which never fires in a script - so
+# pi and gh, installed by the very next line, would stay off PATH for the rest
+# of this file. The shims directory is a fixed path that mise repopulates on
+# every install, so anything installed below is reachable without re-activating.
+eval "$(mise activate bash --shims)"
 # Non-fatal like brew_bundle_install above: one unresolvable npm tool (e.g. a
 # registry trust-policy rejection) shouldn't abort the rest of provisioning.
 mise install --quiet || warn "some toolchains/global npm tools failed to install; continuing setup."
 
 # Install Claude Code via official shell installer (self-updates via `claude update`)
-export PATH="$HOME/.local/bin:$PATH"
 if ! command -v claude >/dev/null 2>&1; then
   curl -fsSL https://claude.ai/install.sh | bash
 fi

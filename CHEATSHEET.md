@@ -40,7 +40,6 @@ file leaves out, so it reads on its own without knowing this config.
 | `zip <path>` | Zip a file/folder via 7-Zip (no compression), strip macOS metadata, move source to Trash |
 | `unzip <path>` | Extract a `.zip` next to itself; on a folder, extract every `.zip` inside it |
 | `killport <port>` / `kip <port>` | TERM whatever process is listening on the given TCP port |
-| `ltail <path>` | `lnav <path>` (log navigator) |
 | `vmise` | Convert `package.json`'s `volta` versions into a `mise use` invocation |
 
 **Tmux helpers**

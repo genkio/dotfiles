@@ -7,11 +7,14 @@ on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 # Only install AlDente on older releases that lack it.
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
 cask "ungoogled-chromium"
-cask "firefox"
+cask "firefox" unless in_vm
 cask "hammerspoon"
-# macos-bootstrap.sh selects this as the screen saver
-cask "fliqlo"
 cask "sublime-text"
 # setup-sublime.sh uses duti to make sublime the default text/code opener
 brew "duti"
 cask "utm" if on_silicon && !in_vm
+# IINA is the mpv engine as a universal .app; on Intel mpv has no bottle and its
+# graph is a ~12 minute source build. Its CLI is `iina`, not `mpv`, which is why
+# yazi's play opener resolves the binary at run time.
+brew "mpv" if on_silicon && !in_vm
+cask "iina" unless on_silicon || in_vm

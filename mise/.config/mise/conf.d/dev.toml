@@ -1,0 +1,58 @@
+# Dev-phase tools that `make update` tracks to latest.
+#
+# The conf.d split is an upgrade policy, not just a phase one: everything in
+# conf.d/ is kept current by update.sh, and config.toml is the frozen set
+# (node, python, go, uv and the typescript pair), where a global bump buys
+# nothing and project-local pins resolve independently anyway.
+#
+# These six are here because `brew upgrade` used to keep them current, back
+# when gh, pi, lazygit and lazysql were formulae; losing that when they moved to
+# mise was a regression, not a decision. ctx7 and @playwright/cli join them
+# because they are ordinary CLIs, not toolchains anything is pinned against.
+#
+# Installed by `make dev` (a bare `mise install` takes every config), unlike
+# conf.d/cli.toml which `make core` installs on its own.
+#
+# Keys must stay quoted backend:repo strings: update.sh and opinionated-flow.sh
+# both read conf.d files with a sed that expects exactly that shape.
+
+[tools]
+# gh and pi were Homebrew formulae until Homebrew stopped building x86_64 macOS
+# bottles (Intel is Tier 3 now): on an Intel Mac gh compiled the Go toolchain
+# first and pi compiled node plus rustc. mise fetches the vendors' own prebuilt
+# darwin binaries for either arch. aqua:cli/cli is the official cli/cli release
+# asset, checksum-verified.
+"aqua:cli/cli" = "latest"
+"npm:@earendil-works/pi-coding-agent" = "latest"
+
+# lazygit and lazysql are gh's story exactly, and were the last two Go formulae
+# in Brewfile.dev: Homebrew publishes no x86_64 macOS bottle for either, so
+# `brew install` on Intel compiles them, and the build dep `go` has no Intel
+# bottle either - the Go toolchain got built first. Both ship darwin_x86_64
+# release assets, at the versions the formulae carry (lazygit 0.65.1, lazysql
+# 0.5.7), so this is a delivery change and not a downgrade.
+#
+# Both go in dev.toml and not cli.toml even though the same rule covers them:
+# they were installed by `make dev`, and cli.toml would hand them to every
+# machine that only ever runs `make core`.
+"aqua:jesseduffield/lazygit" = "latest"
+"aqua:jorgerojas26/lazysql" = "latest"
+
+"npm:ctx7" = "latest"
+# Still pinned, now forward to the newest provenance-backed release.
+#
+#   0.1.18  GitHub Actions, trusted publisher, attestations   <- was pinned here
+#   0.1.19  microsoft1se, NO trusted publisher, NO attestations
+#   0.1.20  GitHub Actions, trusted publisher, attestations
+#
+# `latest` is still the wrong value, for a reason that is not obvious: mise's
+# version listing lags npm's dist-tag, and it currently stops at 0.1.19. So
+# `mise latest npm:@playwright/cli` returns exactly the unattested release this
+# pin exists to avoid, while npm's own `latest` is the good 0.1.20. mise will
+# install 0.1.20 when named explicitly, which is what this line does.
+#
+# Unpin only when `mise latest npm:@playwright/cli` itself returns a version
+# published by a trusted publisher. scripts/check-pins.sh tests that, rather
+# than npm's dist-tag, because the dist-tag said "safe to unpin" here while
+# unpinning would have installed 0.1.19.
+"npm:@playwright/cli" = "0.1.20"

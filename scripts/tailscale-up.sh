@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Log this machine into the tailnet (the one post-`make` step that needs a
-# browser).
+# Put this machine on the tailnet: install the formula, start its daemon, and
+# log in (the one step that needs a browser).
+#
+# Owns the whole of tailscale rather than sharing it with a setup phase. It is
+# the formula and not the tailscale-app cask because this machine has to ACCEPT
+# Tailscale SSH, and that server component runs only on Linux and this
+# open-source tailscaled. Two consequences that keep it out of `make all`: it is
+# a Go build with no x86_64 bottle, so on Intel it compiles; and it leaves a root
+# LaunchDaemon behind, which is not something a bootstrap should do unasked.
 #
 # Wraps `sudo tailscale up --ssh --operator=<user>`:
 #   --ssh       enables Tailscale SSH into this machine
@@ -16,9 +23,14 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 source "$SCRIPT_DIR/lib.sh"
 
-if ! command -v tailscale >/dev/null 2>&1; then
-  err "tailscale not installed; it ships in brew/Brewfile.base, so run 'make' or 'brew install tailscale'."
+if ! command -v brew >/dev/null 2>&1; then
+  err "tailscale needs Homebrew; run 'make core' first."
   exit 1
+fi
+
+if ! command -v tailscale >/dev/null 2>&1; then
+  echo "Installing tailscale (a Go build on Intel, so this is not quick)..."
+  brew install tailscale
 fi
 
 # Root via `sudo make tailscale` would make root the operator, which defeats the

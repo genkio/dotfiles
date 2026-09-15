@@ -14,15 +14,22 @@ set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
 
 DRY_RUN=0
+COMPUTER_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run|-n)
       DRY_RUN=1
       ;;
+    --name)
+      [[ -n "${2:-}" ]] || { err "--name needs a value"; exit 1; }
+      COMPUTER_NAME="$2"
+      shift
+      ;;
     -h|--help)
-      echo "Usage: $(basename "$0") [--dry-run|-n]"
+      echo "Usage: $(basename "$0") [--dry-run|-n] [--name NAME]"
       echo "  --dry-run, -n  Print what would be written without making changes."
+      echo "  --name NAME    Rename the machine (default: leave it alone)."
       exit 0
       ;;
     *)
@@ -35,7 +42,6 @@ done
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || { err "missing command: $1"; exit 1; }; }
 need_cmd defaults
-need_cmd /usr/bin/python3
 need_cmd killall
 need_cmd pmset
 need_cmd nvram
@@ -113,6 +119,102 @@ if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 && -z "${DOTFILES_SUDO_WARME
   sudo -v
   ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
   SUDO_KEEPALIVE_PID=$!
+fi
+
+###############################################################################
+# Software Update
+###############################################################################
+
+# First real step of the run, ahead of the CLT install below and every other
+# fetch, because it is the one that decides how long the rest takes.
+#
+# A just-installed macOS starts pulling every pending update in the background.
+# Measured on a fresh 15.7 image: Safari + a 2GB point release + a 10GB Tahoe
+# upgrade, ~3GB in before provisioning had finished cloning Homebrew. It eats
+# the whole uplink, so the `brew bundle` that follows looks hung for hours.
+# Only scheduling is disabled; XProtect/MRT data updates (ConfigDataInstall)
+# are a separate key and stay on. Re-enable in System Settings > General >
+# Software Update, or run `softwareupdate -l -i -a` by hand.
+echo "Software Update: Disable automatic check, download and install"
+optional sudo_pw defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool false
+optional sudo_pw defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool false
+optional sudo_pw defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticallyInstallMacOSUpdates -bool false
+optional sudo_pw softwareupdate --schedule off
+
+# Those keys only govern the NEXT check. A download already in flight keeps
+# going: the bytes belong to nsurlsessiond, whose background sessions outlive
+# the client that queued them, softwareupdated is an on-demand job that can exit
+# without stopping it, and `softwareupdate` has no cancel verb at all. So the
+# best available here is to notice and say so - an unexplained 20-minute stall
+# in a later `brew bundle` is far worse than four seconds of measuring.
+# Growth, not size: staged bytes from a past update sit there for weeks.
+su_staged_kb() {
+  { sudo_pw du -sk /Library/Updates /System/Volumes/Update/MobileAsset 2>/dev/null || true; } |
+    awk '{ total += $1 } END { print total + 0 }'
+}
+SU_DOWNLOADING=0
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  printf '  [dry-run] %s\n' 'sample /Library/Updates for a download already in flight'
+else
+  SU_BEFORE="$(su_staged_kb)"
+  sleep 4
+  SU_GROWTH=$(($(su_staged_kb) - SU_BEFORE))
+  # 1MB in 4s: well above filesystem noise, well below any real update download.
+  if [[ "$SU_GROWTH" -gt 1024 ]]; then
+    SU_DOWNLOADING=1
+    warn "a macOS update is downloading RIGHT NOW (+$((SU_GROWTH / 1024))MB in 4s)."
+    warn "the settings above stop the next one; they cannot cancel this one."
+    warn "it will compete with everything below for bandwidth, starting with the"
+    warn "Command Line Tools. Rebooting now is usually faster than pushing on."
+    # Timed, and skipped without a terminal: this phase is meant to be runnable
+    # unattended and over ssh, so a prompt that can block forever is a worse bug
+    # than the download it is warning about.
+    if [[ -t 0 ]]; then
+      SU_REPLY=""
+      read -r -t 30 -p "  Continue anyway? [Y/n] (continues on its own in 30s) " SU_REPLY || true
+      echo ""
+      if [[ "$SU_REPLY" == [nN]* ]]; then
+        err "stopped. Reboot, then run 'make macos' again."
+        exit 1
+      fi
+    fi
+  fi
+fi
+
+# The Dock rewrite and the wallpaper-store walk below are both /usr/bin/python3,
+# a CLT shim that pops a GUI installer dialog and blocks forever over ssh rather
+# than failing. Cloning this repo needs /usr/bin/git, the same kind of shim, so
+# in practice the tools are always here; assert rather than install, and turn
+# the one way it can go wrong into an error instead of a hang.
+if ! xcode-select -p >/dev/null 2>&1; then
+  err "Xcode Command Line Tools are required (for /usr/bin/python3)."
+  err "Install them with 'xcode-select --install', then rerun."
+  exit 1
+fi
+
+###############################################################################
+# Computer Name
+###############################################################################
+
+# Opt-in: no --name means leave whatever the setup assistant chose. macOS keeps
+# four names and only ComputerName is the one in System Settings, so setting
+# that alone leaves the shell prompt and the .local address on "Jis-MacBook-Pro".
+# LocalHostName and HostName take letters, digits and hyphens only - anything
+# else is rejected outright, so derive them instead of passing the name through.
+if [[ -n "$COMPUTER_NAME" ]]; then
+  SHORT_NAME="$(printf '%s' "$COMPUTER_NAME" | tr ' ' '-' | tr -cd 'A-Za-z0-9-')"
+  if [[ -z "$SHORT_NAME" ]]; then
+    err "--name '$COMPUTER_NAME' has no letters, digits or hyphens to build a hostname from."
+    exit 1
+  fi
+  echo "Computer Name: $COMPUTER_NAME (ssh/mDNS: ${SHORT_NAME}.local)"
+  optional sudo_pw scutil --set ComputerName "$COMPUTER_NAME"
+  optional sudo_pw scutil --set LocalHostName "$SHORT_NAME"
+  optional sudo_pw scutil --set HostName "$SHORT_NAME"
+  # The SMB name is the fourth, capped at 15 chars and conventionally uppercase.
+  optional sudo_pw defaults write \
+    /Library/Preferences/SystemConfiguration/com.apple.smb.server \
+    NetBIOSName -string "$(printf '%.15s' "$SHORT_NAME" | tr 'a-z' 'A-Z')"
 fi
 
 ###############################################################################
@@ -268,12 +370,23 @@ defaults_current_host_write com.apple.screensaver idleTime -int 300
 # space. Those keys are UUIDs of *this* machine's displays and spaces, so walk
 # the tree instead of seeding a captured file. Kill the agent first, or it
 # writes its in-memory copy back over ours when it exits.
+#
+# A fresh account has no Idle node at all: desktop and screen saver start
+# "linked" (one Linked node, Type "linked"), and the split into Desktop + Idle
+# only happens when something picks a saver. So unlink first, keeping the
+# wallpaper as Desktop, or this silently patches nothing - which is exactly how
+# it failed on a new VM.
 echo "Screen Saver: Use Fliqlo"
 set_screen_saver() {
   killall WallpaperAgent 2>/dev/null || true
-  sleep 1
+  # The store is written lazily, so on a new account the file does not exist
+  # until the agent respawns and creates it. Measured at ~1s.
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [[ -e "$HOME/Library/Application Support/com.apple.wallpaper/Store/Index.plist" ]] && break
+    sleep 1
+  done
   /usr/bin/python3 - "$1" <<'PY'
-import os, plistlib, sys
+import datetime, os, plistlib, sys
 from urllib.parse import quote
 
 saver = sys.argv[1]
@@ -287,37 +400,56 @@ config = plistlib.dumps({"module": {"relative": "file://" + quote(saver)}},
 opts = plistlib.dumps(
     {"values": {"legacyScreenSaverGenerationCount": {"picker": {"_0": {"id": "2"}}}}},
     fmt=plistlib.FMT_BINARY)
+choice = {"Configuration": config, "Files": [],
+          "Provider": "com.apple.wallpaper.choice.screen-saver"}
 
 d = plistlib.load(open(idx, "rb"))
 n = 0
+
+def set_idle(content):
+    content["Choices"] = [choice]
+    content["EncodedOptionValues"] = opts
 
 def walk(node):
     global n
     if not isinstance(node, dict):
         return
+    linked = node.get("Linked")
+    if isinstance(linked, dict) and "Content" in linked:
+        del node["Linked"]
+        node["Type"] = "individual"
+        node["Desktop"] = linked
+        stamp = linked.get("LastSet", datetime.datetime.now())
+        node["Idle"] = {"LastSet": stamp, "LastUse": stamp,
+                        "Content": {"Choices": [], "Shuffle": "$null"}}
+        set_idle(node["Idle"]["Content"])
+        n += 1
+        return
     for key, value in node.items():
         if key == "Idle" and isinstance(value, dict) and "Content" in value:
-            value["Content"]["Choices"] = [{
-                "Configuration": config,
-                "Files": [],
-                "Provider": "com.apple.wallpaper.choice.screen-saver",
-            }]
-            value["Content"]["EncodedOptionValues"] = opts
+            set_idle(value["Content"])
             n += 1
         else:
             walk(value)
 
 walk(d)
 if not n:
-    sys.exit("no Idle nodes in wallpaper store")
+    sys.exit("no screen-saver slots in wallpaper store")
 plistlib.dump(d, open(idx, "wb"), fmt=plistlib.FMT_BINARY)
 PY
   killall WallpaperAgent 2>/dev/null || true
 }
 FLIQLO="${HOME}/Library/Screen Savers/Fliqlo.saver"
-# Brewfile.apps installs Fliqlo after this script, so on a first run the bundle
-# is usually still absent; the path only has to resolve when the saver starts.
-[[ -e "$FLIQLO" ]] || warn "Fliqlo not installed yet; rerun after 'make apps'"
+# Installed from here rather than Brewfile.apps: the selection below needs the
+# bundle on disk NOW, and the apps bundle runs after this script - so on a fresh
+# machine the choice used to warn, skip, and only take on a second run.
+# Non-fatal: a failed download costs the screen saver, not the bootstrap.
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  bash "$(dirname -- "${BASH_SOURCE[0]}")/install-fliqlo.sh" --dry-run
+else
+  bash "$(dirname -- "${BASH_SOURCE[0]}")/install-fliqlo.sh" ||
+    warn "Fliqlo install failed; rerun scripts/install-fliqlo.sh."
+fi
 optional set_screen_saver "$FLIQLO"
 
 echo "Screen Saver: Require password immediately"
@@ -377,10 +509,24 @@ fi
 
 echo "Desktop: Set solid black background"
 BLACK_PNG="/System/Library/Desktop Pictures/Solid Colors/Black.png"
-# System Events wallpaper scripting broke on Tahoe (26.x) after the wallpaper
-# config moved under WallpaperAgent. NSWorkspace via the JS-ObjC bridge still
-# works (same API desktoppr uses) and needs no Apple-events TCC grant.
-set_wallpaper() {
+# Two paths, gated on the OS major, because the thing that changed is an OS bug
+# and each path is verified only on the releases it runs on. Do not "simplify"
+# this into one: both single-path versions were tried and each breaks a release.
+#
+# <= 26: NSWorkspace.setDesktopImageURL. System Events wallpaper scripting broke
+# on Tahoe 26.x when the config moved under WallpaperAgent, but this API still
+# covers every node and needs no Apple-events TCC grant.
+#
+# >= 27: the same call reaches SystemDefault, Displays/<uuid> and a Spaces entry
+# keyed by the EMPTY STRING, but leaves the node for the space actually on
+# screen (Spaces/<space-uuid>/...) on its old image - and still returns true, so
+# the run reports success and the desktop does not change. Nor can it be used as
+# a first step feeding a repair pass: whether the agent has persisted the call
+# to Index.plist by the time we read it is pure timing, measured anywhere
+# between 100ms and never, so a poll either races or copies the PREVIOUS image
+# over every node. So on 27 drive the store directly, exactly as the screen
+# saver above does.
+set_wallpaper_api() {
   osascript -l JavaScript -e '
     ObjC.import("AppKit");
     function run(argv) {
@@ -393,6 +539,66 @@ set_wallpaper() {
         }
       }
     }' "$1"
+}
+
+set_wallpaper_store() {
+  killall WallpaperAgent 2>/dev/null || true
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [[ -e "$HOME/Library/Application Support/com.apple.wallpaper/Store/Index.plist" ]] && break
+    sleep 1
+  done
+  local rc=0
+  /usr/bin/python3 - "$1" <<'PY' || rc=$?
+import os, plistlib, sys
+from urllib.parse import quote
+
+image = sys.argv[1]
+idx = os.path.expanduser(
+    "~/Library/Application Support/com.apple.wallpaper/Store/Index.plist")
+if not os.path.exists(idx):
+    sys.exit("wallpaper store missing")
+
+config = plistlib.dumps({"type": "imageFile",
+                         "url": {"relative": "file://" + quote(image)}},
+                        fmt=plistlib.FMT_BINARY)
+choice = {"Configuration": config, "Files": [],
+          "Provider": "com.apple.wallpaper.choice.image"}
+
+d = plistlib.load(open(idx, "rb"))
+n = 0
+
+
+def walk(node):
+    global n
+    if not isinstance(node, dict):
+        return
+    for key, value in node.items():
+        # Never descend into Idle: that is the screen saver, set separately.
+        # A Linked node has no split yet, so its one Content is the desktop too.
+        if key == "Idle":
+            continue
+        if key in ("Desktop", "Linked") and isinstance(value, dict) and "Content" in value:
+            value["Content"]["Choices"] = [choice]
+            n += 1
+        else:
+            walk(value)
+
+
+walk(d)
+if not n:
+    sys.exit("no desktop slots in wallpaper store")
+plistlib.dump(d, open(idx, "wb"), fmt=plistlib.FMT_BINARY)
+PY
+  killall WallpaperAgent 2>/dev/null || true
+  return "$rc"
+}
+
+set_wallpaper() {
+  if [[ "$MACOS_MAJOR" -ge 27 ]]; then
+    set_wallpaper_store "$1"
+  else
+    set_wallpaper_api "$1"
+  fi
 }
 if [[ -f "$BLACK_PNG" ]]; then
   optional set_wallpaper "$BLACK_PNG"
@@ -412,20 +618,43 @@ else
 fi
 
 ###############################################################################
+# Remote Access
+###############################################################################
+
+# Turned on early in provisioning so the rest of the setup can be driven over
+# ssh from another machine instead of the console.
+echo "Remote Access: Enable Remote Login (SSH)"
+remote_login_on() { [[ "$(sudo_pw systemsetup -getremotelogin 2>/dev/null)" == *On* ]]; }
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  printf '  [dry-run] %s\n' 'sudo systemsetup -setremotelogin on'
+elif remote_login_on; then
+  echo "  Already on."
+else
+  REMOTE_ERR="$(sudo_pw systemsetup -setremotelogin on 2>&1 || true)"
+  if remote_login_on; then
+    echo "  Enabled."
+  else
+    # macOS gates this toggle behind Full Disk Access for the CALLING app, and a
+    # fresh Terminal has no such grant. launchctl reaches the same daemon
+    # without it; bootstrap fails harmlessly when the job is already loaded.
+    sudo_pw launchctl enable system/com.openssh.sshd >/dev/null 2>&1 || true
+    sudo_pw launchctl bootstrap system /System/Library/LaunchDaemons/ssh.plist >/dev/null 2>&1 || true
+    if remote_login_on; then
+      echo "  Enabled via launchctl (systemsetup wanted Full Disk Access)."
+    else
+      warn "could not enable Remote Login: ${REMOTE_ERR:-unknown error}"
+      warn "enable it by hand in System Settings > General > Sharing > Remote Login."
+    fi
+  fi
+fi
+
+###############################################################################
 # System
 ###############################################################################
 
 echo "Menu Bar: Reduce item spacing"
 defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
 defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
-
-###############################################################################
-# Terminal.app
-###############################################################################
-
-echo "Terminal: Set font size to 13 (default and startup profiles)"
-optional osascript -e 'tell application "Terminal" to set font size of default settings to 13'
-optional osascript -e 'tell application "Terminal" to set font size of startup settings to 13'
 
 ###############################################################################
 # Apply Changes
@@ -511,3 +740,36 @@ if [[ ${#SKIPPED[@]} -gt 0 ]]; then
 fi
 
 echo "Note: Trackpad changes may require log out/in to fully apply."
+
+# Repeated from the Software Update section: that warning is ~300 lines up by
+# now, and this is the one finding that changes what you do next.
+if [[ "$SU_DOWNLOADING" -eq 1 ]]; then
+  echo ""
+  warn "a macOS update was still downloading when this phase started, and"
+  warn "disabling automatic updates does not cancel it. Reboot before 'make"
+  warn "core', or the download will starve every later phase of bandwidth."
+fi
+
+# Last line of the run, so it survives the scrollback: with Remote Login on,
+# this is how you reach the machine to drive the rest of the setup remotely.
+# The default route's interface rather than a hardcoded en0 - en0 is Wi-Fi on a
+# laptop but not on a Mac on ethernet, or behind a USB adapter.
+LOCAL_IFACE="$(route -n get default 2>/dev/null | awk '/interface:/{print $2}')"
+LOCAL_IP="$(ipconfig getifaddr "${LOCAL_IFACE:-en0}" 2>/dev/null || true)"
+LOCAL_NAME="$(scutil --get LocalHostName 2>/dev/null || true)"
+# The mDNS name first: it follows the machine, while a DHCP lease can move to a
+# different host and then ssh refuses the whole connection over a known_hosts
+# conflict. The IP stays as the fallback for anywhere mDNS does not reach
+# (another subnet, a VPN).
+if [[ -n "$LOCAL_NAME" ]]; then
+  echo "SSH to this machine: ssh $(id -un)@${LOCAL_NAME}.local"
+fi
+if [[ -n "$LOCAL_IP" ]]; then
+  echo "                 or: ssh $(id -un)@${LOCAL_IP}   (${LOCAL_IFACE:-en0}, DHCP)"
+fi
+if [[ -z "$LOCAL_NAME" && -z "$LOCAL_IP" ]]; then
+  warn "could not determine this machine's local name or IP on ${LOCAL_IFACE:-en0}"
+fi
+echo "  If ssh answers REMOTE HOST IDENTIFICATION HAS CHANGED, that address used"
+echo "  to belong to another machine. Clear it on the client you connect FROM,"
+echo "  not here: ssh-keygen -R <the address above>"

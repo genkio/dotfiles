@@ -23,10 +23,15 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
 source "$SCRIPT_DIR/lib.sh"
 
+export PATH="$HOME/.local/bin:$PATH"
+
 # Read the pins from the files that define them, so the audit can't drift from
 # what is actually pinned.
+# conf.d/dev.toml, not config.toml: the pin moved there when conf.d became the
+# set `make update` tracks to latest. A miss here is silent (the audit would
+# just report "not pinned"), so it is worth stating where it lives.
 pinned_playwright="$(sed -n 's/^"npm:@playwright\/cli" = "\(.*\)"$/\1/p' \
-  "$REPO_ROOT/mise/.config/mise/config.toml")"
+  "$REPO_ROOT/mise/.config/mise/conf.d/dev.toml")"
 pinned_alacritty="$(sed -n 's/^VERSION=\(.*\)$/\1/p' "$SCRIPT_DIR/install-alacritty.sh")"
 
 section "pins"
@@ -41,30 +46,47 @@ action() {
 }
 
 check_playwright() {
-  local pin="$1" json version trusted
+  local pin="$1" json trusted mise_latest
 
-  if [[ -z "$pin" ]]; then
+  # "latest" is unpinned, same as empty. Worth spelling out: an earlier version
+  # of this check only tested for empty, so setting the value to "latest" left
+  # it auditing the literal string and advising you to "restore latest".
+  if [[ -z "$pin" || "$pin" == "latest" ]]; then
     echo "  @playwright/cli: not pinned (tracking latest), nothing to audit"
     return
   fi
 
-  json="$(curl -fsS --max-time 15 https://registry.npmjs.org/@playwright/cli/latest 2>/dev/null)" || {
+  # What mise resolves, NOT npm's dist-tag. These disagree: mise's version
+  # listing lags the registry, and on 2026-09-15 npm's latest was the
+  # provenance-backed 0.1.20 while mise's latest was still the unattested
+  # 0.1.19. Auditing the dist-tag said "safe to unpin" when unpinning would
+  # have installed exactly the release the pin exists to avoid.
+  mise_latest="$(mise latest npm:@playwright/cli 2>/dev/null)" || true
+  if [[ -z "$mise_latest" ]]; then
+    warn "  @playwright/cli $pin: could not ask mise what it resolves to"
+    return
+  fi
+
+  if [[ "$mise_latest" == "$pin" ]]; then
+    echo "  @playwright/cli $pin: mise resolves latest to the pinned version, pin is a no-op"
+    action "drop the pin: \"npm:@playwright/cli\" = \"latest\" in mise/.config/mise/conf.d/dev.toml"
+    return
+  fi
+
+  json="$(curl -fsS --max-time 15 "https://registry.npmjs.org/@playwright/cli/$mise_latest" 2>/dev/null)" || {
     warn "  @playwright/cli $pin: could not reach the npm registry"
     return
   }
 
-  version="$(jq -r '.version' <<<"$json")"
   # A trusted publisher (npm's OIDC flow) is what the no-downgrade policy looks
   # for; the attestation follows from it.
   trusted="$(jq -r '._npmUser.trustedPublisher != null' <<<"$json")"
 
-  if [[ "$version" == "$pin" ]]; then
-    echo "  @playwright/cli $pin: still the latest release, pin is a no-op"
-  elif [[ "$trusted" == "true" ]]; then
-    echo "  @playwright/cli $pin: latest is $version and HAS a trusted publisher"
-    action "restore \"npm:@playwright/cli\" = \"latest\" in mise/.config/mise/config.toml"
+  if [[ "$trusted" == "true" ]]; then
+    echo "  @playwright/cli $pin: mise now resolves latest to $mise_latest, which HAS a trusted publisher"
+    action "drop the pin: \"npm:@playwright/cli\" = \"latest\" in mise/.config/mise/conf.d/dev.toml"
   else
-    echo "  @playwright/cli $pin: latest is $version, still no trusted publisher, keep the pin"
+    echo "  @playwright/cli $pin: mise resolves latest to $mise_latest, still no trusted publisher, keep the pin"
   fi
 }
 

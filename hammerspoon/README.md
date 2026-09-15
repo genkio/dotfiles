@@ -38,14 +38,11 @@ time=2025-01-15T10:00:00+01:00 peers="phone@192.0.2.10" level=info msg=connect t
 time=2025-01-15T10:00:26+01:00 peers="phone@192.0.2.10" level=info msg=disconnect terminal=true duration_seconds=26 connected_at=2025-01-15T10:00:00+01:00
 ```
 
-Open the active file with lnav:
+Follow the active file:
 
 ```sh
-lnav ~/dotfiles/hammerspoon/.hammerspoon/logs/uuremote/events.log
+tail -f ~/dotfiles/hammerspoon/.hammerspoon/logs/uuremote/events.log
 ```
-
-lnav recognizes [logfmt directly](https://docs.lnav.org/en/stable/formats.html#logfmt), without a custom format file.
-It parses the time, level, and message. Extra fields are available in the `logfmt_log` SQL table's `fields` column.
 
 | Field | Meaning |
 | --- | --- |

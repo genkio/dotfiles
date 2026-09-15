@@ -11,5 +11,5 @@ prepend_previewers = [
 # macOS default `play` opener = system `open`; override to mpv (Enter on audio/video plays in mpv).
 [opener]
 play = [
-  { run = 'mpv %s', orphan = true, desc = "mpv", for = "unix" },
+  { run = 'if command -v mpv >/dev/null 2>&1; then mpv %s; else iina %s; fi', orphan = true, desc = "mpv", for = "unix" },
 ]

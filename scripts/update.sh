@@ -6,14 +6,18 @@
 #
 # Deliberately not a provisioner. It never installs a package the machine does
 # not already have, never writes a macOS default, and never asks for sudo, so it
-# runs unattended on any machine whatever profile it was built with (base,
-# --include-apps, --include-dev). `make`, `make apps`, and `make dev` remain the
-# only paths that install.
+# runs unattended on any machine whatever phases it was built with. `make core`,
+# `make apps` and `make dev` remain the only paths that install.
 #
 # Not upgrading something is a decision, not an oversight:
 #
-#   mise, uv tools     working toolchains buy nothing from a global bump, and
-#                      project-local pins resolve independently of them anyway
+#   mise config.toml   the language toolchains (node, python, go, uv and the
+#                      typescript pair). A working toolchain buys nothing from a
+#                      global bump, and project-local pins resolve independently
+#                      of them anyway. What mise/.config/mise/conf.d/ declares IS
+#                      upgraded: those were Homebrew formulae that `brew upgrade`
+#                      kept current until Intel lost its bottles
+#   uv tools           same reasoning as the toolchains above
 #   Claude Code        updated by hand, when you pick the version
 #   Oh My Zsh          self-installs from .zshrc; nothing here needs it current
 #   tmux/nvim plugins  small, stable, pinned. nvim's lockfile is tracked, so
@@ -40,6 +44,9 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
 cd "$REPO_ROOT"
+# mise lives in ~/.local/bin, which only .zshrc adds; a non-interactive `ssh host
+# make update` or a cron shell would otherwise skip the whole mise section.
+export PATH="$HOME/.local/bin:$PATH"
 
 DRY_RUN=0
 while [[ $# -gt 0 ]]; do
@@ -122,7 +129,7 @@ fi
 # ---------------------------------------------------------------- brew
 
 # Upgrade only. `brew bundle` is absent on purpose: it would install every entry
-# of every Brewfile, which converges a base machine to --include-all the first
+# of every Brewfile, which converges a base machine to everything at once the first
 # time you run this. A package added to a Brewfile reaches other machines when
 # you run `make apps` / `make dev` there, deliberately.
 if [[ "$DRY_RUN" == 1 ]]; then
@@ -156,7 +163,7 @@ else
   fi
 fi
 
-# tailscaled runs as a root LaunchDaemon (opinionated-flow.sh starts it that way
+# tailscaled runs as a root LaunchDaemon (tailscale-up.sh starts it that way
 # so the node is reachable without anyone logging in). Upgrading the formula
 # needs no privileges - the Cellar belongs to you - but two consequences do, and
 # this script does not sudo. So report them and let you pick the moment:
@@ -202,17 +209,83 @@ tailscale_followups() {
 }
 tailscale_followups
 
-# ---------------------------------------------------------------- alacritty
+# ---------------------------------------------------------------- mise
 
-# Pinned outside brew because the cask is disabled; see install-alacritty.sh.
-# A no-op unless VERSION there changed, which is how a deliberate bump on one
-# machine reaches the others after a pull.
+# What conf.d/ declares is tracked to latest; config.toml is the frozen set
+# (node, python, go, uv, the typescript pair), where a global bump buys nothing.
+#
+# This is not a new policy so much as a restored one. neovim, yazi, fzf,
+# fastfetch, sevenzip, gh and pi were all Homebrew formulae until Homebrew moved
+# Intel macOS to Tier 3 and stopped shipping x86_64 bottles; `brew upgrade` two
+# sections up is what used to keep them current, and moving them to mise took
+# them off that path without anyone deciding to.
+#
+# Never --bump: `mise upgrade` honours whatever range each entry asks for, so
+# the deliberate @playwright/cli pin cannot move by accident. check-pins.sh is
+# what reports when that pin can be lifted.
+mise_tracked_tools() {
+  sed -n 's/^[[:space:]]*"\([^"]*\)"[[:space:]]*=.*/\1/p' \
+    "$REPO_ROOT"/mise/.config/mise/conf.d/*.toml 2>/dev/null
+}
+
+# mise itself first: it is the thing that upgrades everything below, and
+# install-mise.sh pins nothing, so it tracks upstream. It was the one tool on
+# the machine that nothing updated once it stopped being a formula.
+if [[ "$DRY_RUN" == 1 ]]; then
+  section "mise"
+  bash scripts/install-mise.sh --dry-run
+else
+  bash scripts/install-mise.sh >"$LOG" 2>&1 || fail "mise install failed."
+  report mise 'already at version'
+fi
+
+if command -v mise >/dev/null 2>&1; then
+  # Intersect with what is installed: `mise upgrade X` on a tool that is not
+  # installed installs it (mise outdated shows it as [MISSING]), so passing the
+  # whole conf.d list would give a core-only machine the dev tools on the first
+  # `make update`, which is exactly the install this script promises never to do.
+  MISE_INSTALLED="$(mise ls --installed 2>/dev/null | awk '{print $1}')"
+  MISE_TOOLS=()
+  while IFS= read -r mise_tool; do
+    [[ -n "$mise_tool" ]] || continue
+    grep -qxF "$mise_tool" <<<"$MISE_INSTALLED" && MISE_TOOLS+=("$mise_tool")
+  done < <(mise_tracked_tools)
+
+  if [[ "${#MISE_TOOLS[@]}" -eq 0 ]]; then
+    fail "none of the tools in mise/.config/mise/conf.d/*.toml is installed; nothing was upgraded."
+  elif [[ "$DRY_RUN" == 1 ]]; then
+    # No section header: the install-mise.sh dry run above already opened one.
+    # outdated is read-only and prints nothing when everything is current.
+    outdated_mise="$(mise outdated "${MISE_TOOLS[@]}" 2>/dev/null || true)"
+    if [[ -n "$outdated_mise" ]]; then
+      printf '%s\n' "$outdated_mise" | sed 's/^/  /'
+    else
+      echo "  nothing outdated"
+    fi
+  else
+    mise upgrade "${MISE_TOOLS[@]}" >"$LOG" 2>&1 || fail "mise upgrade failed"
+    report mise 'already up to date|^$'
+  fi
+fi
+
+# ------------------------------------------------------- pinned outside brew
+
+# Both are pinned outside brew: alacritty because the cask is disabled, fliqlo
+# because macos-bootstrap.sh needs the bundle before Brewfile.apps would run.
+# Each is a no-op unless VERSION in its script changed, which is how a
+# deliberate bump on one machine reaches the others after a pull. mise is the
+# third of this kind and is handled in its own section above, where it can be
+# upgraded before the tools it manages.
 if [[ "$DRY_RUN" == 1 ]]; then
   section "alacritty"
   bash scripts/install-alacritty.sh --dry-run
+  section "fliqlo"
+  bash scripts/install-fliqlo.sh --dry-run
 else
   bash scripts/install-alacritty.sh >"$LOG" 2>&1 || fail "Alacritty install failed."
   report alacritty 'already installed, skipping'
+  bash scripts/install-fliqlo.sh >"$LOG" 2>&1 || fail "Fliqlo install failed."
+  report fliqlo 'already installed, skipping'
 fi
 
 # ---------------------------------------------------------------- stow

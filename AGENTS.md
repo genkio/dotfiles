@@ -31,19 +31,116 @@ cd ~/dotfiles && stow -D zsh
 
 ## Brewfile Structure
 
-- `brew/Brewfile` - meta file that sources both base and apps
-- `brew/Brewfile.base` - CLI tools (always installed)
-- `brew/Brewfile.apps` - GUI apps (opt-in with `--include-apps`)
-- `brew/Brewfile.dev` - dev tools (gh, mise, pi, etc.) for the explicit `--include-dev` flow; `mise` manages node/python/go/uv + global npm CLIs via `mise/.config/mise/config.toml`. Claude Code installs via its official shell installer in `setup-dev.sh`. Pi installs as the `pi-coding-agent` formula; the formula pins the npm tarball and sets `PI_SKIP_VERSION_CHECK=1`, so update it with `brew upgrade`, never `pi update` (a self-update writes a second copy into Homebrew's `node_modules` and breaks the formula)
+- `brew/Brewfile` - meta file that sources base and apps
+- `brew/Brewfile.base` - the CLI tools Homebrew is still the right tool for: bottled on both arches, or a small C build. Five former entries (fastfetch, fzf, neovim, sevenzip, yazi) now come from `mise/.config/mise/conf.d/cli.toml` instead, installed by the same `core` phase
+- `brew/Brewfile.apps` - GUI apps, plus the media player: `mpv` on Apple Silicon, `cask "iina"` on Intel (opt-in with `make apps`)
+- `brew/Brewfile.dev` - dev tools (awscli, gnupg, lazydocker, etc.) for the explicit `make dev` flow; `mise` manages the language toolchains, `gh`, `pi`, `lazygit`, `lazysql` and the global npm CLIs (see the mise section below). Claude Code installs via its official shell installer in `setup-dev.sh`
 - Install: `brew bundle --file brew/Brewfile.base` or `brew bundle --file brew/Brewfile`
+- Three tools are pinned outside brew and installed by script: Alacritty (`scripts/install-alacritty.sh`, cask disabled upstream), Fliqlo (`scripts/install-fliqlo.sh`) and mise (`scripts/install-mise.sh`). Fliqlo left the cask list because `macos-bootstrap.sh` selects it as the screen saver and needs the bundle on disk at selection time, which is before `Brewfile.apps` would have run. Its host refuses hotlinked downloads, so the script sends a `Referer`; it and Alacritty verify a pinned sha256 before mounting, and `make update` re-runs both. mise has no local pin because mise.run verifies the release against its own published `SHASUMS256.txt`, so a pin would only freeze the version
+
+### Intel Macs
+
+Homebrew moved Intel macOS to Tier 3, stopped building x86_64 bottles, and plans to drop Intel entirely in September 2027 or later ([Support Tiers](https://docs.brew.sh/Support-Tiers)). Homebrew falls back to a bottle built for an *older* macOS of the same arch, so an Intel Mac on Sonoma or newer still gets whatever was bottled before the cutoff; below Sonoma, effectively everything compiles.
+
+**The installer refuses Intel outright.** Since 2026-09-04 (Homebrew/install `e078684`, "Remove Intel macOS support from installer") `install.sh` aborts with *"Homebrew on macOS is only supported on Apple Silicon processors!"*, and there is no override flag. `brew` itself has no such check and still runs on Intel, so only the installer is in the way: `opinionated-flow.sh` pins the Intel path to `7a133dcc`, the commit before that change, which still knows the `/usr/local` prefix. arm64 tracks `HEAD`. The arch test is `sysctl hw.optional.arm64` and not `uname -m`, which reports `x86_64` for a terminal running under Rosetta on an Apple Silicon mac and would send it down the Intel path. That pin gets no `check-pins.sh` entry on purpose: the repo's other pins exist because upstream had a problem that might get fixed, and this is the opposite, so the audit would never fire.
+
+On Intel the prefix is `/usr/local`, not `/opt/homebrew`. Everything that needs to know already tries both (`zsh/.zshrc`, `scripts/touchid-sudo.sh`, `tmux/bin/clip-png.sh`, `tmux/bin/client-theme.sh`, `hammerspoon/.hammerspoon/uuremote_monitor.lua`); prefer `brew --prefix` over a literal in anything new.
+
+Packages left Homebrew because of this. Each ships an official prebuilt x86_64 binary that the formula would have rebuilt, and most dragged in a toolchain far larger than themselves:
+
+| Package | Formula would build | Now from |
+|---|---|---|
+| `mise` | LLVM 23 + LLVM 22 + rustc (build deps `llvm`, `rust`) | `scripts/install-mise.sh` (mise.run) |
+| `yazi` | rustc, and `rust` depends on `llvm@22` | `aqua:` in `conf.d/cli.toml`, installed by `core` |
+| `fzf` | the Go toolchain | `aqua:junegunn/fzf` |
+| `neovim`, `fastfetch`, `sevenzip` | cmake/pkgconf/imagemagick chains | `aqua:` in `conf.d/cli.toml` |
+| `pi-coding-agent` | node from source, plus rustc as a build dep | `npm:@earendil-works/pi-coding-agent` in mise |
+| `gh` | the Go toolchain | `aqua:cli/cli` in mise (the cli/cli release asset) |
+| `lazygit`, `lazysql` | the Go toolchain: neither has an x86_64 macOS bottle, and the build dep `go` has none either | `aqua:` in `conf.d/dev.toml` |
+| `ffmpeg` | sdl3, sdl2-compat, libvmaf | still brew, moved to `Brewfile.dev` |
+| `mpv` | shaderc, luajit, libass, libplacebo, mujs, yt-dlp | `Brewfile.apps`: `cask "iina"` on Intel, mpv elsewhere |
+| `tailscale` | the Go toolchain | still brew, but `make tailscale` installs it, not a phase |
+
+The aqua entries resolve to the same versions Homebrew ships, checked at the time of the move (yazi 26.9.1, fzf 0.74.4, neovim 0.12.5, fastfetch 2.68.1, 7zip 26.03, lazygit 0.65.1, lazysql 0.5.7), so this is a delivery change and not a downgrade.
+
+`lnav` is gone rather than moved. lnav 0.14 ships only an `aarch64-macos` asset and the aqua registry marks it unsupported on `darwin/amd64`, so `mise install` failed on Intel on every run; pinning 0.13.2 would have frozen every machine for one platform's sake, and the brew formula compiles Rust. Nothing in the repo depended on it.
+
+**The rule for what belongs where**, since the line will drift as Homebrew rebuilds more formulae and more of them lose their stale Sonoma bottles: a CLI tool stays in `Brewfile.base` while Homebrew is still the right tool for it, meaning it is bottled on both arches or is a small C build with bottled deps. When it loses its x86_64 bottle *and* has an aqua entry that supports `darwin/amd64` (check the registry's `supported_envs` and that the latest release actually ships an x86_64 macOS asset), move it to the `conf.d/` file whose phase already installs it - `cli.toml` for a `core` tool, `dev.toml` for a `dev` one - so the move never changes which machines get it. When it loses the bottle and has no prebuilt binary anywhere, it goes to whichever opt-in target actually wants it, never `Brewfile.base`. `tmux` is the current example of the first case (no upstream macOS binary exists, but its deps are bottled, so it is the one thing `core` still compiles on Intel and it takes minutes); `mole` used to be the example of the last case and was dropped instead: no aqua entry, its release tarball ships `analyze`/`status` binaries but no `mole`, and nothing in this repo ever invoked it.
+
+**When there is no prebuilt binary and no substitute, the last resort is an `on_intel` guard in the Brewfile.** Three exist, measured on a 2020 Intel MacBook Pro where `make all` took 3732s: `gnupg` (~900s with gmp and libgcrypt, and only `make gpg-key` wants it - use SSH signing there instead), `awscli` (~300s with its twelve `aws-c-*` libraries, and nothing in the repo calls it), and `mpv`, replaced by `cask "iina"` - the same engine as a universal `.app`, saving ~700s. Two traps: IINA's CLI is named `iina`, so `yazi/.config/yazi/yazi.toml` picks the binary at run time rather than naming one (that file is stowed on both arches); and a guard never uninstalls, since nothing here runs `brew bundle cleanup`. Upgrading macOS is not an alternative - Sonoma is the newest Intel bottle Homebrew builds and the fallback only looks downward, so no macOS version reaches more x86_64 bottles than Sequoia already does.
+
+`PI_SKIP_VERSION_CHECK=1` moved from the Homebrew formula's wrapper to `zsh/.zshrc`: mise owns pi's version, and a `pi update` would install a second copy beside it. Existing machines keep their Homebrew copies until you `brew uninstall` them by hand; `~/.local/bin` and mise's shims come first on PATH, so the new ones win meanwhile.
 
 ## Automated Setup
 
-`scripts/opinionated-flow.sh` clones the repo, installs base Brewfile, and stows core packages (`brew mpv nvim tmux vim yazi zsh`). It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. Pass `--include-apps` to install GUI apps, stow `hammerspoon`, and run `scripts/setup-sublime.sh` (Package Control + auto-installed packages, see below). Pass `--include-dev` to install dev tools (alacritty, mise, pi, etc.), stow `alacritty`, `mise`, and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install Claude Code via its shell installer, and run `scripts/restore-pi-settings.sh` to link the Pi extension and shared skills into `~/.pi/agent/`, install the `pi-web-access` package, and seed `~/.pi/agent/web-search.json` with the browser curator disabled. Pass `--include-all` to enable both flows together. With `--bootstrap-macos` it runs `scripts/macos-bootstrap.sh` with `DOTFILES_DEFER_TOUCHID=1` and calls `scripts/touchid-sudo.sh` itself as the final step, after killing the sudo keepalive: once `pam_tid` is in the sudo policy, sudo wants a fingerprint and stops accepting the piped password, so nothing that sudos may run after it.
+`scripts/opinionated-flow.sh` runs as **phases**: `--phase macos|core|apps|dev|touchid`, repeatable and required, and the Makefile target per phase is `make macos` / `core` / `apps` / `dev` / `touchid`. `make all` passes all five to a single process so the password is asked for once. The order is fixed inside the script, not by flag order, because `touchid` must follow the last sudo of the whole run.
+
+A bare `make` is `.DEFAULT_GOAL := menu`, which runs `scripts/pick-phases.sh`: a checkbox list of the six phases that execs `opinionated-flow.sh` with whatever is ticked. All six start ticked, so Enter reproduces the old bare-`make` behaviour. Three constraints shaped it and should survive any edit:
+
+- **No dependencies.** `fzf` would be the obvious picker and is wrong here, because it arrives with the `core` phase the menu exists to offer. Builtins and `stty` only.
+- **It draws on `/dev/tty`, not stdout**, so `make 2>&1 | tee setup.log` still works and the redraw frames stay out of the log. With no controlling terminal it prints the target names and exits 1 instead of blocking on a read that can never return.
+- **macOS ships bash 3.2**, and `/usr/bin/env bash` on a fresh machine is exactly that. Fractional `read -t` is a hard error there, so the escape-sequence timeout is `-t 1`; do not "fix" it to a fraction.
+
+Run `make macos` first on a new machine: it disables the macOS automatic update that would otherwise saturate the uplink for the rest of the run, enables Remote Login, and prints the machine's local IP so the slow phases can be driven over ssh.
+
+Capturing the sudo password is the only **preamble**. The script never clones: it resolves its own repo root from `BASH_SOURCE` and operates there, since getting the script onto the machine already required the checkout. Homebrew and stow are installed by the `core` phase, so `make macos` pulls nothing from brew; `apps` and `dev` refuse to run without it and tell you to run `make core` first. The `macos` phase needs the Xcode CLT for `/usr/bin/python3` (Dock rewrite, wallpaper store) and asserts it with `xcode-select -p` rather than installing it: `/usr/bin/git` is a CLT shim too, so cloning this repo already triggered the install. The assert exists only to turn the miss into an error, because `/usr/bin/python3` without CLT pops a GUI dialog and blocks forever over ssh.
+
+Presence is not enough for the `core` phase, though, so it opens with `ensure_clt_current` (in `scripts/lib.sh`). Homebrew refuses to install **any** formula, bottled ones included, when the CLT predate the running macOS - `Error: Your Command Line Tools are too outdated` - and a macOS *major upgrade leaves the old CLT in place*, with `xcode-select -p` still answering happily. That is what turned a whole `make` run into 12 failed formulae after a VM went 26 → 27 carrying CLT 16.4. The required major comes from a two-line table rather than a lookup, because Apple aligned Xcode with macOS at 26 (Xcode 26 → macOS 26) and ran one ahead before it (Xcode 16 → macOS 15): `os >= 26 ? os : os + 1`, the same table Homebrew's `CLT.minimum_version` uses. The update is driven through `softwareupdate -i`, not `xcode-select --install`, whose modal dialog nothing can answer over ssh; the sentinel file in `/tmp` is what makes `softwareupdate -l` list the CLT package at all. Fatal when it cannot get there, since the alternative is twenty minutes of failing one package at a time.
+
+The `core` phase installs base Brewfile and stows core packages (`brew mise mpv nvim tmux vim yazi zsh`). It then installs mise via `scripts/install-mise.sh` and the CLI group from `mise/.config/mise/conf.d/cli.toml` - stow first, because mise only puts a tool on PATH if it is in the config, so installing before the config lands would leave six binaries nothing can find. The group is read out of that file with a sed over its quoted keys rather than listed a second time in the script, and a bare `mise install` is deliberately not used: it would pull the dev toolchains from `config.toml` too, which is the split the phases exist to keep. It pre-creates `~/.config/mpv` before stowing so mpv's runtime `watch_later/` state lands outside the dotfiles repo. It clones TPM into `~/.tmux/plugins/tpm` when missing and installs tmux plugins from `~/.tmux.conf` non-interactively. If `~/.gitconfig` already exists as a regular file, it warns and skips `git` instead of aborting. The `apps` phase installs GUI apps, stow `hammerspoon`, and run `scripts/setup-sublime.sh` (Package Control + auto-installed packages, see below); it also installs the media player, `mpv` on Apple Silicon and `cask "iina"` on Intel. The `dev` phase installs dev tools, stow `alacritty` and `claude`, seed Alacritty's active theme via `scripts/apply-alacritty-theme.sh`, install the remaining mise tools with a bare `mise install`, which covers both `config.toml` and `conf.d/dev.toml` (mise itself already arrived with `core`; `setup-dev.sh` only installs it when missing, for a standalone `make dev`), install Claude Code via its shell installer, and run `scripts/restore-pi-settings.sh` to link the Pi extension and shared skills into `~/.pi/agent/`, install the `pi-web-access` package, and seed `~/.pi/agent/web-search.json` with the browser curator disabled. It activates mise with `--shims` rather than the plain hook: the plain one resolves tool bin dirs once and refreshes on a prompt hook that never fires in a script, so `pi` and `gh` (installed on the following line) would stay off PATH for the rest of the file. The `macos` phase runs `scripts/macos-bootstrap.sh` with `DOTFILES_DEFER_TOUCHID=1`; the `touchid` phase calls `scripts/touchid-sudo.sh` as the final step, after killing the sudo keepalive: once `pam_tid` is in the sudo policy, sudo wants a fingerprint and stops accepting the piped password, so nothing that sudos may run after it.
+
+### Wallpaper and screen saver
+
+Both live in WallpaperAgent's store (`~/Library/Application Support/com.apple.wallpaper/Store/Index.plist`), and `macos-bootstrap.sh` writes **both** by walking that tree and killing the agent either side, rather than through any API.
+
+The screen saver has worked that way for a while: module selection left the ByHost `com.apple.screensaver` domain in macOS 14, and the store repeats the choice at every node - all-displays, system default, and one per display and per space - keyed by *this* machine's UUIDs, so it has to be walked, not seeded from a captured file.
+
+The wallpaper is **split on the OS major**, and that split is load-bearing - `set_wallpaper` dispatches to `set_wallpaper_api` below 27 and `set_wallpaper_store` at 27 and above. Do not collapse it into one path; both single-path versions were tried and each breaks a release.
+
+Up to 26 it is `NSWorkspace.setDesktopImageURL`, which covers every node. On 27 that same call reaches `SystemDefault`, `Displays/<uuid>` and a `Spaces` entry keyed by the **empty string**, but leaves the node for the space actually on screen (`Spaces/<space-uuid>/...`) on the old image - and still returns true, so the run reports success and nothing changes. It is also unusable as a first step feeding a repair pass, because whether the agent has persisted the call to `Index.plist` by the time you read it is pure timing (measured between 100ms and never), so a poll either races or copies the *previous* image over every node. Hence the direct walk on 27 only. The store walk is **not** a drop-in for older releases: it was tried on 15.x and set no wallpaper there, so the gate is the fix, not a stylistic choice.
+
+The two walks stay separate and must not clobber each other: the desktop walk skips every `Idle` node, and the screen-saver walk only rewrites `Idle` (unlinking a fresh account's `Linked` node first, keeping its wallpaper as `Desktop`).
+
+## mise config layout
+
+Three files, and the split carries two orthogonal meanings at once: **which phase installs it**, and **whether `make update` upgrades it**.
+
+| File | Holds | Installed by | `make update` |
+|---|---|---|---|
+| `conf.d/cli.toml` | neovim, yazi, fzf, fastfetch, sevenzip (all `aqua:`) | `core`, by name | upgrades |
+| `conf.d/dev.toml` | `gh`, `pi`, `lazygit`, `lazysql`, `ctx7`, `@playwright/cli` | `dev`, via bare `mise install` | upgrades |
+| `config.toml` | node, python, go, uv, typescript, typescript-language-server | `dev`, via bare `mise install` | **frozen** |
+
+The rule is: **everything in `conf.d/` is tracked to latest; `config.toml` is the frozen set.** A working toolchain buys nothing from a global bump and project-local pins resolve independently, which is the long-standing policy. Everything in `conf.d/` is there because `brew upgrade` used to keep it current when it was a formula, and losing that when it moved to mise was a regression rather than a decision.
+
+Consequences worth knowing before editing any of them:
+
+- `update.sh` and `opinionated-flow.sh` both read conf.d files with `sed -n 's/^[[:space:]]*"\([^"]*\)"[[:space:]]*=.*/\1/p'`, so **keys in conf.d must stay quoted `backend:name` strings**. Bare keys like `node = "lts"` are invisible to it, which is exactly why the toolchains live in `config.toml`.
+- `update.sh` never passes `--bump`, and `mise upgrade` honours whatever range each entry asks for. That is what makes it safe to keep the deliberate `"npm:@playwright/cli" = "0.1.20"` supply-chain pin inside an auto-upgraded file: it stays put until the line changes, then starts tracking latest on its own.
+- `scripts/check-pins.sh` reads that pin out of `conf.d/dev.toml`. If the pin moves file again, update the path there too - a miss is silent, since the audit would just report "not pinned, nothing to audit".
+
+### Why mise's Homebrew backend is not used
+
+`[bootstrap.packages]` with `brew:` entries is the obvious candidate for replacing `brew bundle`: `mise bootstrap packages` pours Homebrew's bottles from ghcr.io into the same prefix, writes brew-compatible receipts, and never shells out to `brew`. It is not used, and the blocker is the Intel split itself: **the backend declares itself unavailable on Intel macOS** (mise.jdx.dev/bootstrap/packages/brew.html, "Supported platforms"), so every `brew:` entry is skipped there - non-fatally, exit 0, "N package(s) skipped (only available on arm64 macos and x86_64/arm64 linux)". One config shared by both arches would leave the 13" without those tools while `make core` reported success, which is the silent half-install the phases exist to avoid.
+
+It could not win on Intel even if it ran: mise pours Homebrew's own bottles, so where Homebrew stopped building x86_64 there is nothing to pour, and mise has no fallback - not the older-same-arch bottle `brew` will take, and not a source build. On Intel that makes plain `brew` strictly the more capable of the two. On arm64, where it does run, it still would not retire `brew`: third-party taps publish no API metadata and get built from source through mise's Formula-DSL shim (that is all three `genkio/tap/*` formulae), cask coverage is narrow with no cask import and **no `brew services`** (which `tailscale-up.sh` and `update.sh` use), and `[bootstrap.packages]` is deliberately not `[tools]`, so `mise install` ignores it and `make core` would need a second command.
+
+The split therefore stays: brew for bottles, casks, taps and services; mise for vendor-built binaries; a script for the three pinned outside both.
+
+## Tailscale
+
+The `tailscale` **formula**, not the `tailscale-app` cask, and deliberately so: this machine has to *accept* inbound Tailscale SSH, and that server component runs only on Linux and this open-source `tailscaled`. The mac app cannot serve it, so the cask is not a substitute however much tidier it looks. That decision is what keeps `scripts/tailscale-up.sh` (`make tailscale`), `scripts/tailscale-exit.sh` and `tailscale_followups()` in `update.sh` alive; do not delete them on the grounds that the app would handle it.
+
+The costs that come with the formula, all already handled:
+
+- It is a Go build with no Intel bottle, which is why no phase installs it: `make tailscale` does, on request.
+- `tailscaled` runs as a root LaunchDaemon so the node is up without a login; `scripts/tailscale-up.sh` starts it. That daemon is the reason tailscale left `make all`: a bootstrap should not put a machine on a tailnet unasked.
+- The daemon keeps running the binary it started with, and superseded kegs keep root-owned files that `brew cleanup` cannot remove. `update.sh` reports both instead of sudoing.
+- Its darwin router never programs the IPv4 default route, so `tailscale set --exit-node=X` alone routes nothing. `scripts/tailscale-exit.sh` adds `0.0.0.0/1` + `128.0.0.0/1` over the tailscale utun plus an interface-scoped default via the physical gateway.
 
 ## Sublime Text
 
-Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-sublime.sh` (run by `--include-apps`; standalone via `make sublime`) provisions it headlessly:
+Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-sublime.sh` (run by `make apps`; standalone via `make sublime`) provisions it headlessly:
 
 - Bootstraps Package Control by downloading `Package Control.sublime-package` into `~/Library/Application Support/Sublime Text/Installed Packages/` when missing (non-fatal on network failure).
 - Seeds the User `Package Control.sublime-settings` from `sublime/Package Control.sublime-settings` when absent, else merges the curated `installed_packages` into the existing file (union, preserving Package Control's runtime keys and GUI-added packages). Package Control installs listed-but-missing packages on launch.
@@ -66,7 +163,7 @@ Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-subli
 | `mpv` | `~/.config/mpv/` | Media player; pre-create `~/.config/mpv` before stowing to avoid folding (runtime `watch_later/` writes back to its config dir) |
 | `hammerspoon` | `~/.hammerspoon/` | Hammerspoon config and `rcmd` launcher module |
 | `alacritty` | `~/.config/alacritty/` | Terminal emulator (Flexoki Light / TokyoNight Storm). Run `scripts/apply-alacritty-theme.sh` after stow to seed the active theme; light/dark is driven by `theme-toggle.sh` (tmux `prefix + t`), which rewrites the active theme and repaints the running terminal via OSC |
-| `mise` | `~/.config/mise/` | Polyglot version manager (node/python/go/uv + global npm CLIs) |
+| `mise` | `~/.config/mise/` | Polyglot version manager, split three ways (see below). Stowed by `core`, not `dev`, because `core` now needs it |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; the whole package is linked (`settings.json`, `statusline-command.sh`, `keybindings.json`, plus the `rules/` and `hooks/` dirs) |
 | `pi` | `~/.pi/agent/` | Use `scripts/restore-pi-settings.sh`; links `settings.json`, `keybindings.json`, and `extensions/{tmux-agent-state,quiet-tools,usage-footer,deny-guard}.ts` (tmux agent-state hooks as in Claude; quiet-tools renders every tool row and thinking row at zero height until `Ctrl+O`, keeping one `✗ <tool> failed` line for errors; usage-footer replaces the footer with one line - context usage, session cost with the DeepSeek account balance, cwd, model - and halves DeepSeek off-peak pricing; deny-guard blocks the commands and paths from the Claude `permissions.deny` list and lets everything else run), installs `pi-web-access` via `pi install`, and seeds `web-search.json`. `trust.json` is machine-local, not stowed |
 | `vim` | `~/.vimrc` | Config for the OS-shipped `/usr/bin/vim`; `vi` is shadowed to nvim via `zsh/.zsh_aliases` |

@@ -510,14 +510,6 @@ txk() {
 
 [[ -f "${${(%):-%N}:A:h}/.zsh_git_aliases" ]] && source "${${(%):-%N}:A:h}/.zsh_git_aliases"
 
-ltail() {
-  if [ $# -eq 0 ]; then
-    echo "Usage: ltail <file_or_directory>"
-    return 1
-  fi
-  lnav "$@"
-}
-
 # Raise the macOS "control Messages" popover after a cc-imessage upgrade so it can
 # be approved, else the first notification silently drops. Via the daemon outbox,
 # not `cc-imessage send` (that binds the grant to the terminal, not the daemon).
@@ -525,7 +517,8 @@ ccim-ping() {
   local pane="${TMUX_PANE:-%0}"
   python3 -c 'import json,os,sys,time; open(os.path.expanduser("~/.cc-imessage/outbox/%d-ping.json"%time.time_ns()),"w").write(json.dumps({"target":sys.argv[1],"label":"ping","text":"cc-imessage test ping. Reply to confirm inbound routing."})); print("queued for daemon")' "$pane"
   echo "approve the 'control Messages' popover if it appears"
-  echo "watch: tail -f /opt/homebrew/var/log/cc-imessage.log   (expect: sent outbox)"
+  # Resolved, not hardcoded: the prefix is /usr/local on an Intel mac.
+  echo "watch: tail -f $(brew --prefix)/var/log/cc-imessage.log   (expect: sent outbox)"
 }
 
 # One-word flip of cc-imessage outbound (wraps enable/disable; takes effect on

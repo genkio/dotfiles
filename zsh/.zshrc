@@ -11,7 +11,6 @@ export HOMEBREW_NO_PROGRESS_BARS=1
 export EDITOR="nvim"
 export VISUAL="$EDITOR"
 
-export PATH="$HOME/.local/bin:$PATH"
 # Apple Silicon puts brew in /opt/homebrew, which is not in the default PATH, so
 # without this a fresh terminal on arm64 cannot find brew at all. Intel's
 # /usr/local/bin is already in /etc/paths, but shellenv still adds the
@@ -22,6 +21,10 @@ if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
   done
   unset _brew
 fi
+# After shellenv, which prepends: ~/.local/bin holds mise and Claude Code, and
+# has to beat a leftover `brew install mise` for the migration to mise.run to
+# take. Before it, this line was undone six lines later.
+export PATH="$HOME/.local/bin:$PATH"
 export GPG_TTY=$(tty)
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
@@ -46,10 +49,29 @@ fi
 
 source $ZSH/oh-my-zsh.sh
 
+# mise: the CLI set (neovim, yazi, fzf, fastfetch, sevenzip), the language
+# toolchains, gh and the global npm tools.
+#
+# Has to come before anything below that runs a mise-managed binary, which is
+# why it is here and not at the end of the file: fzf moved from Homebrew to
+# mise, and with the old ordering every new shell opened on
+# "/Users/you/.zshrc:52: command not found: fzf". Activation prepends the shims
+# directory to PATH right away rather than waiting for the first precmd, so
+# everything after this line can use them.
+#
+# pi is one of those npm tools, so mise owns its version. Inherited from the
+# Homebrew formula this replaced: `pi update` would install a second copy beside
+# the one mise pinned, and every later `mise install` would fight it.
+export PI_SKIP_VERSION_CHECK=1
+command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
+
 # Custom prompt (managed as ~/.zsh_prompt via stow)
 [[ -f ~/.zsh_prompt ]] && source ~/.zsh_prompt
 
-source <(fzf --zsh)
+# Guarded: between `make macos` and `make core` there is no fzf yet, and an
+# unguarded source there greets every new shell with a command-not-found. The
+# tmux pickers that need it (prefix F, prefix P) check for it and say so.
+command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
 
 # Keep SSH_* in long-lived tmux panes in sync with the newest client attach.
 # tmux update-environment (see .tmux.conf) refreshes the *session* environment,
@@ -122,7 +144,7 @@ unset k
 # Aliases and helper functions (managed as ~/.zsh_aliases via stow)
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
-# mise: node, python, java, go, uv + global npm tools
-eval "$(mise activate zsh)"
+# mise is activated near the top, before the first thing that uses one of its
+# binaries. See the block after oh-my-zsh.
 
-eval "$(zoxide init zsh)"
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"

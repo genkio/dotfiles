@@ -90,7 +90,7 @@ file leaves out, so it reads on its own without knowing this config.
 | `prefix s` | Same chooser across every session (`session:index name` rows), instead of tmux's session tree |
 | `prefix v` | Vertical split (side-by-side) in current path |
 | `prefix h` | Horizontal split (top-bottom) in current path |
-| `prefix x` | Kill pane, after a `y/n` confirm (auto-rebalance) |
+| `prefix x` | Kill pane, no confirm (auto-rebalance) |
 | `prefix X` | Kill all other panes in the window, after a `y/n` confirm |
 | `prefix y` | Toggle synchronize-panes |
 | `prefix b` | Break pane out into its own window here (auto-rebalance) |

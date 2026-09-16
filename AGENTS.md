@@ -29,6 +29,10 @@ cd ~/dotfiles && bash scripts/restore-pi-settings.sh
 cd ~/dotfiles && stow -D zsh
 ```
 
+`scripts/restow.sh` (`make stow`, and the stow step of `make update`) relinks everything, **one package per `stow` invocation**. That is not cosmetic: stow aborts the whole invocation on a single conflict, so a batched call meant one bad package took the other thirteen down with it and reported `All operations aborted` under a list of links it had just claimed to make. On a target-side conflict it asks, on `/dev/tty`, whether to rename the offending file aside (`<name>.bak-<stamp>`) and stow over it; with no tty (cron, `ssh host make update`) it reports and moves on, and the script exits non-zero naming the packages it left unstowed.
+
+**Never commit an absolute symlink inside a package.** stow refuses to stow one and aborts, and the path it names is per-arch anyway (`/opt/homebrew` vs `/usr/local`). Two got committed by `herdlet setup` writing through stow links into the checkout: `pi/.pi/agent/extensions/herdlet.ts` (which aborted every restow) and `skills/herdlet/SKILL.md` (which only escaped that because stow folds a skill directory into one link and never descends into it, so it silently pointed at a nonexistent path on Intel). Both are now machine-local, written by `scripts/link-herdlet.sh` into `~/.pi/agent/extensions`, `~/.claude/skills/herdlet` and `~/.pi/agent/skills/herdlet` - real directories, which is also what keeps a future `herdlet setup` out of the repo. It links into the keg rather than copying, so a herdlet upgrade carries the content; `make update` and both `restore-*-settings.sh` scripts call it, and it is a no-op when herdlet is not installed.
+
 ## Brewfile Structure
 
 - `brew/Brewfile` - meta file that sources base and apps
@@ -101,6 +105,14 @@ Up to 26 it is `NSWorkspace.setDesktopImageURL`, which covers every node. On 27 
 
 The two walks stay separate and must not clobber each other: the desktop walk skips every `Idle` node, and the screen-saver walk only rewrites `Idle` (unlinking a fresh account's `Linked` node first, keeping its wallpaper as `Desktop`).
 
+### Routine updates (`make update`)
+
+`scripts/update.sh` upgrades an already-provisioned machine: brew, mise's `conf.d/` set, the three tools pinned outside brew, a restow, the machine-local seeds, and `check-pins.sh`. Every step is non-fatal and anything actionable is reprinted as one block at the end, because six chatty steps bury the two lines that need a decision. `--dry-run` reports through each tool's own simulation.
+
+It **does** install: `brew bundle` runs for `brew/Brewfile` (base + apps) and `brew/Brewfile.dev`, gated behind `brew bundle check` so a satisfied Brewfile costs a second rather than the minutes a no-op bundle spends re-resolving casks. `trust_brewfile_taps` (in `lib.sh`) runs first, because Homebrew will not load a non-official tap's formulae until they are trusted and `trust.json` is **machine-local** - a machine provisioned before its Brewfile gained a tap, or before brew had `trust` at all, arrives here untrusted. Untrusted does not merely fail to install: `brew bundle check` reports an installed tap formula as "needs to be installed or updated", so every pass would try that tap again and die on it. The tap list is **read out of the Brewfiles**, never written down, which is the fix for how this broke - the trust step existed only in `opinionated-flow.sh` with three taps named by hand, and the new `brew bundle` had no equivalent. `setup-dev.sh` calls it too, for the day `Brewfile.dev` gains a tap. It used to be upgrade-only on the grounds that this is not a provisioner, and the cost was silence: an entry added to a Brewfile on one machine reached the others only through a full `make apps` / `make dev`, which is not what anyone runs on a Tuesday, so it never arrived. The trade that comes with it: the first run converges a core-only machine to the GUI apps and the dev tools too.
+
+mise is the exception and stays split: `update.sh` intersects `conf.d/` with what is installed, because `mise upgrade <tool>` on a missing tool installs it, and nothing here can tell a dev tool that was never wanted from one that is merely not installed yet.
+
 ## mise config layout
 
 Three files, and the split carries two orthogonal meanings at once: **which phase installs it**, and **whether `make update` upgrades it**.
@@ -167,7 +179,7 @@ Installed as `cask "sublime-text"` in `brew/Brewfile.apps`. `scripts/setup-subli
 | `alacritty` | `~/.config/alacritty/` | Terminal emulator (Flexoki Light / TokyoNight Storm). Run `scripts/apply-alacritty-theme.sh` after stow to seed the active theme; light/dark is driven by `theme-toggle.sh` (tmux `prefix + t`), which rewrites the active theme and repaints the running terminal via OSC |
 | `mise` | `~/.config/mise/` | Polyglot version manager, split three ways (see below). Stowed by `core`, not `dev`, because `core` now needs it |
 | `claude` | `~/.claude/` | Use `scripts/restore-claude-settings.sh`; the whole package is linked (`settings.json`, `statusline-command.sh`, `keybindings.json`, plus the `rules/` and `hooks/` dirs) |
-| `pi` | `~/.pi/agent/` | Use `scripts/restore-pi-settings.sh`; links `settings.json`, `keybindings.json`, and `extensions/{tmux-agent-state,quiet-tools,usage-footer,deny-guard}.ts` (tmux agent-state hooks as in Claude; quiet-tools renders every tool row and thinking row at zero height until `Ctrl+O`, keeping one `✗ <tool> failed` line for errors; usage-footer replaces the footer with one line - context usage, session cost with the DeepSeek account balance, cwd, model - and halves DeepSeek off-peak pricing; deny-guard blocks the commands and paths from the Claude `permissions.deny` list and lets everything else run), installs `pi-web-access` via `pi install`, and seeds `web-search.json`. `trust.json` is machine-local, not stowed |
+| `pi` | `~/.pi/agent/` | Use `scripts/restore-pi-settings.sh`; links `settings.json`, `keybindings.json`, and `extensions/{tmux-agent-state,quiet-tools,usage-footer,deny-guard}.ts` (tmux agent-state hooks as in Claude; quiet-tools renders every tool row and thinking row at zero height until `Ctrl+O`, keeping one `✗ <tool> failed` line for errors; usage-footer replaces the footer with one line - context usage, session cost with the DeepSeek account balance, cwd, model - and halves DeepSeek off-peak pricing; deny-guard blocks the commands and paths from the Claude `permissions.deny` list and lets everything else run), installs `pi-web-access` via `pi install`, and seeds `web-search.json`. `trust.json` is machine-local, not stowed; so is `extensions/herdlet.ts`, which `scripts/link-herdlet.sh` links into the herdlet keg (see the stow section) |
 | `vim` | `~/.vimrc` | Config for the OS-shipped `/usr/bin/vim`; `vi` is shadowed to nvim via `zsh/.zsh_aliases` |
 
 ### Extension tests

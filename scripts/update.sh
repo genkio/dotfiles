@@ -4,10 +4,10 @@
 # installed, re-link the repo, re-seed what drifted, and report what needs a
 # decision.
 #
-# Deliberately not a provisioner. It never installs a package the machine does
-# not already have, never writes a macOS default, and never asks for sudo, so it
-# runs unattended on any machine whatever phases it was built with. `make core`,
-# `make apps` and `make dev` remain the only paths that install.
+# It installs what the Brewfiles declare and nothing else: no macOS default, no
+# toolchain, no sudo, so it still runs unattended on any machine whatever phases
+# it was built with. `make core`, `make apps` and `make dev` remain the only
+# paths that provision a machine from nothing.
 #
 # Not upgrading something is a decision, not an oversight:
 #
@@ -128,10 +128,34 @@ fi
 
 # ---------------------------------------------------------------- brew
 
-# Upgrade only. `brew bundle` is absent on purpose: it would install every entry
-# of every Brewfile, which converges a base machine to everything at once the first
-# time you run this. A package added to a Brewfile reaches other machines when
-# you run `make apps` / `make dev` there, deliberately.
+# Upgrade what is installed, then install what the Brewfiles gained since the
+# last pass. The install half used to be absent on the grounds that this script
+# provisions nothing, and the cost was silence: an entry added to a Brewfile on
+# one machine reached the others only through a full `make apps` / `make dev`,
+# which is not what anyone runs on a Tuesday, so it simply never arrived.
+#
+# The trade that comes with it: this converges a machine to every Brewfile,
+# so the first run on a core-only machine installs the GUI apps and the dev
+# tools too. That is the intended behaviour, not an oversight.
+BREWFILES=(brew/Brewfile brew/Brewfile.dev)
+# The leaf files, for the tap scan only: `brew/Brewfile` just instance_evals
+# base and apps, so it names no tap itself. Globbed rather than listed so a new
+# leaf Brewfile is covered without a second edit here.
+BREWFILE_LEAVES=(brew/Brewfile.*)
+
+# What `brew bundle` would install, as its own one-line-per-entry prose
+# ("Formula awscli needs to be installed or updated."). Also the fast path:
+# check only dependency-resolves, so a satisfied Brewfile costs a second rather
+# than the minutes a no-op `brew bundle` spends re-resolving every cask.
+#
+# stderr is folded in because that is where `check --verbose` puts those lines,
+# not stdout. The arrow prefix is what separates them from everything else that
+# lands there, e.g. a tap's `postflight` deprecation warning.
+brew_bundle_missing() {
+  HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --file "$1" --verbose 2>&1 |
+    sed -n 's/^→ //p'
+}
+
 if [[ "$DRY_RUN" == 1 ]]; then
   section "brew"
   # No `brew update` first: it rewrites tap metadata, which is a change. So this
@@ -148,6 +172,21 @@ if [[ "$DRY_RUN" == 1 ]]; then
   else
     echo "  nothing outdated (as of the last 'brew update')"
   fi
+  # Reported first: until a tap is trusted, brew cannot even tell whether its
+  # formulae are installed, so the "would install" list below overstates by
+  # every entry those taps own.
+  untrusted="$(brewfile_untrusted_taps "${BREWFILE_LEAVES[@]}")"
+  if [[ -n "$untrusted" ]]; then
+    printf '  would trust %s tap(s): %s\n' \
+      "$(grep -c . <<<"$untrusted")" "$(tr '\n' ' ' <<<"$untrusted" | sed 's/ *$//')"
+  fi
+  for brewfile in "${BREWFILES[@]}"; do
+    missing="$(brew_bundle_missing "$brewfile")"
+    if [[ -n "$missing" ]]; then
+      printf '  would install from %s:\n' "$brewfile"
+      printf '%s\n' "$missing" | sed 's/^/    /'
+    fi
+  done
 else
   # --quiet: `brew update` reports tap churn on every run and says nothing about
   # whether anything here needs upgrading. Failures still print.
@@ -161,6 +200,23 @@ else
     # minutes still shows it is alive.
     brew upgrade $outdated || fail "brew upgrade failed"
   fi
+
+  # Before the bundle, not as part of provisioning: trust.json is machine-local,
+  # so a machine provisioned before its Brewfile gained a tap - or before brew
+  # had `trust` at all - reaches this point untrusted, and every pass then tries
+  # to install that tap's formulae and fails on them. Idempotent and silent.
+  trust_brewfile_taps "${BREWFILE_LEAVES[@]}"
+
+  # After the upgrade, so anything installed here arrives current and is not
+  # immediately outdated by the pass that just ran. Streams for the same reason
+  # `brew upgrade` does, and is non-fatal for the same reason opinionated-flow.sh
+  # makes it non-fatal: bundle keeps going past a bad entry, installs the rest,
+  # then exits non-zero with a summary.
+  for brewfile in "${BREWFILES[@]}"; do
+    [[ -n "$(brew_bundle_missing "$brewfile")" ]] || continue
+    section "brew bundle: $brewfile"
+    brew bundle --file "$brewfile" || fail "brew bundle --file $brewfile failed"
+  done
 fi
 
 # tailscaled runs as a root LaunchDaemon (tailscale-up.sh starts it that way
@@ -243,7 +299,9 @@ if command -v mise >/dev/null 2>&1; then
   # Intersect with what is installed: `mise upgrade X` on a tool that is not
   # installed installs it (mise outdated shows it as [MISSING]), so passing the
   # whole conf.d list would give a core-only machine the dev tools on the first
-  # `make update`, which is exactly the install this script promises never to do.
+  # `make update`. The Brewfiles above are converged deliberately; mise's split
+  # between the core group and the dev one is not, because nothing here can tell
+  # a tool that was never wanted from one that is merely not installed yet.
   MISE_INSTALLED="$(mise ls --installed 2>/dev/null | awk '{print $1}')"
   MISE_TOOLS=()
   while IFS= read -r mise_tool; do
@@ -339,10 +397,13 @@ fi
 
 # A conflict ("existing target is neither a link nor a directory") is reported
 # in lines the change filter is built to drop, and it is exactly the case where
-# the detail matters. So a failed restow prints its whole output instead.
+# the detail matters. So the conflict block is printed alongside the changes -
+# restow.sh stows one package at a time, so the rest of the run linked normally
+# and its churn is still worth filtering out.
 if [[ "$stow_rc" -ne 0 ]]; then
   section "stow"
-  cat "$LOG"
+  stow_changes <"$LOG"
+  grep -E '^(WARNING!|  \*|SETUP_)' "$LOG" | sed 's/^/  /'
   fail "restow failed"
 else
   changed="$(stow_changes <"$LOG")"
@@ -358,7 +419,7 @@ fi
 
 # ---------------------------------------------------------------- seeds
 
-# Four files the repo cannot own outright, each stale in its own way.
+# The files the repo cannot own outright, each stale in its own way.
 
 SEED_LINES=()
 seed_say() { SEED_LINES+=("  $*"); }
@@ -423,6 +484,17 @@ seed_or_diff() {
     SEED_LINES+=("${missing%$'\n'}")
   fi
 }
+
+# Machine-local for the same reason the two files below are, and re-linked here
+# rather than only in the restore-*-settings.sh scripts because `make dev` is not
+# what anyone runs after the brew step above upgrades herdlet.
+if [[ "$DRY_RUN" == 1 ]]; then
+  herdlet_links="$(bash scripts/link-herdlet.sh --dry-run)"
+else
+  herdlet_links="$(bash scripts/link-herdlet.sh)" ||
+    fail "could not link herdlet's extension and skill."
+fi
+[[ -n "$herdlet_links" ]] && SEED_LINES+=("$(printf '%s\n' "$herdlet_links" | sed 's/^/  /')")
 
 seed_or_diff "$HOME/.gitconfig.local" "$REPO_ROOT/git/.gitconfig.local.example" \
   git_keys "edit ~/.gitconfig.local: it still holds the example identity."

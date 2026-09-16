@@ -265,12 +265,11 @@ if ! command -v stow >/dev/null 2>&1; then
   brew install stow
 fi
 
-# carbonyl ships from third-party genkio/tap. Newer Homebrew refuses to load
-# non-official tap formulae until trusted (HOMEBREW_REQUIRE_TAP_TRUST, slated to
-# become default) -> `brew bundle` aborts without this. Guarded: older brew
-# lacks `trust`, re-runs are no-ops.
-brew tap genkio/tap >/dev/null 2>&1 || true
-brew trust genkio/tap || true
+# Newer Homebrew refuses to load non-official tap formulae until trusted, so
+# `brew bundle` aborts without this. The taps come from the Brewfile itself
+# (see trust_brewfile_taps in lib.sh) rather than being named here, which is
+# what update.sh's brew step reuses; re-runs are no-ops.
+trust_brewfile_taps brew/Brewfile.base
 
 brew_bundle_install brew/Brewfile.base
 mkdir -p "$HOME/.config/mpv"
@@ -353,11 +352,9 @@ fi
 if has_phase apps; then
   phase_start "apps: GUI casks, hammerspoon, aerospace, sketchybar, sublime"
   require_brew apps
-  # Same tap-trust dance as genkio/tap above: aerospace, borders and sketchybar
+  # Same tap-trust dance as the core phase: aerospace, borders and sketchybar
   # all ship from their authors' own taps.
-  brew trust --cask nikitabobko/tap/aerospace || true
-  brew trust --formula FelixKratz/formulae/borders || true
-  brew trust --formula FelixKratz/formulae/sketchybar || true
+  trust_brewfile_taps brew/Brewfile.apps
   brew_bundle_install brew/Brewfile.apps
   stow -t "$HOME" hammerspoon aerospace sketchybar
   # Non-fatal: a failed Package Control download shouldn't abort provisioning.

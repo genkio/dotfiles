@@ -19,3 +19,7 @@ echo "Restored Claude Code settings into ~/.claude"
 
 stow -t "$HOME/.claude/skills" skills
 echo "Restored shared coding-agent skills into ~/.claude/skills"
+
+# herdlet's skill ships in its keg and the link to it is absolute (the Homebrew
+# prefix differs per arch), so it is machine-local rather than stowed.
+bash "$SCRIPT_DIR/link-herdlet.sh"

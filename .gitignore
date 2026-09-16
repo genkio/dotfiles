@@ -22,6 +22,11 @@ claude/.claude/**
 # Legacy repo-local git identity override (kept ignored for compatibility)
 git/.gitconfig.local
 
+# `herdlet setup` drops an absolute symlink to its keg here. Absolute means
+# per-arch, and stow aborts the whole pass on an absolute symlink inside a
+# package, so it stays machine-local: scripts/link-herdlet-extension.sh writes it
+pi/.pi/agent/extensions/herdlet.ts
+
 # Skills package: keep tracked content only
 skills/.DS_Store
 !claude/.claude/prompts/

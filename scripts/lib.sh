@@ -54,6 +54,64 @@ restore_tty() {
   { stty "$_SETUP_TTY_STATE" </dev/tty; } 2>/dev/null || true
 }
 
+# Homebrew will not load a non-official tap's formulae or casks until they are
+# trusted, and trust.json is machine-local, so every machine needs its own
+# grant. Untrusted does not merely fail to install: `brew bundle check` reports
+# an installed tap formula as "needs to be installed or updated", so a bundle
+# runs on every single pass and then dies on the tap.
+#
+# The taps are read out of the Brewfiles rather than listed here, because a list
+# is what broke: the trust step lived only in opinionated-flow.sh, naming three
+# taps by hand, and update.sh's `brew bundle` had no equivalent.
+#
+# One -e per form, never an alternation: BSD sed has no `\|` and takes it as a
+# literal pipe rather than erroring, so the pattern silently never matches.
+# `brew/Brewfile` itself is skipped by the callers - it only instance_evals the
+# leaf files, which is where every tap entry actually lives.
+brewfile_taps() {  # brewfile_taps <brewfile...>
+  sed -n \
+    -e 's/^[[:space:]]*tap[[:space:]]*"\([^"]*\)".*/\1/p' \
+    -e 's|^[[:space:]]*brew[[:space:]]*"\([^"/]*/[^"/]*\)/[^"]*".*|\1|p' \
+    -e 's|^[[:space:]]*cask[[:space:]]*"\([^"/]*/[^"/]*\)/[^"]*".*|\1|p' \
+    "$@" 2>/dev/null | sort -u
+}
+
+# ~/.homebrew/trust.json unless XDG_CONFIG_HOME is set (see `brew trust --help`).
+brew_trust_store() {
+  if [[ -n "${XDG_CONFIG_HOME:-}" ]]; then
+    printf '%s\n' "$XDG_CONFIG_HOME/homebrew/trust.json"
+  else
+    printf '%s\n' "$HOME/.homebrew/trust.json"
+  fi
+}
+
+# Read-only counterpart, for a dry run that must not write. Trust is recorded
+# either per tap or per entry ("genkio/tap" vs "genkio/tap/herdlet"), so a
+# prefix match answers both, case-insensitively - brew downcases what it stores.
+brewfile_untrusted_taps() {  # brewfile_untrusted_taps <brewfile...>
+  local store tap
+  store="$(brew_trust_store)"
+  brewfile_taps "$@" | while IFS= read -r tap; do
+    [[ -n "$tap" ]] || continue
+    grep -qi "\"$tap" "$store" 2>/dev/null || printf '%s\n' "$tap"
+  done
+}
+
+# Tap-level, not per-entry: a tap grant covers whatever those Brewfiles gain
+# later, which is the point of deriving the list from them.
+trust_brewfile_taps() {  # trust_brewfile_taps <brewfile...>
+  local tap
+  command -v brew >/dev/null 2>&1 || return 0
+  # Older Homebrew has no `trust` at all, and needs none.
+  brew trust --help >/dev/null 2>&1 || return 0
+
+  brewfile_taps "$@" | while IFS= read -r tap; do
+    [[ -n "$tap" ]] || continue
+    brew tap "$tap" >/dev/null 2>&1 || true
+    brew trust --tap "$tap" >/dev/null 2>&1 || true
+  done
+}
+
 # Detect a guest VM (mirrors the Brewfile check) so host-only steps such as
 # FileVault and Touch ID can be skipped on virtual machines.
 is_vm() {

@@ -29,7 +29,10 @@ brew_bundle_install() {
   brew bundle --file "$file" || warn "some entries in $file failed to install; continuing setup."
 }
 
-# Install dev tools via Homebrew
+# Install dev tools via Homebrew. Brewfile.dev names no third-party tap today,
+# but the trust step is derived from the file rather than from a list, so it
+# costs nothing and covers the day it gains one.
+trust_brewfile_taps brew/Brewfile.dev
 brew_bundle_install brew/Brewfile.dev
 # Not a cask: see the header of install-alacritty.sh. Non-fatal so a download
 # failure can't abort provisioning over one app.

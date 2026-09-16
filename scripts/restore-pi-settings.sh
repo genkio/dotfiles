@@ -66,3 +66,8 @@ merge_json_defaults() {  # merge_json_defaults <target> <example> <label>
 
 merge_json_defaults "$HOME/.pi/agent/web-search.json" \
   "$REPO_ROOT/pi/.pi/agent/web-search.json.example" "~/.pi/agent/web-search.json"
+
+# Same reasoning as web-search.json, for a different reason: herdlet's extension
+# and skill live in its keg, and the links to them are absolute (the prefix
+# differs per arch), so the repo cannot own them.
+bash "$SCRIPT_DIR/link-herdlet.sh"

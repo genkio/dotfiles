@@ -14,6 +14,10 @@ claude/.claude/**
 !claude/.claude/rules/**
 !claude/.claude/hooks/
 !claude/.claude/hooks/**
+!claude/.claude/agents/
+!claude/.claude/agents/**
+!claude/.claude/prompts/
+!claude/.claude/prompts/**
 
 # Legacy repo-local git identity override (kept ignored for compatibility)
 git/.gitconfig.local

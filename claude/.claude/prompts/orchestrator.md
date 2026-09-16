@@ -16,12 +16,21 @@ Workers are herdlet agents in tmux panes (the `herdlet` skill; load it before
 the first spawn, it owns every flag, exit code and menu rule). Spawn each one
 with `herdlet spawn`. One worker per independent unit of work; several in
 parallel when the units don't share files. Claude workers by default; a second
-model family means pi on OpenAI's Codex models (`pi --provider openai-codex
---model gpt-5.6-sol --thinking medium`), only when the user asks for it this
-session - otherwise that pairing is the one-shot cross-model reviewer the
-review skills already run. `herdlet spawn` cannot launch it (`--agent` takes
-claude or codex only), so build that pane by hand. Thinking medium unless the
-unit would put Claude on high.
+model family means pi (`herdlet spawn --agent pi`), only when the user asks for
+it this session - otherwise that pairing is the one-shot cross-model reviewer
+the review skills already run. herdlet holds no pi routing of its own; the
+flags are the only place it lives, and there are exactly two:
+
+- Codex: `--agent pi --model openai-codex/gpt-5.6-sol --effort medium`.
+  `high` only when the unit would put Claude on high, never above.
+- DeepSeek: `--agent pi --provider fireworks
+  --model accounts/fireworks/models/deepseek-v4p1-flash --effort max`.
+  ALWAYS `max` for this model; it is not a pace lever.
+
+`--sandbox read-only` gives a pi worker read/grep/find/ls only (reviewers).
+pi has no permission prompts, so `--allow` is refused and a pi worker never
+goes `blocked` on approval; its state comes from the bridge extension stowed
+at `~/.pi/agent/extensions/herdlet.ts`.
 
 Every worker gets a written brief at `plans/<topic>-brief.md` before it starts:
 the goal, the decisions already made (so it doesn't re-litigate them), what is
@@ -115,7 +124,9 @@ The Codex models bill a separate pool with its own cache file,
 `~/Library/Caches/tmux-open-usage/codex.json` (`weekly.pct` USED, `reset_at`;
 refresh with `--refresh codex`). Read it before every pi-on-Codex spawn and at
 every `limited` wake, exactly like the Claude one; the user resets that pool by
-hand when it nears 5% left, so say the number when you spawn.
+hand when it nears 5% left, so say the number when you spawn. DeepSeek on
+Fireworks has no pool and no cache: it bills per token, so the pace table does
+not apply to it and its thinking level is fixed at `max` regardless.
 
 Re-read the cache before EVERY spawn, and again after any `limited` wake or
 session reset. A 12-hour run crosses several windows; a row picked in the

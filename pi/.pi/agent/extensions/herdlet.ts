@@ -1,0 +1,1 @@
+/opt/homebrew/opt/herdlet/share/doc/herdlet/pi-herdlet.ts

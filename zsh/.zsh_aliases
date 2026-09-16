@@ -1,3 +1,4 @@
+alias aero="open -a AeroSpace"
 alias vmise='mise use $(jq -r ".volta | to_entries[] | \"\(.key)@\(.value)\"" package.json)'
 alias y="yazi"
 cc() {

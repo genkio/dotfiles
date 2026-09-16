@@ -1,0 +1,110 @@
+# AeroSpace: https://nikitabobko.github.io/AeroSpace/guide
+config-version = 2
+
+# startup.sh starts the bar and the focus ring. chrome.sh is where the ring is
+# configured, because fullscreen-toggle.sh has to put it back after hiding it
+# and one definition is enough.
+after-startup-command = [
+  'exec-and-forget $HOME/.config/aerospace/scripts/startup.sh',
+]
+
+# AeroSpace workspaces are not mission-control spaces, so sketchybar's `space`
+# component cannot see them. This is the only way it learns about a switch.
+exec-on-workspace-change = [
+  '/bin/bash', '-c',
+  '$HOME/.config/aerospace/scripts/sync.sh',
+]
+
+start-at-login = true
+auto-reload-config = true
+
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+accordion-padding = 30
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+# Focus is the only signal for two things: fullscreen is dropped as soon as the
+# window loses it, and a window opening or closing has no hook of its own but
+# does move focus, which is what the workspace indicator needs to notice.
+on-focus-changed = ['exec-and-forget $HOME/.config/aerospace/scripts/sync.sh']
+automatically-unhide-macos-hidden-apps = false
+focus-follows-mouse.enabled = true
+key-mapping.preset = 'qwerty'
+
+persistent-workspaces = ["1", "2", "3", "4"]
+
+gaps.inner.horizontal = 8
+gaps.inner.vertical =   8
+gaps.outer.left =       8
+gaps.outer.bottom =     8
+# Room for sketchybar (40 high), which is drawn over the top of every display.
+# A display without a notch reserves nothing once the menu bar is auto-hidden,
+# so it needs the whole bar height plus a little daylight - a non-notched
+# built-in (the Intel 13") included.
+#
+# The notch reserves a strip AeroSpace never tiles into, so only the remainder
+# is needed there. That strip is not a constant: it is 29pt or 32pt on this
+# MacBook depending on the display mode, so the value is the one that still
+# clears a 40pt bar at the smaller of the two. It costs a few pt of daylight at
+# the larger one, which beats windows sliding under the bar at the smaller.
+gaps.outer.top =        [{ monitor.'built-in' = 11 }, 41]
+gaps.outer.right =      8
+
+[mode.main.binding]
+    alt-slash = 'layout tiles horizontal vertical'
+    alt-comma = 'layout accordion horizontal vertical'
+
+    alt-h = 'focus left'
+    alt-j = 'focus down'
+    alt-k = 'focus up'
+    alt-l = 'focus right'
+
+    alt-shift-h = 'move left'
+    alt-shift-j = 'move down'
+    alt-shift-k = 'move up'
+    alt-shift-l = 'move right'
+
+    alt-1 = 'workspace 1'
+    alt-2 = 'workspace 2'
+    alt-3 = 'workspace 3'
+    alt-4 = 'workspace 4'
+
+    alt-shift-1 = 'move-node-to-workspace 1'
+    alt-shift-2 = 'move-node-to-workspace 2'
+    alt-shift-3 = 'move-node-to-workspace 3'
+    alt-shift-4 = 'move-node-to-workspace 4'
+
+# Right-Command layer, reached only through hammerspoon's aerospace_leader.lua:
+# Carbon hotkeys cannot see which Command key is down, so the tap there names
+# the key and calls `trigger-binding --mode rcmd`. This mode is never entered.
+[mode.rcmd.binding]
+    minus = 'resize smart -50'
+    equal = 'resize smart +50'
+
+    '1' = 'workspace 1'
+    '2' = 'workspace 2'
+    '3' = 'workspace 3'
+    '4' = 'workspace 4'
+
+    'shift-1' = 'move-node-to-workspace 1'
+    'shift-2' = 'move-node-to-workspace 2'
+    'shift-3' = 'move-node-to-workspace 3'
+    'shift-4' = 'move-node-to-workspace 4'
+
+    shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+    tab = 'workspace-back-and-forth'
+
+    enter = 'exec-and-forget $HOME/.config/aerospace/scripts/fullscreen-toggle.sh'
+
+    a = 'exec-and-forget open -a Alacritty'
+    c = 'exec-and-forget open -a Calendar'
+    f = 'exec-and-forget open -a Finder'
+    m = 'exec-and-forget open -a Mail'
+    s = 'exec-and-forget open -a "Sublime Text"'
+    t = 'exec-and-forget open -a TablePlus'
+    w = 'exec-and-forget open -a WeChat'
+    z = 'exec-and-forget open -a Firefox'

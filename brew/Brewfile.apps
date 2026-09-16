@@ -6,6 +6,20 @@ on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 # macOS 26 (Tahoe) ships a native battery charge limit in Settings -> Battery.
 # Only install AlDente on older releases that lack it.
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
+# Tiling WM, not in homebrew-cask: the author ships it from his own tap only.
+# The three of these carry no in_vm guard, unlike the rest of the desktop apps
+# here: a VM is where this stack gets tested before it reaches a real machine.
+tap "nikitabobko/tap"
+cask "nikitabobko/tap/aerospace"
+# AeroSpace draws no focus ring of its own; JankyBorders is what does. Launched
+# by aerospace.toml's after-startup-command, so leave `brew services` alone or
+# two copies fight over the same border.
+tap "FelixKratz/formulae"
+brew "FelixKratz/formulae/borders"
+# Status bar. No bottle in the tap, so it always builds from source - but that
+# is ~6s of clang over system frameworks, and the default target lipos x86_64
+# and arm64 together, so Intel gets a real binary rather than a toolchain.
+brew "FelixKratz/formulae/sketchybar"
 cask "ungoogled-chromium"
 cask "firefox" unless in_vm
 cask "hammerspoon"

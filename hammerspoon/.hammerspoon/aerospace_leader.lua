@@ -1,0 +1,157 @@
+-- Right-Command as the AeroSpace leader.
+--
+-- AeroSpace registers its hotkeys through Carbon, whose modifier mask has no
+-- left/right bits, so `rightCmd-h` cannot be written in aerospace.toml at all.
+-- Raw device flags do tell the two Command keys apart, so this tap reads them
+-- and forwards the chord to `aerospace trigger-binding --mode rcmd <key>`.
+--
+-- The rcmd mode is never entered; trigger-binding fires its bindings from
+-- whatever mode is current. So the keymap lives entirely in aerospace.toml and
+-- this file only routes keys to it.
+
+local M = {}
+
+local MODE = "rcmd"
+
+local aerospaceBinary = nil
+local leaderHeld = false
+local flagsTap = nil
+local keyTap = nil
+local bindings = {}
+local refreshTask = nil
+
+local rawFlagMasks = hs.eventtap.event.rawFlagMasks or {}
+local leftCommandMask = rawFlagMasks.deviceLeftCommand or 0
+local rightCommandMask = rawFlagMasks.deviceRightCommand or 0
+
+-- Keys Hammerspoon and AeroSpace spell differently.
+local keyNameOverrides = {
+  ["return"] = "enter",
+  ["escape"] = "esc",
+  ["delete"] = "backspace",
+  ["forwarddelete"] = "forwardDelete",
+  ["pageup"] = "pageUp",
+  ["pagedown"] = "pageDown",
+  ["/"] = "slash",
+  [","] = "comma",
+  ["."] = "period",
+  ["-"] = "minus",
+  ["="] = "equal",
+  [";"] = "semicolon",
+  ["'"] = "quote",
+  ["`"] = "backtick",
+  ["\\"] = "backslash",
+  ["["] = "leftSquareBracket",
+  ["]"] = "rightSquareBracket",
+}
+
+local function findAerospace()
+  for _, path in ipairs({ "/opt/homebrew/bin/aerospace", "/usr/local/bin/aerospace" }) do
+    if hs.fs.attributes(path) then
+      return path
+    end
+  end
+
+  return nil
+end
+
+-- Shift is allowed through: it is the move-window layer. Any other modifier
+-- means the chord belongs to macOS or to the focused app.
+local function isRightCommandOnly(event)
+  local flags = event:getFlags()
+
+  if not flags.cmd or flags.alt or flags.ctrl or flags.fn then
+    return false
+  end
+
+  local rawFlags = event:rawFlags()
+
+  return (rawFlags & rightCommandMask) ~= 0 and (rawFlags & leftCommandMask) == 0
+end
+
+local function bindingName(event)
+  local keyName = hs.keycodes.map[event:getKeyCode()]
+
+  if type(keyName) ~= "string" then
+    return nil
+  end
+
+  keyName = keyNameOverrides[keyName] or keyName
+
+  if event:getFlags().shift then
+    return "shift-" .. keyName
+  end
+
+  return keyName
+end
+
+-- Which keys the mode defines, so an unbound one still reaches macOS
+-- (right-cmd+c stays copy). Re-read on each press of the leader, which is what
+-- picks up an aerospace.toml edit without reloading Hammerspoon.
+local function refreshBindings()
+  if refreshTask and refreshTask:isRunning() then
+    return
+  end
+
+  refreshTask = hs.task.new(aerospaceBinary, function(exitCode, stdout)
+    if exitCode ~= 0 then
+      return
+    end
+
+    local ok, parsed = pcall(hs.json.decode, stdout)
+
+    if ok and type(parsed) == "table" then
+      bindings = parsed
+    end
+  end, { "config", "--get", "mode." .. MODE .. ".binding", "--json" })
+
+  refreshTask:start()
+end
+
+function M.start()
+  aerospaceBinary = findAerospace()
+
+  if not aerospaceBinary then
+    hs.alert.show("aerospace leader off: aerospace binary not found")
+    return false
+  end
+
+  if rightCommandMask == 0 then
+    hs.alert.show("aerospace leader off: no raw modifier flags")
+    return false
+  end
+
+  refreshBindings()
+
+  flagsTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, function(event)
+    local held = isRightCommandOnly(event)
+
+    if held and not leaderHeld then
+      refreshBindings()
+    end
+
+    leaderHeld = held
+    return false
+  end)
+
+  keyTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(event)
+    if not leaderHeld then
+      return false
+    end
+
+    local binding = bindingName(event)
+
+    if not binding or bindings[binding] == nil then
+      return false
+    end
+
+    hs.task.new(aerospaceBinary, nil, { "trigger-binding", "--mode", MODE, "--", binding }):start()
+    return true
+  end)
+
+  flagsTap:start()
+  keyTap:start()
+  return true
+end
+
+return M

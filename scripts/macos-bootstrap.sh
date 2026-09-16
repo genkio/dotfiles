@@ -301,8 +301,37 @@ echo "Finder: Search current folder by default"
 defaults_write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
 ###############################################################################
+# Menu bar
+###############################################################################
+
+# sketchybar owns this strip and cannot be clicked through, so a visible Apple
+# menu bar would sit buried under it. Hidden, it still slides down on hover and
+# draws over sketchybar. AeroSpace's gaps.outer.top is sized for the sketchybar
+# height on the assumption this is set.
+echo "Menu bar: Automatically hide and show"
+# Both, and neither alone is enough. The `defaults` write is the setting of
+# record but is read at login, so on a running session the menu bar stays put
+# (measured: killall ControlCenter/Dock/SystemUIServer does not shake it loose).
+# The System Events call applies it live.
+#
+# It is also the only cross-app AppleEvent in this file - everything else here
+# is JXA calling ObjC in-process - so it is the only one that needs an
+# Automation grant, which a fresh machine has not given and nobody can give over
+# ssh. `optional` alone would not help: it sees a bad exit code, and only once
+# the call returns. The perl wrapper is the hard bound; the alarm survives the
+# exec and kills the process whether the prompt was answered or not. Losing the
+# live apply just means the menu bar hides at next login, which the `defaults`
+# write above covers.
+defaults_write NSGlobalDomain _HIHideMenuBar -bool true
+optional perl -e 'alarm shift; exec @ARGV' 15 \
+  osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to true'
+
+###############################################################################
 # Dock
 ###############################################################################
+
+echo "Dock: Automatically hide and show"
+defaults_write com.apple.dock autohide -bool true
 
 echo "Dock: Hide recent applications"
 defaults_write com.apple.dock show-recents -bool false

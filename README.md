@@ -30,7 +30,7 @@ Install stow:
 - `stow vim` or `stow git`
 - Core packages: `mkdir -p ~/.ssh ~/.config/mpv && chmod 700 ~/.ssh && stow brew git mpv nvim tmux vim yazi zsh ssh`
 - `nvim` installs `~/.config/nvim`; launch it with `nvim`
-- Optional app packages: `stow hammerspoon`, then `make sublime` to enable Sublime's Package Control and auto-install packages
+- Optional app packages: `stow hammerspoon aerospace sketchybar`, then `make sublime` to enable Sublime's Package Control and auto-install packages
 - Optional dev packages: `stow alacritty && bash scripts/apply-alacritty-theme.sh && bash scripts/restore-claude-settings.sh && bash scripts/restore-pi-settings.sh`
   - Both restore scripts also stow the shared `skills/` package into `~/.claude/skills/` and `~/.pi/agent/skills` so coding-agent skills are kept in one place. The Pi script also links `settings.json` (fullscreen TUI and other choices), the transcript keybindings, the tmux agent-state extension, `quiet-tools.ts` (renders every tool row and thinking row at zero height until `Ctrl+O`, keeping one `✗ <tool> failed` line for errors), `deny-guard.ts` (deny-only gate: the commands and paths from the Claude `permissions.deny` list are blocked, everything else runs), and `usage-footer.ts` (one-line footer: model, context usage, cwd, session cost; DeepSeek off-peak requests are priced at half, which pi's model catalog does not do) into `~/.pi/agent/`, installs the `pi-web-access` package through `pi install`, and seeds `~/.pi/agent/web-search.json` (browser curator off) from the tracked example.
 - Yazi: `stow yazi`
@@ -122,7 +122,7 @@ exits rather than hanging.
 - Touch ID for sudo (`/etc/pam.d/sudo_local`) is written by `scripts/touchid-sudo.sh` as the very last step of the run, because from then on `sudo` asks for a fingerprint instead of taking the password the setup feeds it. Standalone: `bash scripts/touchid-sudo.sh` (`--dry-run` to preview).
 - On newer macOS releases, individual preference writes that Apple rejects are skipped with a warning so the rest of the bootstrap can continue. A failed package (e.g. a `brew bundle` entry) is likewise a warning, not a stop.
 - Non-fatal warnings are prefixed `SETUP_WARN:` (yellow) and fatal errors `SETUP_ERROR:` (red) across every script `make` runs, so they stand out in a long run by default (see below).
-- `make apps` installs GUI apps, stows `hammerspoon`, and sets up Sublime Text (Package Control + auto-installed packages).
+- `make apps` installs GUI apps, stows `hammerspoon`, `aerospace` and `sketchybar`, and sets up Sublime Text (Package Control + auto-installed packages).
 - `make dev` installs dev tools (mise, pi, claude-code, etc.) and restores `~/.claude` and `~/.pi`.
 - There is no `make heavy`. It existed because on an Intel Mac ffmpeg, mpv, tailscale and mole were the largest build graph in the repo and nothing else depended on them. Once mpv was replaced by the IINA cask on Intel, that phase was no longer the longest wait - `core` is - so its contents went where they belong: `ffmpeg` to `make dev`, `mpv` (IINA on Intel) to `make apps`, and `tailscale` to `make tailscale`, which now installs the formula as well as starting its daemon. `mole` was dropped; nothing here used it.
 

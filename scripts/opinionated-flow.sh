@@ -351,10 +351,15 @@ phase_end core
 fi
 
 if has_phase apps; then
-  phase_start "apps: GUI casks, hammerspoon, sublime"
+  phase_start "apps: GUI casks, hammerspoon, aerospace, sketchybar, sublime"
   require_brew apps
+  # Same tap-trust dance as genkio/tap above: aerospace, borders and sketchybar
+  # all ship from their authors' own taps.
+  brew trust --cask nikitabobko/tap/aerospace || true
+  brew trust --formula FelixKratz/formulae/borders || true
+  brew trust --formula FelixKratz/formulae/sketchybar || true
   brew_bundle_install brew/Brewfile.apps
-  stow -t "$HOME" hammerspoon
+  stow -t "$HOME" hammerspoon aerospace sketchybar
   # Non-fatal: a failed Package Control download shouldn't abort provisioning.
   bash scripts/setup-sublime.sh \
     || warn "Sublime Package Control setup failed; run 'make sublime' later."

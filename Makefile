@@ -57,7 +57,9 @@ macos:
 core:
 	$(FLOW) --phase core
 
-# GUI casks, hammerspoon, and Sublime's headless Package Control setup.
+# GUI casks, hammerspoon, aerospace, sketchybar, and Sublime's headless
+# Package Control setup. Wants `macos` to have run: the tiling gaps assume the
+# menu bar is auto-hidden, which that phase does.
 apps:
 	$(FLOW) --phase apps
 

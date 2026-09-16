@@ -48,7 +48,7 @@ end
 -- global: a local would be collected and the watcher would stop firing
 configWatcher = hs.pathwatcher.new(hs.fs.pathToAbsolute(hs.configdir), reloadOnLuaChange):start()
 
-require("rcmd").start()
+require("aerospace_leader").start()
 require("raycast").start()
 require("selection_ocr").start()
 require("homerow").start()

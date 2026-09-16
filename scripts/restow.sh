@@ -60,7 +60,7 @@ run_stow() {
 }
 
 # Packages that stow straight to $HOME with no guards.
-HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon mise claude pi vim)
+HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon aerospace sketchybar mise claude pi vim)
 run_stow "$HOME" "into ~: ${HOME_PKGS[*]}" "${HOME_PKGS[@]}"
 
 # ssh and git: skip when a real file already exists at the target so we

@@ -208,28 +208,13 @@ Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t`
 `init.lua` loads seven modules from `hammerspoon/.hammerspoon`. Three own a
 trigger key, one remaps two keys, two run with no keys at all.
 
-### Rcmd launcher (hold right-Command)
+### AeroSpace leader (hold right-Command)
 
-Hold **right** Command (the left one is untouched) and tap a key. Hold it for
-half a second without tapping to get an overlay of every binding. A key mapped
-to more than one app opens a picker, chosen with `1`-`9` / `0`.
-
-| Key | Target |
-|---|---|
-| `a` / `z` | Alacritty / Firefox (both fullscreen) |
-| `c` / `m` / `f` | Calendar / Mail / Finder |
-| `i` | iPhone Mirroring |
-| `t` / `s` | TablePlus / Sublime Text |
-| `u` / `w` | UURemote / WeChat |
-| `o` | Open the front Finder window's folder in Alacritty |
-| `q` | `vi ~/box/notes.txt` in Alacritty |
-| `n` | Notification Center |
-| `0` / `1` / `2` / `3` | Window: maximize / left half / right half / two-thirds |
-| `` ` `` | Move the window to the next screen |
-| `/` | Toggle "use F1, F2, etc. as standard function keys" (alerts which mode it landed in) |
-
-The map lives in `rcmd.config.lua`; a value can be an app name, a bundle ID, a
-list of apps, or one of the named actions.
+Hold **right** Command (the left one is untouched) and tap a key.
+`aerospace_leader.lua` reads raw device flags to tell the two Command keys
+apart, which Carbon hotkeys cannot do, then calls `aerospace trigger-binding
+--mode rcmd`. Every binding lives in `aerospace.toml` under `[mode.rcmd.binding]`,
+and a key that mode does not define still reaches macOS.
 
 ### Homerow navigation
 
@@ -245,7 +230,7 @@ list of apps, or one of the named actions.
 |---|---|
 | `Option+Space` | Raycast-lite palette: run an Apple Shortcut, or a quick link from `raycast.config.lua` (`{query}` placeholders) |
 | `Cmd+Shift+S` | Selection OCR: drag a rectangle, and its text (Japanese + English, via Apple's Vision framework) lands on the clipboard |
-| `F1` / `F2` | Escape / backtick, for an Apple Wireless Keyboard whose own keys are broken. Needs the standard-function-keys setting on, which `rcmd + /` toggles |
+| `F1` / `F2` | Escape / backtick, for an Apple Wireless Keyboard whose own keys are broken. Needs "use F1, F2, etc. as standard function keys" on, in System Settings > Keyboard |
 
 No keys of their own: `input_source` switches the macOS input source per app
 (`input_source.config.lua`), and `uuremote_lock` starts the screen saver when a

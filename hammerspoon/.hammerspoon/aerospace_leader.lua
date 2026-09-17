@@ -12,6 +12,7 @@
 local M = {}
 
 local MODE = "rcmd"
+local BUNDLE_ID = "bobko.aerospace"
 
 local aerospaceBinary = nil
 local leaderHeld = false
@@ -19,6 +20,9 @@ local flagsTap = nil
 local keyTap = nil
 local bindings = {}
 local refreshTask = nil
+local pollTimer = nil
+local listeners = {}
+local aerospaceRunning = false
 
 local rawFlagMasks = hs.eventtap.event.rawFlagMasks or {}
 local leftCommandMask = rawFlagMasks.deviceLeftCommand or 0
@@ -108,6 +112,46 @@ local function refreshBindings()
   refreshTask:start()
 end
 
+-- Exactly one of this module and rcmd.lua owns right-Command at a time: this
+-- one while AeroSpace runs, rcmd once it quits. Both follow the same watcher.
+-- hs.application.watcher is not usable for this: on AeroSpace's terminated
+-- event LuaSkin cannot build an app object for the dead pid ("Unable to fetch
+-- NSRunningApplication") and the watcher never fires again, for any app. So
+-- the state is polled. applicationsForBundleID is one NSRunningApplication
+-- lookup, cheap enough for a 2s tick.
+local function isRunning()
+  return #hs.application.applicationsForBundleID(BUNDLE_ID) > 0
+end
+
+-- Exactly one of this module and rcmd.lua owns right-Command at a time: this
+-- one while AeroSpace runs, rcmd once it quits. rcmd follows through
+-- onRunningChanged rather than polling on its own.
+local function setRunning(running)
+  if aerospaceRunning == running then
+    return
+  end
+
+  aerospaceRunning = running
+  leaderHeld = false
+
+  if running then
+    refreshBindings()
+  end
+
+  for _, listener in ipairs(listeners) do
+    listener(running)
+  end
+end
+
+function M.onRunningChanged(listener)
+  listeners[#listeners + 1] = listener
+  listener(aerospaceRunning)
+end
+
+function M.isActive()
+  return aerospaceRunning
+end
+
 function M.start()
   aerospaceBinary = findAerospace()
 
@@ -121,9 +165,20 @@ function M.start()
     return false
   end
 
-  refreshBindings()
+  aerospaceRunning = isRunning()
+  pollTimer = hs.timer.doEvery(2, function()
+    setRunning(isRunning())
+  end)
+
+  if aerospaceRunning then
+    refreshBindings()
+  end
 
   flagsTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, function(event)
+    if not aerospaceRunning then
+      return false
+    end
+
     local held = isRightCommandOnly(event)
 
     if held and not leaderHeld then

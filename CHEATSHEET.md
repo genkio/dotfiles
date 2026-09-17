@@ -205,16 +205,40 @@ Theme: `Flexoki Light` / `TokyoNight Storm`. Toggle light/dark with `prefix + t`
 
 ## Hammerspoon
 
-`init.lua` loads seven modules from `hammerspoon/.hammerspoon`. Three own a
-trigger key, one remaps two keys, two run with no keys at all.
+`init.lua` loads eight modules from `hammerspoon/.hammerspoon`. Two share the
+right-Command trigger, two more own a key of their own, one remaps two keys,
+two run with no keys at all.
 
-### AeroSpace leader (hold right-Command)
+### Right-Command (hold it, tap a key)
 
-Hold **right** Command (the left one is untouched) and tap a key.
-`aerospace_leader.lua` reads raw device flags to tell the two Command keys
-apart, which Carbon hotkeys cannot do, then calls `aerospace trigger-binding
---mode rcmd`. Every binding lives in `aerospace.toml` under `[mode.rcmd.binding]`,
-and a key that mode does not define still reaches macOS.
+Hold **right** Command (the left one is untouched) and tap a key. Which module
+answers depends on whether AeroSpace is running:
+
+**AeroSpace running:** `aerospace_leader.lua` reads raw device flags to tell the
+two Command keys apart, which Carbon hotkeys cannot do, then calls `aerospace
+trigger-binding --mode rcmd`. Every binding lives in `aerospace.toml` under
+`[mode.rcmd.binding]`, and a key that mode does not define still reaches macOS.
+
+**AeroSpace quit:** `rcmd.lua` takes over (a 2s poll flips it after AeroSpace
+launches or exits). Hold right-Command for half a second
+without tapping to get an overlay of every binding. A key mapped to more than
+one app opens a picker, chosen with `1`-`9` / `0`.
+
+| Key | Target |
+|---|---|
+| `a` / `z` | Alacritty / Firefox (both fullscreen) |
+| `c` / `m` / `f` | Calendar / Mail / Finder |
+| `i` | iPhone Mirroring |
+| `t` / `s` | TablePlus / Sublime Text |
+| `u` / `w` | UURemote / WeChat |
+| `o` | Open the front Finder window's folder in Alacritty |
+| `q` | `vi ~/box/notes.txt` in Alacritty |
+| `n` | Notification Center |
+| `0` / `1` / `2` / `3` | Window: maximize / left half / right half / two-thirds |
+| `` ` `` | Move the window to the next screen |
+
+The map lives in `rcmd.config.lua`; a value can be an app name, a bundle ID, a
+list of apps, or one of the named actions.
 
 ### Homerow navigation
 

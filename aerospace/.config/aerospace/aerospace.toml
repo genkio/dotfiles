@@ -95,6 +95,7 @@ gaps.outer.right =      8
 [mode.rcmd.binding]
     minus = 'resize smart -50'
     equal = 'resize smart +50'
+    0 = 'balance-sizes'
 
     '1' = 'workspace 1'
     '2' = 'workspace 2'

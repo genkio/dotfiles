@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # Push the workspace indicator's state into sketchybar: the focused workspace,
-# which workspaces are worth a number at all - the ones holding windows, plus
-# the focused one even when empty, so a switch to an empty workspace still
-# highlights something - and which of them hold an agent waiting on the user.
-# One workspace in use needs no indicator, so the list goes empty and the whole
-# thing disappears.
+# which workspaces are worth a number at all - the ones holding windows, the
+# ones on screen (a second monitor shows one even when empty), plus the focused
+# one, so a switch to an empty workspace still highlights something - and which
+# of them hold an agent waiting on the user. One workspace in use needs no
+# indicator, so the list goes empty and the whole thing disappears.
 #
 # The memo keeps a focus change that changed nothing from re-running an item
 # script per workspace. `force` is for sketchybarrc, whose fresh items have to
@@ -17,8 +17,9 @@ MEMO="${TMPDIR:-/tmp}/aerospace-spaces-state"
 
 focused="$(aerospace list-workspaces --focused)"
 occupied="$(
-  { aerospace list-workspaces --monitor all --empty no; printf '%s\n' "$focused"; } \
-    | sort -u
+  { aerospace list-workspaces --monitor all --empty no
+    aerospace list-workspaces --monitor all --visible
+    printf '%s\n' "$focused"; } | sort -u
 )"
 
 # A Claude Code or pi agent asking for input marks its tmux pane (see

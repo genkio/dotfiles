@@ -40,17 +40,29 @@ gaps.inner.horizontal = 8
 gaps.inner.vertical =   8
 gaps.outer.left =       8
 gaps.outer.bottom =     8
-# Room for sketchybar (40 high), which is drawn over the top of every display.
-# A display without a notch reserves nothing once the menu bar is auto-hidden,
-# so it needs the whole bar height plus a little daylight - a non-notched
-# built-in (the Intel 13") included.
+# Room for sketchybar (40 high), which draws at window layer -20 - *below*
+# ordinary windows. Nothing but this gap keeps it visible, so a gap smaller than
+# the bar means windows sit on top of it and the bar is simply gone.
 #
-# The notch reserves a strip AeroSpace never tiles into, so only the remainder
-# is needed there. That strip is not a constant: it is 29pt or 32pt on this
-# MacBook depending on the display mode, so the value is the one that still
-# clears a 40pt bar at the smaller of the two. It costs a few pt of daylight at
-# the larger one, which beats windows sliding under the bar at the smaller.
-gaps.outer.top =        [{ monitor.'built-in' = 11 }, 41]
+# One value for every display, and the per-monitor form it replaced is a trap
+# worth not walking back into. It read
+#
+#   [{ monitor.'built-in' = 11 }, 41]
+#
+# on the reasoning that a built-in reserves a notch strip AeroSpace never tiles
+# into, so only the remainder is needed. True of this MacBook (measured
+# safeAreaInsets.top = 32, windows landed at 43 with a 40pt bar). False of every
+# built-in without a notch, which reserves nothing yet matches the same pattern
+# by name - both report exactly "Built-in Retina Display", so no pattern can
+# tell them apart. The Intel 13" therefore got 11pt of clearance for a 40pt bar
+# and spent a long debugging session with an invisible status bar.
+#
+# The cost, on a notched display only, is the notch reserve itself: windows
+# start at 32 + 41 = 73 rather than 43, so about 33pt of desktop shows under the
+# bar. That is not tunable by shrinking the bar - the gap has to clear the whole
+# bar on a display that reserves nothing, so the waste always equals the reserve.
+# A covered bar is worse than a visible margin.
+gaps.outer.top =        41
 gaps.outer.right =      8
 
 [mode.main.binding]

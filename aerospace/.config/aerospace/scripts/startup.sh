@@ -9,6 +9,16 @@
 
 PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
+# Anything still running here is stale by definition: AeroSpace is launching,
+# so whatever fed these died with the last instance. Reclaim rather than add to
+# them. sketchybar in particular takes a lock file and a survivor wins it - a
+# bar orphaned to launchd (PPID 1) once beat every launch that followed,
+# including the one at login, so the machine came up with a process, no bar and
+# nothing able to replace it. borders does not lock at all and simply stacks: 8
+# copies, measured.
+pkill -x sketchybar
+pkill -x borders
+
 sketchybar &
 
 "$(dirname "$0")/reclaim-workspaces.sh"

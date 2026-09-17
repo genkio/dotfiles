@@ -1,10 +1,10 @@
 // Footer with only the numbers worth showing:
 //
-//   6.7%/1m · $0.39/¥15.17 · ~/dotfiles (main) · (deepseek) deepseek-flash (max)
+//   6.7%/1m · $0.39/¥15.17 · (deepseek) deepseek-flash (max) · ~/dotfiles (main)
 //
-// The model block sits last and the spend sits before the path, so context
-// usage and cost read first. The built-in footer splits these over two rows and
-// also carries cumulative in/out tokens, cache read/write counters, the
+// Context, spend and model lead; the path sits last, where truncation to the
+// terminal width eats it first. The built-in footer splits these over two rows
+// and also carries cumulative in/out tokens, cache read/write counters, the
 // cache-hit rate, and pi's auto-compaction marker; those are dropped here. The
 // rest of the pieces (thinking level, context usage, cwd + git branch + session
 // name) keep the built-in footer's formats. Cost is trimmed to cents, since a
@@ -245,8 +245,8 @@ export default function (pi: ExtensionAPI): void {
           const line = [
             contextColored,
             costText,
-            theme.fg("dim", cwd),
             theme.fg("dim", model),
+            theme.fg("dim", cwd),
           ].join(" · ");
           const lines = [truncateToWidth(line, width, theme.fg("dim", "..."))];
           const statuses = footerData.getExtensionStatuses();

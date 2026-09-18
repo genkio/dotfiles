@@ -64,6 +64,16 @@ sketchybar --add item network right \
            --set network update_freq=2 drawing=off \
                  script="$PLUGIN_DIR/network.sh"
 
+sketchybar --add item agent_usage right \
+           --set agent_usage update_freq=180 drawing=off \
+                 script="$PLUGIN_DIR/agent-usage.sh" \
+           --subscribe agent_usage system_woke
+
+sketchybar --add item maestral right \
+           --set maestral update_freq=30 drawing=off \
+                 script="$PLUGIN_DIR/maestral.sh" \
+           --subscribe maestral system_woke
+
 sketchybar --add item wechat right \
            --set wechat update_freq=10 drawing=off \
                  script="$PLUGIN_DIR/wechat.sh" \

@@ -19,7 +19,7 @@ LOCK_TTL_SECONDS = 60
 HTTP_TIMEOUT_SECONDS = 8
 # Cloudflare blocks urllib's default UA on the OAuth token endpoints
 # (error 1010). Any non-default value passes.
-USER_AGENT = "tmux-open-usage"
+USER_AGENT = "agent-usage"
 DEFAULT_REFRESH_INTERVAL_MINUTES = 15
 CLAUDE_SHARED_CACHE_MAX_AGE_SECONDS = 24 * 60 * 60
 
@@ -58,7 +58,7 @@ CODEX_EXPIRY_BUFFER_MS = 5 * 60 * 1000
 PI_AUTH_PATH = Path.home() / ".pi" / "agent" / "auth.json"
 PI_CODEX_PROVIDER = "openai-codex"
 PI_MIN_TOKEN_EXPIRY = "10m"
-# tmux may run the status command with a login PATH that predates the install.
+# sketchybar may run the plugin with a login PATH that predates the install.
 PI_BINARY_CANDIDATES = (
     Path("/opt/homebrew/bin/pi"),
     Path("/usr/local/bin/pi"),
@@ -71,12 +71,6 @@ DEFAULT_USAGE_VIEW = "session"
 CLAUDE_FABLE_MODEL_NAME = "fable"
 MISSING_PROVIDER_SEGMENT = "-/-"
 MISSING_SESSION_SEGMENT = "-"
-STATUS_LINE_FG = "#5c5c5c"
-FAILED_PROVIDER_FG = STATUS_LINE_FG
-PROVIDER_FG = {
-    "claude": "#E67E22",
-    "codex": "#10A37F",
-}
 
 
 class FetchResult(NamedTuple):
@@ -87,7 +81,7 @@ class FetchResult(NamedTuple):
 
 
 def refresh_interval_seconds() -> int:
-    raw = os.environ.get("TMUX_OPEN_USAGE_REFRESH_INTERVAL_MINUTES", "").strip()
+    raw = os.environ.get("AGENT_USAGE_REFRESH_INTERVAL_MINUTES", "").strip()
     if not raw:
         return DEFAULT_REFRESH_INTERVAL_MINUTES * 60
     try:
@@ -100,7 +94,7 @@ def refresh_interval_seconds() -> int:
 
 
 def provider_order() -> list[str]:
-    raw = os.environ.get("TMUX_OPEN_USAGE_PROVIDERS", "").strip()
+    raw = os.environ.get("AGENT_USAGE_PROVIDERS", "").strip()
     if not raw:
         ordered: list[str] = []
         if load_claude_credentials():
@@ -124,14 +118,14 @@ def provider_order() -> list[str]:
 
 
 def usage_view() -> str:
-    raw = os.environ.get("TMUX_OPEN_USAGE_VIEW", "").strip().lower()
+    raw = os.environ.get("AGENT_USAGE_VIEW", "").strip().lower()
     if raw in USAGE_VIEWS:
         return raw
     return DEFAULT_USAGE_VIEW
 
 
 def provider_usage_view(provider: str) -> str:
-    raw = os.environ.get(f"TMUX_OPEN_USAGE_{provider.upper()}_VIEW", "").strip().lower()
+    raw = os.environ.get(f"AGENT_USAGE_{provider.upper()}_VIEW", "").strip().lower()
     if raw in USAGE_VIEWS:
         return raw
     return usage_view()
@@ -142,14 +136,14 @@ def env_flag(name: str) -> bool:
 
 
 def claude_fable_enabled() -> bool:
-    return env_flag("TMUX_OPEN_USAGE_CLAUDE_FABLE")
+    return env_flag("AGENT_USAGE_CLAUDE_FABLE")
 
 
 def cache_dir() -> Path:
-    override = os.environ.get("TMUX_OPEN_USAGE_CACHE_DIR")
+    override = os.environ.get("AGENT_USAGE_CACHE_DIR")
     if override:
         return Path(override).expanduser()
-    return Path.home() / "Library" / "Caches" / "tmux-open-usage"
+    return Path.home() / "Library" / "Caches" / "agent-usage"
 
 
 def cache_path(provider: str) -> Path:
@@ -251,7 +245,7 @@ def keychain_write_json(service: str, payload: Any) -> None:
             "add-generic-password",
             "-U",
             "-a",
-            os.environ.get("USER", "tmux-open-usage"),
+            os.environ.get("USER", "agent-usage"),
             "-s",
             service,
             "-w",
@@ -1065,18 +1059,8 @@ def render_provider_segment(provider: str, data: dict[str, Any], now: datetime |
     return f"{session_part or '-'}/{weekly_part or '-'}"
 
 
-def style_provider_part(provider: str, part: str) -> str:
-    if provider_fetch_failed(provider):
-        color = FAILED_PROVIDER_FG
-    else:
-        color = PROVIDER_FG.get(provider, STATUS_LINE_FG)
-    return f"#[fg={color}]{part}#[fg={STATUS_LINE_FG}]"
-
-
 def join_status_parts(parts: list[str], separator: str = " ") -> str:
-    if not parts:
-        return ""
-    return " " + separator.join(parts)
+    return separator.join(parts)
 
 
 def missing_provider_segment(provider: str) -> str:
@@ -1089,13 +1073,17 @@ def render_status_line() -> str:
     providers = provider_order()
     parts: list[str] = []
     for provider in providers:
+        # A failed fetch or a bare placeholder means we have nothing worth
+        # showing; drop the whole segment rather than render a gap.
+        if provider_fetch_failed(provider):
+            continue
         placeholder = missing_provider_segment(provider)
         data = get_provider_status(provider)
-        if not data:
-            parts.append(style_provider_part(provider, placeholder))
+        part = render_provider_segment(provider, data) if data else None
+        part = part or placeholder
+        if part in (MISSING_SESSION_SEGMENT, MISSING_PROVIDER_SEGMENT):
             continue
-        part = render_provider_segment(provider, data)
-        parts.append(style_provider_part(provider, part if part else placeholder))
+        parts.append(part.replace("/", " / ", 1))
     return join_status_parts(parts)
 
 

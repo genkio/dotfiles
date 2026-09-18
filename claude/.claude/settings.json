@@ -42,6 +42,8 @@
       "Bash(mkfs *)",
       "Bash(git push --force*)",
       "Bash(git push *--force*)",
+      "Bash(gh pr create)",
+      "Bash(gh pr create:*)",
       "Bash(git reset --hard*)",
       "Edit(~/.ssh/**)",
       "Read(**/*.pem)",
@@ -52,7 +54,6 @@
       "Read(**/.ssh/**)"
     ],
     "ask": [
-      "Bash(gh pr create:*)",
       "Bash(gh pr comment:*)",
       "Bash(gh pr merge:*)",
       "Bash(gh pr review:*)",

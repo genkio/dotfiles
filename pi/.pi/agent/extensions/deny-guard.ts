@@ -51,9 +51,18 @@ const BASH_RULES: BashRule[] = [
     matches: isRecursiveForceRm,
   },
   {
+    // Ordinary push is allowed; rewriting published history is not.
     label: "Bash(git push --force*)",
     reason: "force push rewrites published history",
     matches: isForcePush,
+  },
+  {
+    label: "Bash(gh pr create *)",
+    reason: "opening a PR is the user's call",
+    matches: (segment) => {
+      const words = tokens(segment);
+      return words[0] === "gh" && words[1] === "pr" && words[2] === "create";
+    },
   },
   {
     label: "Bash(git reset --hard*)",
@@ -185,10 +194,36 @@ function isRecursiveForceRm(segment: string): boolean {
   return recursive && force;
 }
 
+/**
+ * The git subcommand and its arguments, past the global options.
+ *
+ * `git -C <dir> push --force` is a force push, and matching on `words[1]`
+ * misses it. Global options come before the subcommand and some of them take a
+ * value, so skip those pairs before deciding what the subcommand is.
+ */
+function gitSubcommand(words: string[]): { name: string; rest: string[] } | undefined {
+  if (words[0] !== "git") return undefined;
+  const takesValue = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"]);
+  let index = 1;
+  while (index < words.length) {
+    const word = words[index];
+    if (takesValue.has(word)) {
+      index += 2;
+      continue;
+    }
+    if (word.startsWith("-")) {
+      index += 1;
+      continue;
+    }
+    return { name: word, rest: words.slice(index + 1) };
+  }
+  return undefined;
+}
+
 function isForcePush(segment: string): boolean {
-  const words = tokens(segment);
-  if (words[0] !== "git" || words[1] !== "push") return false;
-  return words.slice(2).some(
+  const sub = gitSubcommand(tokens(segment));
+  if (sub === undefined || sub.name !== "push") return false;
+  return sub.rest.some(
     (word) =>
       word.startsWith("--force") ||
       word === "-f" ||

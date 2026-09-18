@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Provision Sublime Text headlessly (no GUI console):
-#   1. Drop `Package Control.sublime-package` into Installed Packages/ so
-#      "Package Control: Install Package" works on first launch.
-#   2. Seed/merge `installed_packages` into User settings; Package Control
-#      installs any listed-but-missing package on launch.
-#   3. Set Sublime as the default opener for text + code files, without the
-#      pile of Finder confirmation dialogs `duti -s` triggers (see below).
-# The settings file is seeded, not stowed (like ~/.gitconfig.local): Package
-# Control rewrites it at runtime (bootstrapped flag, in_process_packages,
-# GUI-added packages), so a symlink into the repo would churn. Re-run to push
-# newly-curated packages or file associations.
-
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib.sh"
@@ -39,15 +27,11 @@ if [[ ! -f "$SOURCE_FILE" ]]; then
   exit 1
 fi
 
-# Cask not installed and app never launched: nothing to configure.
 if [[ ! -d "$APP" && ! -d "$DATA_DIR" ]]; then
   echo "Sublime Text not installed; skipping Package Control setup."
   exit 0
 fi
 
-# Non-fatal: a network hiccup shouldn't abort provisioning, and the seeded list
-# below still applies once Package Control is present (later re-run, or the
-# command palette).
 mkdir -p "$INSTALLED_PACKAGES_DIR"
 if [[ -f "$PC_PACKAGE" ]]; then
   echo "Package Control already bootstrapped."
@@ -62,10 +46,6 @@ else
   fi
 fi
 
-# A bare extension only has a real UTI when some installed app declares it;
-# anything else resolves to a throwaway `dyn.*` type that no handler preference
-# can attach to. Resolving here keeps those out of the change list rather than
-# asking LaunchServices to record something it will ignore.
 resolve_extension_utis() {
   (($#)) || return 0
   if ! command -v swift >/dev/null 2>&1; then
@@ -84,9 +64,6 @@ for ext in CommandLine.arguments.dropFirst() {
 SWIFT
 }
 
-# Round-trips the whole domain through cfprefsd (`defaults export`/`import`)
-# rather than editing com.apple.launchservices.secure.plist in place: the
-# daemon caches the domain and would flush its copy back over a direct write.
 write_ls_handlers() {
   local rc=0 exported updated
   exported="$(mktemp -t ls-handlers-in)"
@@ -108,12 +85,7 @@ with open(exported, "rb") as f:
     domain = plistlib.load(f)
 
 handlers = domain.get("LSHandlers") or []
-# Entries bind by content type, URL scheme, or filename tag; only the
-# content-type ones are ours. Reuse an existing entry instead of appending a
-# second one for the same UTI - LaunchServices picks between duplicates
-# arbitrarily.
 by_type = {h.get("LSHandlerContentType"): h for h in handlers if isinstance(h, dict)}
-# LaunchServices timestamps count seconds from 2001-01-01, not the Unix epoch.
 stamp = int(time.time() - 978307200)
 
 for uti in sys.argv[4:]:
@@ -155,12 +127,6 @@ desired_utis() {
   resolve_extension_utis ${exts[@]+"${exts[@]}"}
 }
 
-# macOS makes the user confirm every default-handler change that goes through
-# LaunchServices, and `duti -s` is one such call per type: a fresh machine used
-# to stack ~30 modal Finder dialogs over the terminal, and re-running re-asked
-# for types that were already set. So read the current handler first and only
-# touch what actually differs, then write those through cfprefsd and restart
-# lsd, which applies them silently. duti is now read-only here.
 if [[ -f "$ASSOC_FILE" ]]; then
   if ! command -v duti >/dev/null 2>&1; then
     warn "duti not found; skipping default-opener setup (it's in brew/Brewfile.apps)."
@@ -178,9 +144,6 @@ if [[ -f "$ASSOC_FILE" ]]; then
     if ((${#pending[@]} == 0)); then
       echo "Default opener: already $BUNDLE_ID for every type in $ASSOC_FILE."
     elif write_ls_handlers "${pending[@]}"; then
-      # lsd caches the handler table in memory and only re-reads the domain on
-      # start, so the import is invisible until it restarts. launchd brings it
-      # straight back.
       killall lsd 2>/dev/null || true
       echo "Default opener: set $BUNDLE_ID for ${#pending[@]} type(s): ${pending[*]}"
     else
@@ -199,17 +162,12 @@ if [[ ! -f "$TARGET_FILE" ]]; then
   exit 0
 fi
 
-# Target exists and is runtime-managed by Package Control (trailing commas, its
-# own keys). Union the curated list in without clobbering GUI-added packages.
 if [[ -z "$PY" ]]; then
   warn "python3 not found; left existing $TARGET_FILE untouched."
   warn "Add any missing packages from $SOURCE_FILE by hand."
   exit 0
 fi
 
-# Sublime settings are JSON with comments + trailing commas, which the stdlib
-# json parser rejects; strip both (string-aware) before parsing, union the
-# lists, and write back only when something is actually missing.
 "$PY" - "$SOURCE_FILE" "$TARGET_FILE" <<'PYEOF' || warn "Package Control merge failed; left settings untouched."
 import io, json, sys
 

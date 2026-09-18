@@ -1,13 +1,3 @@
--- Right-Command as the AeroSpace leader.
---
--- AeroSpace registers its hotkeys through Carbon, whose modifier mask has no
--- left/right bits, so `rightCmd-h` cannot be written in aerospace.toml at all.
--- Raw device flags do tell the two Command keys apart, so this tap reads them
--- and forwards the chord to `aerospace trigger-binding --mode rcmd <key>`.
---
--- The rcmd mode is never entered; trigger-binding fires its bindings from
--- whatever mode is current. So the keymap lives entirely in aerospace.toml and
--- this file only routes keys to it.
 
 local M = {}
 
@@ -28,7 +18,6 @@ local rawFlagMasks = hs.eventtap.event.rawFlagMasks or {}
 local leftCommandMask = rawFlagMasks.deviceLeftCommand or 0
 local rightCommandMask = rawFlagMasks.deviceRightCommand or 0
 
--- Keys Hammerspoon and AeroSpace spell differently.
 local keyNameOverrides = {
   ["return"] = "enter",
   ["escape"] = "esc",
@@ -59,8 +48,6 @@ local function findAerospace()
   return nil
 end
 
--- Shift is allowed through: it is the move-window layer. Any other modifier
--- means the chord belongs to macOS or to the focused app.
 local function isRightCommandOnly(event)
   local flags = event:getFlags()
 
@@ -89,9 +76,6 @@ local function bindingName(event)
   return keyName
 end
 
--- Which keys the mode defines, so an unbound one still reaches macOS
--- (right-cmd+c stays copy). Re-read on each press of the leader, which is what
--- picks up an aerospace.toml edit without reloading Hammerspoon.
 local function refreshBindings()
   if refreshTask and refreshTask:isRunning() then
     return
@@ -112,20 +96,10 @@ local function refreshBindings()
   refreshTask:start()
 end
 
--- Exactly one of this module and rcmd.lua owns right-Command at a time: this
--- one while AeroSpace runs, rcmd once it quits. Both follow the same watcher.
--- hs.application.watcher is not usable for this: on AeroSpace's terminated
--- event LuaSkin cannot build an app object for the dead pid ("Unable to fetch
--- NSRunningApplication") and the watcher never fires again, for any app. So
--- the state is polled. applicationsForBundleID is one NSRunningApplication
--- lookup, cheap enough for a 2s tick.
 local function isRunning()
   return #hs.application.applicationsForBundleID(BUNDLE_ID) > 0
 end
 
--- Exactly one of this module and rcmd.lua owns right-Command at a time: this
--- one while AeroSpace runs, rcmd once it quits. rcmd follows through
--- onRunningChanged rather than polling on its own.
 local function setRunning(running)
   if aerospaceRunning == running then
     return

@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-#
-# Print the currently effective theme (light or dark).
-#
-# Resolution order:
-#   1. Override file at $XDG_CACHE_HOME/dotfiles/theme-override.
-#   2. macOS appearance via `defaults read -g AppleInterfaceStyle`.
-#
-# Consumers: tmux/bin/apply-theme.sh, nvim's colors.lua, theme-toggle.sh.
 
 set -euo pipefail
 

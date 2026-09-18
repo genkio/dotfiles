@@ -1,15 +1,9 @@
-# AeroSpace: https://nikitabobko.github.io/AeroSpace/guide
 config-version = 2
 
-# startup.sh starts the bar and the focus ring. chrome.sh is where the ring is
-# configured, because fullscreen-toggle.sh has to put it back after hiding it
-# and one definition is enough.
 after-startup-command = [
   'exec-and-forget $HOME/.config/aerospace/scripts/startup.sh',
 ]
 
-# AeroSpace workspaces are not mission-control spaces, so sketchybar's `space`
-# component cannot see them. This is the only way it learns about a switch.
 exec-on-workspace-change = [
   '/bin/bash', '-c',
   '$HOME/.config/aerospace/scripts/sync.sh',
@@ -26,9 +20,6 @@ default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
-# Focus is the only signal for two things: fullscreen is dropped as soon as the
-# window loses it, and a window opening or closing has no hook of its own but
-# does move focus, which is what the workspace indicator needs to notice.
 on-focus-changed = ['exec-and-forget $HOME/.config/aerospace/scripts/sync.sh']
 automatically-unhide-macos-hidden-apps = false
 focus-follows-mouse.enabled = true
@@ -40,28 +31,6 @@ gaps.inner.horizontal = 8
 gaps.inner.vertical =   8
 gaps.outer.left =       8
 gaps.outer.bottom =     8
-# Room for sketchybar (40 high), which draws at window layer -20 - *below*
-# ordinary windows. Nothing but this gap keeps it visible, so a gap smaller than
-# the bar means windows sit on top of it and the bar is simply gone.
-#
-# One value for every display, and the per-monitor form it replaced is a trap
-# worth not walking back into. It read
-#
-#   [{ monitor.'built-in' = 11 }, 41]
-#
-# on the reasoning that a built-in reserves a notch strip AeroSpace never tiles
-# into, so only the remainder is needed. True of this MacBook (measured
-# safeAreaInsets.top = 32, windows landed at 43 with a 40pt bar). False of every
-# built-in without a notch, which reserves nothing yet matches the same pattern
-# by name - both report exactly "Built-in Retina Display", so no pattern can
-# tell them apart. The Intel 13" therefore got 11pt of clearance for a 40pt bar
-# and spent a long debugging session with an invisible status bar.
-#
-# The cost, on a notched display only, is the notch reserve itself: windows
-# start at 32 + 41 = 73 rather than 43, so about 33pt of desktop shows under the
-# bar. That is not tunable by shrinking the bar - the gap has to clear the whole
-# bar on a display that reserves nothing, so the waste always equals the reserve.
-# A covered bar is worse than a visible margin.
 gaps.outer.top =        41
 gaps.outer.right =      8
 
@@ -89,9 +58,6 @@ gaps.outer.right =      8
     alt-shift-3 = 'move-node-to-workspace 3'
     alt-shift-4 = 'move-node-to-workspace 4'
 
-# Right-Command layer, reached only through hammerspoon's aerospace_leader.lua:
-# Carbon hotkeys cannot see which Command key is down, so the tap there names
-# the key and calls `trigger-binding --mode rcmd`. This mode is never entered.
 [mode.rcmd.binding]
     minus = 'resize smart -50'
     equal = 'resize smart +50'

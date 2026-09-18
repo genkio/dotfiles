@@ -1,4 +1,3 @@
--- Alacritty has no graphics protocol -> render images as ANSI half-blocks via viu.
 local M = {}
 
 function M:peek(job)

@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generate a GPG signing key for Git commits.
-#
-# Defaults to RSA 4096 with 3y expiry, no passphrase so git can sign without
-# prompting. Prints the public key for pasting into GitHub, sets
-# user.signingkey + commit.gpgsign in ~/.gitconfig.local if present, and
-# copies the armored public key to the clipboard.
-
 source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
 
 NAME="genkio"
@@ -60,9 +53,6 @@ case "$KEY_TYPE" in
   *) err "unsupported key type: $KEY_TYPE (use RSA or EDDSA)"; exit 1 ;;
 esac
 
-# A key for this identity may already exist; generating another leaves
-# duplicate keys in the keyring, and Git keeps using the old user.signingkey
-# unless this script rewrites it below. Default to aborting.
 if gpg --list-secret-keys --with-colons "$EMAIL" 2>/dev/null | grep -q '^sec:'; then
   echo "A GPG secret key already exists for $EMAIL:"
   gpg --list-secret-keys --keyid-format=long "$EMAIL" 2>/dev/null || true
@@ -98,8 +88,6 @@ trap 'rm -f "$BATCH_FILE" "$STATUS_FILE"' EXIT
 echo "Generating $KEY_TYPE key for $NAME <$EMAIL> (expires: $EXPIRE)..."
 gpg --batch --status-file "$STATUS_FILE" --generate-key "$BATCH_FILE"
 
-# Read the fingerprint straight from gpg's status output for the key we just
-# created, so we never mis-select an older key when several share this email.
 KEY_ID="$(awk '/^\[GNUPG:\] KEY_CREATED/ { print $4 }' "$STATUS_FILE")"
 
 if [[ -z "$KEY_ID" ]]; then
@@ -109,7 +97,6 @@ fi
 
 echo "Created key: $KEY_ID"
 
-# Sync signing config into ~/.gitconfig.local if it exists.
 GITCONFIG_LOCAL="$HOME/.gitconfig.local"
 if [[ -f "$GITCONFIG_LOCAL" ]] && command -v git >/dev/null 2>&1; then
   CURRENT_NAME="$(git config -f "$GITCONFIG_LOCAL" user.name 2>/dev/null || true)"

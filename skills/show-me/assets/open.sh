@@ -1,5 +1,4 @@
 #!/usr/bin/env zsh
-# Usage: open.sh path/to/show-me-x.html  -> ensures the notes server runs, opens the page through it.
 set -eu
 port="${SHOW_ME_PORT:-4747}"
 here="$(cd "$(dirname "$0")" && pwd -P)"

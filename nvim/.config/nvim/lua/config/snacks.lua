@@ -1,10 +1,3 @@
--- Snacks.nvim picker and search integration.
---
--- This module centralizes the custom picker behavior from README.md: cwd-based
--- file and grep pickers, dotfiles-specific hidden-file defaults, richer grep
--- prompts, document/workspace symbols, and a small TypeScript/JavaScript LSP
--- bootstrap path for buffers that do not have a client attached yet.
-
 local M = {}
 
 local function normalize(path)
@@ -231,9 +224,6 @@ local function workspace_symbols()
     end
   end
 
-  -- Reaches into snacks' internal picker source (bufmap/request/results_to_items)
-  -- to run a workspace/symbol request from another buffer's client. snacks tracks
-  -- `main`, so guard the internal require and fail soft if a future update moves it.
   local ok, lsp = pcall(require, 'snacks.picker.source.lsp')
   if not ok or not (lsp.bufmap and lsp.request and lsp.results_to_items) then
     vim.notify('Workspace symbols: snacks internal API changed', vim.log.levels.WARN)
@@ -264,8 +254,6 @@ local function workspace_symbols()
   }
 end
 
--- The reference list truncates long paths in the left pane, so surface the full
--- (cwd/home-relative) path as the preview pane title instead of just the filename.
 local function set_preview_title_to_path(item)
   if item.file then
     item.preview_title = vim.fn.fnamemodify(item.file, ':~:.')
@@ -278,12 +266,7 @@ function M.setup()
   Snacks.setup {
     picker = {
       enabled = true,
-      -- Default is 5000ms: a slow picker (LSP refs in a big monorepo, large grep)
-      -- shows nothing until results arrive. Lower it so the picker opens quickly
-      -- with its built-in spinner + count acting as a loading indicator.
       show_delay = 100,
-      -- No Nerd Font installed, so the default file-type glyphs render as tofu
-      -- boxes. Drop the per-row file/dir icons and use a plain-text prompt.
       icons = {
         files = { enabled = false },
       },

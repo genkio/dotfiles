@@ -1,4 +1,3 @@
-# Flexoki Light palette (matches nvim's flexoki dawn variant).
 [colors.primary]
 background = "#fffcf0"
 foreground = "#100f0f"

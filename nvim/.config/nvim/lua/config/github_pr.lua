@@ -1,10 +1,3 @@
--- Open the GitHub pull request associated with the current line.
---
--- The flow is intentionally local-first: use git blame to identify the commit,
--- ask gh for the repository and associated PRs, rank likely matches, then open
--- the best PR in the browser or picker. This keeps the keymap lightweight while
--- still handling merged, open, and cross-repository PR metadata.
-
 local M = {}
 
 local TITLE = 'GitHub PR'
@@ -116,7 +109,6 @@ local function current_dir()
   return vim.fs.dirname(vim.fs.normalize(path))
 end
 
--- Worktree-aware: gh resolves the PR from whatever branch this dir is on.
 local function branch_root()
   local output = run({
     'git',

@@ -1,4 +1,2 @@
-# Everything a non-dev machine gets. tailscale is not here: `make tailscale`
-# owns installing it and starting its root daemon.
 instance_eval(File.read(File.join(__dir__, "Brewfile.base")))
 instance_eval(File.read(File.join(__dir__, "Brewfile.apps")))

@@ -1,9 +1,3 @@
--- Raycast-lite: option-Space command palette for Shortcuts and quick links.
---
--- Features:
---   - Search and run Apple Shortcuts from the Shortcuts app
---   - Quick links from raycast.config.lua with {query} placeholders
---   - Type a search directly, then pick a quick link to open it
 
 local M = {}
 

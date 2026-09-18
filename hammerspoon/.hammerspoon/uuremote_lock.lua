@@ -1,11 +1,3 @@
--- Start the screen saver when a UURemote session ends.
---
--- UURemote's own "lock on disconnect" gives a bare lock screen, and macOS
--- won't let anything (ScreenSaverEngine included) draw over it afterwards.
--- Starting the saver first gets Fliqlo and, with askForPasswordDelay=0, locks
--- just the same. UURemote has no hook for this, so we poll UURemoteServer's
--- peer connections and fire on the connected -> disconnected edge. Requires
--- UURemote's lock-on-disconnect to be OFF, otherwise its lock wins the race.
 
 local M = {}
 

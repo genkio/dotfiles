@@ -1,8 +1,3 @@
--- App-specific input source defaults.
---
--- Configure app -> input source mappings in input_source.config.lua. Each time
--- macOS activates an app, this module switches to that app's configured input
--- source when one is defined.
 
 local M = {}
 

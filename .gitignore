@@ -2,9 +2,7 @@
 nvim.log
 .DS_Store
 /.claude
-# Repo-local Pi state (trust, sessions) when pi runs in this repo
 /.pi/
-# Claude Code runtime state inside the package directory
 claude/.claude/**
 !claude/.claude/
 !claude/.claude/settings.json
@@ -19,15 +17,10 @@ claude/.claude/**
 !claude/.claude/prompts/
 !claude/.claude/prompts/**
 
-# Legacy repo-local git identity override (kept ignored for compatibility)
 git/.gitconfig.local
 
-# `herdlet setup` drops an absolute symlink to its keg here. Absolute means
-# per-arch, and stow aborts the whole pass on an absolute symlink inside a
-# package, so it stays machine-local: scripts/link-herdlet-extension.sh writes it
 pi/.pi/agent/extensions/herdlet.ts
 
-# Skills package: keep tracked content only
 skills/.DS_Store
 !claude/.claude/prompts/
 !claude/.claude/prompts/**

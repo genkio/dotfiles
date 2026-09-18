@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# Open a URL on the machine the tmux CLIENT is sitting at, or hand it to that
-# machine's clipboard when no browser there can be reached. Prints "opened" or
-# "copied" so the caller can word its own status message.
-#
-# Pick by where the client is, not by which opener happens to be installed.
-# SSH_CONNECTION here is the session's (run-shell inherits session env, fed by
-# update-environment on attach), so it means "this tmux server is remote" - not
-# "some pane ssh'd out", which leaves the session env alone and still wants the
-# local `open`. On a remote Mac `open` would put the tab on that machine's
-# screen, and a remote xdg-open with no display can fall through to a text
-# browser that fights for the pane.
 set -euo pipefail
 
 url=${1:?url required}

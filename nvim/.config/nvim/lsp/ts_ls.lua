@@ -1,7 +1,3 @@
--- typescript-language-server is an isolated mise npm install with no sibling
--- `typescript`, so it can't self-resolve tsserver and crashes on init in any repo
--- that doesn't vendor its own. fallbackPath (not path) so a project's local
--- node_modules/typescript still wins; the global lib only rescues repos without one.
 local function global_tsserver_lib()
   local tsserver = vim.fn.exepath 'tsserver'
   if tsserver == '' then

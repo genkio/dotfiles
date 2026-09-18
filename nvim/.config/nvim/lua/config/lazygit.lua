@@ -1,11 +1,3 @@
--- LazyGit terminal launcher with per-invocation override configs.
---
--- The keymaps open LazyGit in a disposable tab terminal, hiding the command log
--- by default and optionally applying a folded layout that narrows the side
--- panels into a slim column beside a wide diff. When
--- delta is available, a temporary config also wires LazyGit's pager to delta so
--- file links can jump back into Neovim.
-
 local M = {}
 
 local function override_config_path(kind)
@@ -29,9 +21,6 @@ local function ensure_delta_config()
   local apple_terminal = vim.env.TERM_PROGRAM == 'Apple_Terminal'
   local lines
   if apple_terminal then
-    -- Terminal.app lacks truecolor; truecolor styles render as muddy near-blue
-    -- tones on the light Basic profile. Use a light-theme syntax + ANSI-named
-    -- diff backgrounds so labels stay legible on white.
     lines = {
       '[delta]',
       'light = true',
@@ -44,8 +33,6 @@ local function ensure_delta_config()
       'plus-style = "syntax auto"',
     }
   elseif vim.o.background == 'light' then
-    -- Diff backgrounds match Flexoki Light: the #fffcf0 paper base tinted with
-    -- the red-50 / green-50 wash. GitHub keeps code tokens legible on paper.
     lines = {
       '[delta]',
       'light = true',
@@ -58,8 +45,6 @@ local function ensure_delta_config()
       'plus-style = "syntax #edeecf"',
     }
   else
-    -- Diff backgrounds match TokyoNight Storm: the #24283b base tinted with a
-    -- dim red / green wash. Monokai Extended keeps code legible on the dark bg.
     lines = {
       '[delta]',
       'dark = true',
@@ -76,9 +61,6 @@ local function ensure_delta_config()
   return path
 end
 
--- Lazygit executes copyToClipboardCmd directly via argv (no shell), so a pipe
--- in the YAML wouldn't work. Drop a tiny wrapper that bridges the {{text}} arg
--- to osc52-copy.sh's stdin (OSC52 works over SSH + tmux; mirrors to pbcopy locally).
 local function ensure_osc52_clip_script()
   local copy_helper = osc52_copy_helper()
   if vim.fn.executable(copy_helper) ~= 1 then
@@ -100,9 +82,6 @@ local function ensure_osc52_clip_script()
   return path
 end
 
--- Lazygit's default selectedLineBgColor (blue) renders as muddy dark teal on
--- the Flexoki light paper, killing contrast against the red sha / message
--- text. Pick a bg per theme so the selected row stays legible.
 local function theme_lines()
   local apple_terminal = vim.env.TERM_PROGRAM == 'Apple_Terminal'
   if apple_terminal then
@@ -113,8 +92,6 @@ local function theme_lines()
       '    selectedLineBgColor: [reverse]',
     }
   elseif vim.o.background == 'light' then
-    -- Flexoki Light: green-600 active border, base-300 inactive, and a base-100
-    -- selected row that reads like the editor cursorline.
     return {
       '  theme:',
       "    activeBorderColor: ['#66800b', bold]",
@@ -122,8 +99,6 @@ local function theme_lines()
       "    selectedLineBgColor: ['#e6e4d9']",
     }
   else
-    -- TokyoNight Storm: green active border, dark3 inactive border, and a
-    -- #3b4261 selected row that matches tmux current_bg.
     return {
       '  theme:',
       "    activeBorderColor: ['#9ece6a', bold]",
@@ -142,10 +117,6 @@ local function ensure_override_config(kind, opts)
   vim.list_extend(lines, theme_lines())
 
   if kind == 'folded' then
-    -- Normal screen mode keeps all five side panels, but a narrow sidePanelWidth
-    -- plus the focused-panel accordion folds the unfocused panels (branches,
-    -- commits) down to slivers so Files dominates a ~20% left column beside a
-    -- wide Diff. status/stash stay pinned at 3 lines (lazygit has no zero-fold).
     vim.list_extend(lines, {
       '  screenMode: normal',
       '  portraitMode: never',
@@ -236,8 +207,6 @@ function M.open_default()
   open 'default'
 end
 
--- Entry point for the terminal `lg` launcher: folded layout, with Q wired to
--- quit the host Neovim that lg spins up to host LazyGit.
 function M.open_quit_all()
   open('folded', { quit_nvim_on_Q = true })
 end
@@ -250,8 +219,6 @@ function M.setup()
   vim.keymap.set('n', '<leader>lg', M.open_default, { desc = 'LazyGit default layout' })
   vim.keymap.set('n', '<leader>lf', M.open_folded, { desc = 'LazyGit folded layout' })
 
-  -- Theme flip moves vim.o.background; regen delta's config so an open LazyGit
-  -- picks up new diff colours on next render (else +/- bg stays baked at launch).
   vim.api.nvim_create_autocmd('OptionSet', {
     pattern = 'background',
     callback = function()

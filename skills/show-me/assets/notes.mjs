@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// CLI for the agent to read/answer show-me notes safely (atomic write, no hand-edited JSON).
-//   notes.mjs list  <page.html|page.notes.json> [--all]
-//   notes.mjs reply <page> <threadId> [text]        text from arg or stdin
-//   notes.mjs resolve <page> <threadId>
 import fs from 'node:fs'
 import path from 'node:path'
 

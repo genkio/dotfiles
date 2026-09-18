@@ -1,16 +1,10 @@
 PLUGIN_DIR="$CONFIG_DIR/plugins"
 
-# AeroSpace starts sketchybar with the login PATH, which has no Homebrew in it.
-# Exporting here would not reach the click scripts either - those are spawned by
-# the sketchybar daemon, with its own environment - so they get an absolute path.
 PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 AEROSPACE="$(command -v aerospace)"
 
 sketchybar --bar position=top height=40 blur_radius=30 color=0x40000000
 
-# The gap between two neighbouring items is the sum of four paddings - the right
-# one of the left item and the left one of the right item, at both item and
-# label level - so all four are kept equal and the gap is 4x this number.
 default=(
   padding_left=3
   padding_right=3
@@ -22,25 +16,10 @@ default=(
 )
 sketchybar --default "${default[@]}"
 
-##### AeroSpace workspaces #####
-# AeroSpace workspaces are not mission control spaces, so the `space` component
-# cannot track them and these are plain items. Both the highlight and which of
-# them draw at all are pushed in by spaces-sync.sh through the custom event -
-# hence drawing=off to start with.
-#
-# A fixed range rather than `aerospace list-workspaces --all`: AeroSpace invents
-# workspaces after the bar has started (restart it and windows land on one), and
-# an item that does not exist by then can never be shown without repeating its
-# whole definition somewhere outside this file. Nine covers every workspace this
-# config can reach, and the ones nobody uses never draw.
-
 sketchybar --add event aerospace_workspace_change
 
 for sid in 1 2 3 4 5 6 7 8 9
 do
-  # Outlined boxes, after AeroSpace's own menu bar indicator. Its focused
-  # workspace has a dashed border, which sketchybar cannot draw, so the plugin
-  # marks focus with a brighter outline and a faint fill instead.
   workspace=(
     label="$sid"
     label.padding_left=7
@@ -60,11 +39,6 @@ do
              --subscribe space."$sid" aerospace_workspace_change
 done
 
-##### Right items #####
-# First added is rightmost. The clock runs on a fixed cycle; volume only when
-# the system volume actually changes.
-
-# Quits the stack.
 sketchybar --add item quit right \
            --set quit label="-" \
                  click_script="$HOME/.config/aerospace/scripts/quit.sh"
@@ -72,10 +46,6 @@ sketchybar --add item quit right \
 sketchybar --add item clock right \
            --set clock update_freq=10 script="$PLUGIN_DIR/clock.sh"
 
-# Between the clock and the volume, and always drawn - unlike its neighbours it
-# has no "nothing to say" state. Polled, because an input source change raises
-# no event a shell can subscribe to; front_app_switched is the one that matters,
-# since input_source.lua swaps the source per app.
 sketchybar --add item input_source right \
            --set input_source update_freq=3 \
                  script="$PLUGIN_DIR/input-source.sh" \
@@ -85,37 +55,24 @@ sketchybar --add item volume right \
            --set volume script="$PLUGIN_DIR/volume.sh" \
            --subscribe volume volume_change
 
-# Draws only while unplugged, so it starts off and the events do the rest.
 sketchybar --add item battery right \
            --set battery update_freq=120 drawing=off \
                  script="$PLUGIN_DIR/battery.sh" \
            --subscribe battery power_source_change system_woke
 
-# A rate needs two samples, so the first tick only records one and draws
-# nothing; 2s is what makes the second one feel like "now".
 sketchybar --add item network right \
            --set network update_freq=2 drawing=off \
                  script="$PLUGIN_DIR/network.sh"
 
-# Unread WeChat messages. front_app_switched is what clears it promptly on the
-# way out of WeChat, rather than up to a tick later.
 sketchybar --add item wechat right \
            --set wechat update_freq=10 drawing=off \
                  script="$PLUGIN_DIR/wechat.sh" \
            --subscribe wechat front_app_switched
 
-# Agent attention lives in tmux, which AeroSpace knows nothing about, so the
-# workspace payload needs a heartbeat of its own on top of the WM's hooks. It
-# draws nothing; sketchybar runs the scripts of hidden items all the same, and
-# the sync's memo means a tick that changed nothing costs one tmux query.
 sketchybar --add item spaces_heartbeat right \
            --set spaces_heartbeat drawing=off update_freq=2 \
                  script="$HOME/.config/aerospace/scripts/spaces-sync.sh"
 
 sketchybar --update
 
-# The workspace items have no event payload yet, so nothing would be drawn until
-# the first switch, and a bar that came back up from a restart is visible on
-# every display whatever the chrome memo last recorded. `force` is what gets
-# past both memos.
 "$HOME/.config/aerospace/scripts/sync.sh" force

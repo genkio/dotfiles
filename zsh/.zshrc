@@ -1,42 +1,25 @@
-# Main interactive zsh startup file for the stowed shell profile.
-#
-# This sets the shared environment, loads Oh My Zsh, installs a few interactive
-# conveniences, and then hands off to the smaller sourced files for prompt,
-# aliases, and machine-local overrides. Keep machine-specific values in
-# ~/.zshrc.local or ~/.local/bin/env rather than in this tracked file.
-
 export LANG=en_US.UTF-8
 export LC_MESSAGES=en_US.UTF-8
 export HOMEBREW_NO_PROGRESS_BARS=1
 export EDITOR="nvim"
 export VISUAL="$EDITOR"
 
-# Apple Silicon puts brew in /opt/homebrew, which is not in the default PATH, so
-# without this a fresh terminal on arm64 cannot find brew at all. Intel's
-# /usr/local/bin is already in /etc/paths, but shellenv still adds the
-# HOMEBREW_*/MANPATH/INFOPATH vars. Guarded so nested shells skip the fork.
 if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
   for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
     [[ -x "$_brew" ]] && eval "$("$_brew" shellenv)" && break
   done
   unset _brew
 fi
-# After shellenv, which prepends: ~/.local/bin holds mise and Claude Code, and
-# has to beat a leftover `brew install mise` for the migration to mise.run to
-# take. Before it, this line was undone six lines later.
 export PATH="$HOME/.local/bin:$PATH"
 export GPG_TTY=$(tty)
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()
 
-# Auto-attach interactive SSH logins to the default tmux session.
-# Set NO_AUTO_TMUX=1 before starting the shell to bypass this.
 if [[ -o interactive && -n "$SSH_CONNECTION" && -z "$TMUX" && -z "$NO_AUTO_TMUX" ]] && command -v tmux >/dev/null 2>&1; then
   exec tmux new -A -s "${TMUX_DEFAULT_SESSION:-tmp}"
 fi
 
-# Auto-install Oh My Zsh if missing (keep existing .zshrc)
 if [ ! -d "$ZSH" ]; then
   if command -v curl >/dev/null 2>&1; then
     echo "Oh My Zsh not found. Installing to $ZSH..."
@@ -49,36 +32,13 @@ fi
 
 source $ZSH/oh-my-zsh.sh
 
-# mise: the CLI set (neovim, yazi, fzf, fastfetch, sevenzip), the language
-# toolchains, gh and the global npm tools.
-#
-# Has to come before anything below that runs a mise-managed binary, which is
-# why it is here and not at the end of the file: fzf moved from Homebrew to
-# mise, and with the old ordering every new shell opened on
-# "/Users/you/.zshrc:52: command not found: fzf". Activation prepends the shims
-# directory to PATH right away rather than waiting for the first precmd, so
-# everything after this line can use them.
-#
-# pi is one of those npm tools, so mise owns its version. Inherited from the
-# Homebrew formula this replaced: `pi update` would install a second copy beside
-# the one mise pinned, and every later `mise install` would fight it.
 export PI_SKIP_VERSION_CHECK=1
 command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
 
-# Custom prompt (managed as ~/.zsh_prompt via stow)
 [[ -f ~/.zsh_prompt ]] && source ~/.zsh_prompt
 
-# Guarded: between `make macos` and `make core` there is no fzf yet, and an
-# unguarded source there greets every new shell with a command-not-found. The
-# tmux pickers that need it (prefix F, prefix P) check for it and say so.
 command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
 
-# Keep SSH_* in long-lived tmux panes in sync with the newest client attach.
-# tmux update-environment (see .tmux.conf) refreshes the *session* environment,
-# but shells that already run keep their stale copy, so pam_reattach's
-# ignore_ssh can't tell a remote attach from a local one and sudo pops Touch ID
-# on the physical screen instead of asking for a password. Re-export before
-# every prompt so sudo always sees the current attach type.
 if [[ -n "$TMUX" ]]; then
   _tmux_refresh_ssh_env() {
     local line
@@ -124,27 +84,18 @@ bindkey -M emacs '^[d' remove-history-space
 bindkey -M viins '^a' beginning-of-line
 bindkey -M viins '^e' end-of-line
 
-# Cmd/Opt+Shift+u/d/j/k are Claude Code scroll chords (Alacritty emits
-# ESC+letter). Unbound they split into ESC -> vicmd, where D kills to eol.
-# Swallow so a fat-finger at the prompt does nothing.
 for k in U D J K; do
   bindkey -M viins -s "^[$k" ''
   bindkey -M emacs -s "^[$k" ''
 done
 unset k
 
-# Machine-specific env / config (not tracked by git)
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-# Create iCloud symlink if missing
 [[ -d "$HOME/Library/Mobile Documents/com~apple~CloudDocs" && ! -e ~/icloud ]] && \
   ln -s "$HOME/Library/Mobile Documents/com~apple~CloudDocs" ~/icloud
 
-# Aliases and helper functions (managed as ~/.zsh_aliases via stow)
 [[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
-
-# mise is activated near the top, before the first thing that uses one of its
-# binaries. See the block after oh-my-zsh.
 
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"

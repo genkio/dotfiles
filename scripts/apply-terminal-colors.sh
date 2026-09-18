@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-#
-# Repaint the live terminal to the current theme via OSC 4/10/11/12 (colours
-# from the matching Alacritty theme toml). Flips shell panes + padding too, not
-# just apps that paint their own bg. Inside tmux it writes each client tty, so
-# over SSH it reaches the client's Alacritty (one-way output, so tmux's colour
-# cache is moot). Can't rewrite a remote client's config file, so a fresh window
-# still starts from disk until the next local flip.
-#   --print [light|dark]   dump the payload instead of writing
 
 set -euo pipefail
 
@@ -30,7 +22,6 @@ else
 fi
 [ -f "$src" ] || exit 0
 
-# Value is quoted; pull it from between the quotes (stripping at # eats the hex).
 osc="$(awk '
   /^\[colors\./ { sec = $0; gsub(/[][ \t]/, "", sec); next }
   /=[ \t]*"#[0-9a-fA-F]+"/ {
@@ -60,14 +51,6 @@ if [ "$mode" = "print" ]; then
   exit 0
 fi
 
-# Every attached tmux client tty, whether or not this shell is itself inside
-# tmux: a client-attached hook has to repaint a client that missed the last flip.
-# `tmux info` is the probe (it never spawns a server), not $TMUX.
-#
-# No -F here: inside run-shell (which is how every hook runs) a #{client_tty}
-# format is expanded against the CALLING client, so all rows collapse to that one
-# tty and the other clients are never painted. The default output leads each row
-# with the real tty, and a tty path never contains a colon.
 if command -v tmux > /dev/null 2>&1 && tmux info > /dev/null 2>&1; then
   while IFS= read -r tty; do
     if [ -n "$tty" ] && [ -w "$tty" ]; then
@@ -76,8 +59,6 @@ if command -v tmux > /dev/null 2>&1 && tmux info > /dev/null 2>&1; then
   done < <(tmux list-clients 2> /dev/null | sed -n 's/^\([^:]*\):.*/\1/p' | sort -u)
 fi
 
-# Outside tmux, the controlling terminal is the one to paint (inside, it is
-# already one of the client ttys above).
 if [ -z "${TMUX:-}" ] && [ -w /dev/tty ]; then
   printf '%s' "$osc" > /dev/tty 2> /dev/null || true
 fi

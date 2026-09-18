@@ -9,7 +9,6 @@ cc() {
       -ex) pre+=(--effort xhigh); shift ;;
       -em) pre+=(--effort max); shift ;;
       -m)  pre+=(--model "$2"); shift 2 ;;
-      # orchestrator mode: analyze / dispatch to herdlet workers / verify (~/.claude/prompts/orchestrator.md)
       -o)  pre+=(--append-system-prompt-file "$HOME/.claude/prompts/orchestrator.md"); shift ;;
       *) break ;;
     esac
@@ -19,7 +18,6 @@ cc() {
   elif [[ "$1" == -* ]]; then
     claude "${pre[@]}" "$@"
   elif [[ "$1" == /* ]]; then
-    # leading slash means a command to run, not a session name
     claude "${pre[@]}" "$*"
   else
     claude "${pre[@]}" -n "$*"
@@ -36,13 +34,6 @@ lg() {
 }
 alias ld="lazydocker"
 
-# lazysql launcher with docker auto-discovery.
-#   lq             in a repo -> find its dockerized DBs, pick one, connect
-#   lq -r          same, read-only
-#   lq <url|flags> pass straight through to lazysql
-# host:port come from each container's live published binding, so non-default
-# hosts (e.g. a sandbox IP override in some .env) resolve right - nothing hardcoded.
-# No DB container for the repo? fall back to a sqlite file found in the tree.
 lq() {
   local -a pre
   if [[ "$1" == "-r" || "$1" == "--read-only" ]]; then
@@ -54,7 +45,6 @@ lq() {
     return
   fi
 
-  # no docker (or daemon down) is not fatal - fall through to the sqlite/picker path
   local ids_raw=""
   if ! command -v docker >/dev/null 2>&1; then
     echo "lq: docker not found - looking for a sqlite file instead" >&2
@@ -66,7 +56,6 @@ lq() {
   local repo
   repo="$(git rev-parse --show-toplevel 2>/dev/null)" || repo="$PWD"
 
-  # image -> driver, live binding -> host:port, env -> creds; emit "label<TAB>url"
   local prog='def val($env; $k): ($env | map(select(startswith($k + "="))) | (.[0] // "") | sub("^[^=]+=";""));
 .[]
 | ((.Config.Image // "") | ascii_downcase) as $img
@@ -118,7 +107,6 @@ lq() {
       -type f \( -iname '*.sqlite' -o -iname '*.sqlite3' -o -iname '*.db' -o -iname '*.db3' \) -print 2>/dev/null)"})
     local f
     for f in "${sqlite_files[@]}"; do
-      # magic header - rejects non-sqlite files that just share a .db extension
       [[ "$(head -c 15 "$f" 2>/dev/null)" == "SQLite format 3" ]] || continue
       rows+="${f#$repo/} | sqlite | $(du -h "$f" 2>/dev/null | cut -f1)"$'\t'"$f"$'\n'
     done
@@ -161,7 +149,7 @@ lq() {
   lazysql "${pre[@]}" "${line##*$'\t'}"
 }
 
-_lr_age() {  # $1=epoch -> REPLY: compact age (9s/5m/23h/2d/Jun 25)
+_lr_age() {
   local d=$(( EPOCHSECONDS - $1 ))
   if   (( d < 60 ));     then REPLY="${d}s"
   elif (( d < 3600 ));   then REPLY="$(( d / 60 ))m"
@@ -171,7 +159,7 @@ _lr_age() {  # $1=epoch -> REPLY: compact age (9s/5m/23h/2d/Jun 25)
   fi
 }
 
-_lr_clean() {  # $1=raw title -> REPLY: one line, trimmed, <=72 chars
+_lr_clean() {
   emulate -L zsh
   setopt extended_glob
   local s=${1//$'\n'/ }; s=${s//$'\t'/ }; s=${s//$'\r'/ }
@@ -181,17 +169,11 @@ _lr_clean() {  # $1=raw title -> REPLY: one line, trimmed, <=72 chars
   REPLY=${s:-'(untitled)'}
 }
 
-# List coding-agent sessions started in THIS dir, newest first; Enter resumes.
-#   claude -> ~/.claude/projects/<cwd, with / . _ folded to ->/<uuid>.jsonl
-#   pi     -> ~/.pi/agent/sessions/<cwd, slashes dashed>/*.jsonl (cwd in the header)
-# Titles (claude aiTitle, pi session name or first user_message) can sit
-# hundreds of KB into the file, so grep -m1 scans it whole: stops at the first
-# hit, no cap needed. fzf picker, `select` fallback; needs jq for pi titles.
 lr() {
   emulate -L zsh
   setopt local_options extended_glob null_glob
-  zmodload zsh/datetime 2>/dev/null   # EPOCHSECONDS, strftime
-  zmodload zsh/stat 2>/dev/null       # zstat
+  zmodload zsh/datetime 2>/dev/null
+  zmodload zsh/stat 2>/dev/null
 
   local -a rows st
   local f id title mt age ct disp agent
@@ -336,8 +318,6 @@ _unzip_archive() {
       fi
       ;;
     *.rar)
-      # unar picks up the sibling volumes on its own, so name the output
-      # directory after the set rather than after foo.part1
       [[ "${base:l}" == *.part<-> ]] && base="${base:r}"
       tool="${commands[unar]}"
       if [[ -z "$tool" ]]; then
@@ -385,7 +365,6 @@ unzip() {
     raw_archives=("$src"/*.zip(N) "$src"/*.ZIP(N) "$src"/*.rar(N) "$src"/*.RAR(N))
     for archive in "${raw_archives[@]}"; do
       [[ -n "${seen[$archive]}" ]] && continue
-      # trailing volumes of a multi-part set: unar unpacks them via part1
       [[ "${archive:t:l}" == *.part<2->.rar ]] && continue
       seen[$archive]=1
       archives+=("$archive")
@@ -407,14 +386,6 @@ unzip() {
 
 alias x="clear"
 
-# xx: exit, except when this shell is the last pane of its tmux session and
-# other sessions are alive. Plain exit there takes the session down with it and
-# detaches the client, dumping you back to a bare terminal; instead hop to the
-# most recently used other session, open the window chooser (same view as
-# prefix+w), and only then kill the session we came from - so the terminal
-# stays in tmux and you pick where to land.
-# Not a hook on session-closed: that fires for every session anywhere, so a
-# background one ending would pop the chooser over whatever you were doing.
 xx() {
   if [[ -n $TMUX ]]; then
     local cur other
@@ -423,16 +394,11 @@ xx() {
       other=$(tmux list-sessions -F '#{session_last_attached} #{session_id}' \
         | grep -v " $cur\$" | sort -rn | head -1 | cut -d' ' -f2)
       if [[ -n $other ]]; then
-        # every client, not just this one: the mac and the phone can both be on
-        # this session, and any left behind would be detached by the kill.
         local clients client
         clients=$(tmux list-clients -t "$cur" -F '#{client_activity} #{client_name}' | sort -rn | cut -d' ' -f2)
         for client in ${(f)clients}; do
           tmux switch-client -c "$client" -t "$other"
         done
-        # popup, not inline: this pane's session is about to die and no client
-        # is looking at it any more. Most recently active client = the one xx
-        # was typed on. Blocks until a window is picked or the popup is closed.
         client=${clients%%$'\n'*}
         [[ -n $client ]] && tmux display-popup -E -c "$client" -w 95% -h 95% -T " windows " \
           "$HOME/dotfiles/tmux/bin/window-chooser.sh '$other' '$client'"
@@ -488,7 +454,6 @@ kip() {
   killport "$@"
 }
 
-# Copy the last command to clipboard
 alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
@@ -511,19 +476,13 @@ txk() {
 
 [[ -f "${${(%):-%N}:A:h}/.zsh_git_aliases" ]] && source "${${(%):-%N}:A:h}/.zsh_git_aliases"
 
-# Raise the macOS "control Messages" popover after a cc-imessage upgrade so it can
-# be approved, else the first notification silently drops. Via the daemon outbox,
-# not `cc-imessage send` (that binds the grant to the terminal, not the daemon).
 ccim-ping() {
   local pane="${TMUX_PANE:-%0}"
   python3 -c 'import json,os,sys,time; open(os.path.expanduser("~/.cc-imessage/outbox/%d-ping.json"%time.time_ns()),"w").write(json.dumps({"target":sys.argv[1],"label":"ping","text":"cc-imessage test ping. Reply to confirm inbound routing."})); print("queued for daemon")' "$pane"
   echo "approve the 'control Messages' popover if it appears"
-  # Resolved, not hardcoded: the prefix is /usr/local on an Intel mac.
   echo "watch: tail -f $(brew --prefix)/var/log/cc-imessage.log   (expect: sent outbox)"
 }
 
-# One-word flip of cc-imessage outbound (wraps enable/disable; takes effect on
-# the next reply, no daemon restart).
 ccim-toggle() {
   if cc-imessage status | grep -q '^outbound: on'; then
     cc-imessage disable

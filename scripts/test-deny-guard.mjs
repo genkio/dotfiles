@@ -1,12 +1,3 @@
-// Unit tests for the deny-guard pi extension.
-//
-// Drives the real tool_call handler with a stub ExtensionAPI, so a change to
-// the rule list is checked against the allow/deny table below instead of
-// against a live session. Run with: make test-deny-guard
-//
-// The cases mirror the Claude `permissions.deny` block the extension ports:
-// both the blocks and the *non*-blocks matter, because a guard that also
-// blocks ordinary work is worse than no guard.
 
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -39,7 +30,6 @@ try {
   writeFileSync(join(fixtures, "secret.pem"), "SECRET");
   symlinkSync(join(fixtures, "secret.pem"), join(fixtures, "alias.txt"));
 
-  // Blocked bash
   blocked("rm -rf", bash("rm -rf /tmp/x"));
   blocked("rm -fr", bash("rm -fr /tmp/x"));
   blocked("rm --recursive --force", bash("rm --recursive --force /tmp/x"));
@@ -58,7 +48,6 @@ try {
   blocked("hard reset", bash("git reset --hard HEAD~1"));
   blocked("chained hard reset", bash("git fetch && git reset --hard origin/main"));
 
-  // Allowed bash
   allowed("plain ls", bash("ls -la"));
   allowed("git status", bash("git status --short"));
   allowed("rm force only", bash("rm -f /tmp/x"));
@@ -70,7 +59,6 @@ try {
   allowed("commit message mentions rm -rf", bash('git commit -m "rm -rf cleanup"'));
   allowed("sudo-looking filename", bash("ls sudo-file.txt"));
 
-  // Blocked paths (read side, then write side)
   blocked("read .pem", file("read", join(fixtures, "secret.pem")));
   blocked("read .key", file("read", "~/.config/app/private.key"));
   blocked("read ~/.ssh", file("read", "~/.ssh/id_rsa"));
@@ -82,7 +70,6 @@ try {
   blocked("edit .ssh config", file("edit", "~/.ssh/config"));
   blocked("symlink alias to .pem", file("read", join(fixtures, "alias.txt")));
 
-  // Allowed paths
   allowed("read normal file", file("read", "~/dotfiles/README.md"));
   allowed("write normal file", file("write", "~/dotfiles/notes.md"));
   allowed("edit normal file", file("edit", "~/dotfiles/AGENTS.md"));

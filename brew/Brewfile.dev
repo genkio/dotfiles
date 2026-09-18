@@ -3,40 +3,9 @@ in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
 on_intel = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip != "1"
 
 brew "awscli" unless on_intel || in_vm
-# On Apple Silicon mpv pulls this in from Brewfile.apps anyway; the line matters
-# on Intel, where mpv is not installed and nothing else would fetch it.
 brew "ffmpeg" unless in_vm
 brew "git-delta"
 brew "gnupg" unless on_intel || in_vm
 brew "lazydocker" unless in_vm
-
-# Five entries left this file for mise or a script, because
-# every one of them ships an official prebuilt x86_64 binary that Homebrew would
-# otherwise rebuild. Homebrew put Intel macOS in Tier 3 and stopped producing
-# x86_64 bottles (docs.brew.sh/Support-Tiers), so on Intel `brew install` now
-# means `compile`, and these five drag in the worst toolchains there are:
-#
-#   mise              Rust; build deps llvm + rust -> LLVM 23, LLVM 22, rustc
-#                     -> scripts/install-mise.sh (mise.run, checksum-verified)
-#   pi-coding-agent   deps node (C++ source build), build dep rust
-#                     -> mise conf.d/dev.toml, npm:@earendil-works/pi-coding-agent
-#   gh                Go; needs the go toolchain built first
-#                     -> mise conf.d/dev.toml, aqua:cli/cli (the cli/cli release)
-#   lazygit, lazysql  Go, exactly like gh: neither has an x86_64 macOS bottle,
-#                     and the build dep `go` has none either, so on Intel the Go
-#                     toolchain was built before either one. Unlike gnupg and
-#                     awscli neither could just be dropped on Intel - they are
-#                     daily drivers (nvim's lazygit panel, the `lq` alias).
-#                     -> mise conf.d/dev.toml, aqua:jesseduffield/lazygit and
-#                        aqua:jorgerojas26/lazysql
-#
-# PI_SKIP_VERSION_CHECK=1 moved to zsh/.zshrc with the formula's wrapper: a
-# `pi update` under mise writes a second copy that mise's version pin then
-# disagrees with, the same failure the formula guarded against.
-
-# alacritty: cask disabled upstream 2026-09-01 (fails_gatekeeper_check) because
-# the dmg is ad-hoc signed and not notarized. scripts/install-alacritty.sh
-# installs it from the pinned upstream release instead; restore the cask here
-# when Homebrew re-enables it.
 
 cask "orbstack" unless in_vm

@@ -1,13 +1,12 @@
-"\" enable filetype detection and language-specific indentation
 filetype plugin on
 
 syntax on
 
-set nocompatible " for vim only
+set nocompatible
 set encoding=utf-8
-set clipboard=unnamed " yank to clipboard (macos only)
+set clipboard=unnamed
 set rnu
-set cursorline " highlight the entire current line
+set cursorline
 set nowrap
 set wildmenu
 set hlsearch
@@ -19,24 +18,20 @@ set undodir=~/.vim/undo
 
 set autoindent
 set smartindent
-set tabstop=2       " how many spaces a <Tab> counts for (display)
-set softtabstop=2   " how many spaces <Tab> inserts when editing
-set shiftwidth=2    " indentation width
-set expandtab       " use spaces instead of literal tabs
+set tabstop=2
+set softtabstop=2
+set shiftwidth=2
+set expandtab
 
-" shortcutting split navigation (avoid C-w)
 noremap <C-h> <C-w>h
 noremap <C-j> <C-w>j
 noremap <C-k> <C-w>k
 noremap <C-l> <C-w>l
 
-" <Esc> also clear search highlights
 noremap <silent> <Esc> :noh<CR><Esc>
 
-" :RetabAll to replace ALL tabs with spaces using current settings
 command! RetabAll %retab!
 
-" remove trailing whitespaces and empty lines at the end of the file on save
 function! TrimWhitespace()
     let l:save = winsaveview()
     %s/\s\+$//e

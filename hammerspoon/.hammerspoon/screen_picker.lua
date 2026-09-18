@@ -1,13 +1,3 @@
--- Monitor picker for the rcmd app keys, called by aerospace/scripts/launch.sh
--- through `hs -c` when the app has no window and there is more than one
--- monitor. Each monitor shows its AeroSpace id; the digit pressed goes to
--- `aerospace focus-monitor`, and the app then opens on the focused workspace,
--- which is how AeroSpace places new windows. Nothing happens until a digit is
--- pressed, so Esc costs nothing.
---
--- Screens are matched to AeroSpace monitors by AppKit index: allScreens() is
--- NSScreen.screens, the ordering %{monitor-appkit-nsscreen-screens-id} reports.
--- Names would collide on two identical monitors.
 
 local M = {}
 
@@ -91,8 +81,6 @@ local function launchOn(monitorId, app)
   end, { "focus-monitor", tostring(monitorId) }):start()
 end
 
--- Digits are accepted bare only: with right-Command still held the leader tap
--- would read the same key as a workspace switch.
 local function listen(monitorIds, app)
   keyTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(event)
     local keyName = hs.keycodes.map[event:getKeyCode()]

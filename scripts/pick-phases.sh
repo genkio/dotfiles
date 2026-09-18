@@ -1,27 +1,11 @@
 #!/usr/bin/env bash
-#
-# Interactive phase picker: what a bare `make` runs.
-#
-# The phase names are the one thing this repo expects you to know before it will
-# do anything, and on a new machine that is exactly when you do not know them.
-#
-# Builtins and stty only. fzf is the obvious tool for this and is deliberately
-# not used: it arrives with the `core` phase, so it cannot be a dependency of
-# the menu whose job is to offer to run `core`.
-#
-# Everything is drawn on /dev/tty rather than stdout, so `make 2>&1 | tee
-# setup.log` still works and the redraw frames stay out of the log.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
-# Display order only. opinionated-flow.sh fixes the real run order, because
-# touchid has to follow the last sudo of the run whatever is picked here.
 PHASES=(macos core apps dev touchid)
-# Kept short on purpose: the whole row has to fit 80 columns, which is what a
-# stock Terminal.app opens at on the machines this menu is for.
 WHAT=(
   "system prefs, remote login, updates off"
   "homebrew + mise, CLI tools, stow, tmux"
@@ -38,8 +22,6 @@ NOTE=(
 )
 PICKED=(1 1 1 1 1)
 
-# No controlling terminal (a pipeline with no tty, CI, a hook): say what the
-# menu would have offered instead of blocking on a read that can never return.
 if ! { exec 3<>/dev/tty; } 2>/dev/null; then
   err "no terminal to prompt on. Name the phases instead:"
   printf '  make %s\n' "${PHASES[@]}" >&2
@@ -54,7 +36,6 @@ restore_term() {
 }
 trap restore_term EXIT
 
-# min 1 time 0: one keypress at a time, no line buffering, nothing echoed.
 stty -echo -icanon min 1 time 0 <&3
 printf '\033[?25l' >&3
 
@@ -66,7 +47,6 @@ printf '\033[?25l' >&3
 DREW=0
 draw() {
   local i box arrow
-  # Every redraw reprints in place, so jump back over the previous frame.
   if [[ "$DREW" -eq 1 ]]; then printf '\033[%dA' "${#PHASES[@]}" >&3; else DREW=1; fi
   for i in "${!PHASES[@]}"; do
     [[ "${PICKED[i]}" -eq 1 ]] && box="x" || box=" "
@@ -76,17 +56,6 @@ draw() {
   done
 }
 
-# Arrow keys arrive as ESC [ A (or ESC O A on an application-mode keypad). A
-# bare Esc is that same first byte, so the follow-up read needs a deadline
-# rather than blocking forever on it.
-#
-# The deadline is 1 and not a fraction because macOS ships bash 3.2, where
-# `read -t 0.3` is not slow, it is a hard error ("invalid timeout
-# specification") - and this script exists for machines with nothing installed
-# yet, so /usr/bin/env bash is exactly that 3.2. A whole second is invisible for
-# a real arrow key, whose bytes are already buffered; it is only felt on a bare
-# Esc, which does nothing anyway. Unrecognised sequences are ignored rather than
-# quitting, so half an arrow off a slow link is harmless. q is the only way out.
 read_key() {
   local k rest
   IFS= read -rsn1 k <&3 || { echo quit; return; }
@@ -115,8 +84,6 @@ read_key() {
 CURSOR=0
 draw
 while true; do
-  # Assignments, not (( ... )): an arithmetic command evaluating to 0 returns
-  # exit status 1, which errexit would treat as a failure and kill the picker.
   case "$(read_key)" in
     up) CURSOR=$(((CURSOR - 1 + ${#PHASES[@]}) % ${#PHASES[@]})) ;;
     down) CURSOR=$(((CURSOR + 1) % ${#PHASES[@]})) ;;
@@ -148,9 +115,6 @@ fi
 
 printf '\n  \033[36m→\033[0m %s\n\n' "${CHOSEN[*]}" >&3
 
-# exec replaces this process, so the EXIT trap never fires: put the terminal
-# back by hand first, and close the tty fd so the flow script does not inherit
-# it. Exec rather than call, so its exit status is the one make sees.
 restore_term
 trap - EXIT
 exec 3>&-

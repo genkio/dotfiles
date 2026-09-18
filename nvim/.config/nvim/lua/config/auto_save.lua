@@ -1,12 +1,3 @@
--- Auto-save markdown and plain-text buffers, but only when Neovim was launched
--- with a single file argument (e.g. `nvim ~/notes/draft.md`). Directory
--- launches such as bare `vi` (which the zsh alias rewrites to `nvim .`) or
--- `vi some/folder/` leave this off so the normal browse-and-edit workflow is
--- unaffected.
---
--- When active, the buffer is written on InsertLeave, TextChanged, and
--- FocusLost so notes survive crashes or reboots without needing a manual `:w`.
-
 local M = {}
 
 local function launched_with_single_file()

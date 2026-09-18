@@ -1,11 +1,9 @@
-# Opinionated
 .claude/
 .agents/
 .reviews/
 .playwright/
 .playwright-cli/
 
-# General
 .DS_Store
 .localized
 __MACOSX/
@@ -13,10 +11,8 @@ __MACOSX/
 .LSOverride
 Icon[]
 
-# Resource forks
 ._*
 
-# Files and directories that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
 .Spotlight-V100
@@ -34,14 +30,12 @@ Icon[]
 lost+found
 .HFS+ Private Directory Data[]
 
-# Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
 
-# Mac OS 6 to 9
 Desktop DB
 Desktop DF
 TheFindByContentFolder
@@ -50,13 +44,11 @@ TheVolumeSettingsFolder
 .FBCSemaphoreFile
 .FBCLockFolder
 
-# Quota system
 .quota.group
 .quota.user
 .quota.ops.group
 .quota.ops.user
 
-# TimeMachine
 Backups.backupdb
 .MobileBackups
 .MobileBackups.trash

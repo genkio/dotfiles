@@ -1,4 +1,3 @@
-# Narrow-screen Yazi profile for Neovim.
 [mgr]
 show_hidden = true
 ratio = [0, 1, 0]

@@ -1,25 +1,6 @@
 in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
         `/usr/sbin/sysctl -n hw.model 2>/dev/null`.strip.match?(/VirtualMac|VMware|Parallels|QEMU/i)
 
-# What is left here is what Homebrew is still the right tool for: bottled on
-# both arches, or a small C build. Two groups moved out, both because Homebrew
-# stopped shipping x86_64 bottles and `brew install` on Intel now means
-# `compile`:
-#
-#   fastfetch, fzf, neovim, sevenzip, yazi
-#     -> mise/.config/mise/conf.d/cli.toml, installed by the same `core` phase.
-#        aqua fetches each project's own release binary, at the versions brew
-#        ships. yazi was the expensive one: it build-depends on rust, and rust
-#        depends on llvm@22, so a shell cost an LLVM build.
-#
-#   ffmpeg -> Brewfile.dev; mpv (IINA on Intel) -> Brewfile.apps;
-#   tailscale -> `make tailscale`, which owns its root daemon too.
-#        Long builds nothing else needs, so none of them should sit in the phase
-#        that has to finish before there is a working shell.
-#
-# tmux stays: no upstream binary exists to fetch, but its deps are bottled, so
-# it is the one thing `core` still compiles on Intel and it takes minutes.
-
 brew "bat"
 brew "eza"
 brew "fd"
@@ -28,17 +9,10 @@ brew "genkio/tap/cc-imessage"
 brew "genkio/tap/herdlet"
 brew "htop"
 brew "jq"
-# lets pam_tid (Touch ID for sudo) work inside tmux; macos-bootstrap.sh installs
-# it itself (it runs before this bundle) and needs it on disk before referencing
-# it in /etc/pam.d/sudo_local; listed here so it stays managed and upgraded
 brew "pam-reattach" unless in_vm
-# clipboard image -> stdout for tmux/bin/clip-png.sh (prefix + V); the script
-# falls back to osascript, which is slower and re-encodes, when it is missing
 brew "pngpaste" unless in_vm
 brew "ripgrep"
 brew "stow"
-# the `tldr` command; the old `tldr` formula was disabled 2025-10-24 as
-# unmaintained and brew now points at this, the official Rust client
 brew "tlrc"
 brew "tmux"
 brew "tmuxp"

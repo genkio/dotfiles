@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# Clear @agent_busy / @agent_awaiting / @agent_attention on every
-# window, and @agent_pane_state on every pane, across every session on
-# the running tmux server.
-#
-# Intended uses:
-#   - One-time sweep at tmux server start, in case any prior server
-#     lifetime left these per-window options set (e.g. a future plugin
-#     starts persisting them, or a custom resurrect save script does).
-#   - Post-tmux-resurrect-restore sweep, same reason.
-#   - Manual invocation when the user sees a stuck overlay because an
-#     agent died without firing its Stop hook.
 
 set -u
 command -v tmux >/dev/null 2>&1 || exit 0
@@ -26,7 +15,6 @@ tmux list-panes -a -F '#{pane_id}' 2>/dev/null | while read -r pid; do
   tmux set-option -p -q -u -t "$pid" @agent_pane_state
 done
 
-# repaint borders so any cleared pane colour disappears immediately
 tmux list-clients -F '#{client_name}' 2>/dev/null | while read -r c; do
   [ -n "$c" ] && tmux refresh-client -t "$c"
 done

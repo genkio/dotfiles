@@ -1,33 +1,3 @@
-// Footer with only the numbers worth showing:
-//
-//   6.7%/1m · $0.39/¥15.17 · (deepseek) deepseek-flash (max) · ~/dotfiles (main)
-//
-// Context, spend and model lead; the path sits last, where truncation to the
-// terminal width eats it first. The built-in footer splits these over two rows
-// and also carries cumulative in/out tokens, cache read/write counters, the
-// cache-hit rate, and pi's auto-compaction marker; those are dropped here. The
-// rest of the pieces (thinking level, context usage, cwd + git branch + session
-// name) keep the built-in footer's formats. Cost is trimmed to cents, since a
-// third decimal is noise next to a balance that is itself two decimals.
-//
-// A DeepSeek session shows the account balance after the cost
-// ("$0.39/¥15.17"), read from GET /user/balance and refreshed on a timer. It
-// only appears while the active provider is deepseek: the endpoint reports the
-// credit on a DeepSeek account, which says nothing about another provider's
-// session, and the balance stays in CNY because that is the currency DeepSeek
-// bills a China account in.
-//
-// The cost is recomputed instead of summing usage.cost.total, because pi prices
-// every request at the model catalog's rates, and pi.dev's catalog lists
-// DeepSeek's PEAK rates only. DeepSeek bills off-peak requests at half price
-// (peak = Mon-Fri 01:00-04:00 and 06:00-10:00 UTC, everything else off-peak):
-//   https://api-docs.deepseek.com/quick_start/pricing/
-// So pi reports the worst case whenever a session runs outside those windows.
-// Here deepseek entries are priced from their token counts and per-entry
-// timestamps (off-peak counts half), and every other provider keeps pi's stored
-// usage.cost.total. Rate lookup is model-specific, so sessions that switched
-// between deepseek models stay correct.
-
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { Usage } from "@earendil-works/pi-ai";
 import type {
@@ -37,13 +7,11 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 
-/** Context window in Claude's style: 1000000 -> "1m", 200000 -> "200k". */
 function formatContextWindow(tokens: number): string {
   if (tokens >= 1e6) return `${Number((tokens / 1e6).toFixed(1))}m`;
   return `${Math.round(tokens / 1e3)}k`;
 }
 
-/** DeepSeek peak hours: Mon-Fri 01:00-04:00 and 06:00-10:00 UTC. */
 function isDeepSeekPeak(timestamp: string): boolean {
   const date = new Date(timestamp);
   const day = date.getUTCDay();
@@ -52,7 +20,6 @@ function isDeepSeekPeak(timestamp: string): boolean {
   return (hour >= 1 && hour < 4) || (hour >= 6 && hour < 10);
 }
 
-/** Usage recorded on an entry: assistant/tool messages, or a generated summary. */
 function entryUsage(entry: SessionEntry): Usage | undefined {
   if (entry.type === "message") {
     if (entry.message.role === "assistant") return entry.message.usage;
@@ -67,11 +34,6 @@ function entryUsage(entry: SessionEntry): Usage | undefined {
 
 type Rates = { input: number; output: number; cacheRead: number; cacheWrite: number };
 
-/**
- * Sum session cost, halving deepseek entries recorded off-peak. Rate lookups
- * are cached per model, and the result is cached per entry count: the session
- * tree is append-only, so a new entry (including model_change) invalidates it.
- */
 function correctedCost(
   ctx: ExtensionContext,
   rateCache: Map<string, Rates | undefined>,
@@ -89,8 +51,6 @@ function correctedCost(
       entry.type === "message" && entry.message.role === "assistant"
         ? entry.message
         : undefined;
-    // Summaries and tool results carry usage but no provider; attribute them
-    // to the active provider rather than assuming a price.
     const provider = assistant?.provider ?? ctx.model?.provider;
     if (provider !== "deepseek") {
       total += usage.cost.total;
@@ -127,7 +87,6 @@ function correctedCost(
   return total;
 }
 
-/** How often the DeepSeek balance is re-read, and how long one read may take. */
 const BALANCE_REFRESH_MS = 60_000;
 const BALANCE_TIMEOUT_MS = 5_000;
 const BALANCE_URL = "https://api.deepseek.com/user/balance";
@@ -135,11 +94,6 @@ const BALANCE_URL = "https://api.deepseek.com/user/balance";
 const isRecord = (value: unknown): value is { [key: string]: unknown } =>
   typeof value === "object" && value !== null;
 
-/**
- * DeepSeek balance payload -> "¥15.17". The response carries one entry per
- * currency; take CNY, the currency a DeepSeek account is billed in, and fall
- * back to the first entry when there is no CNY one.
- */
 function parseBalance(payload: unknown): string | undefined {
   if (!isRecord(payload) || !Array.isArray(payload["balance_infos"])) return undefined;
   const infos = payload["balance_infos"].filter(isRecord);
@@ -148,7 +102,6 @@ function parseBalance(payload: unknown): string | undefined {
   return `${info["currency"] === "CNY" ? "¥" : "$"}${info["total_balance"]}`;
 }
 
-/** cwd with ~ instead of $HOME, matching the built-in footer. */
 function formatCwd(cwd: string): string {
   const home = process.env.HOME ?? process.env.USERPROFILE;
   if (!home) return cwd;
@@ -169,9 +122,6 @@ export default function (pi: ExtensionAPI): void {
     ctx.ui.setFooter((tui, theme, footerData) => {
       const unsubscribe = footerData.onBranchChange(() => tui.requestRender());
 
-      // The balance is kept off the render path: the footer paints the last
-      // known figure and a background fetch refreshes it, so a slow or failing
-      // API can never stall a repaint.
       let balance: string | undefined;
       let fetching = false;
       let disposed = false;
@@ -192,7 +142,6 @@ export default function (pi: ExtensionAPI): void {
           balance = next;
           tui.requestRender();
         } catch {
-          // Cosmetic: an unreachable API leaves the previous reading alone.
         } finally {
           fetching = false;
         }

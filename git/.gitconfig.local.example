@@ -1,6 +1,3 @@
-# Copy this file to ~/.gitconfig.local and customize it for this machine.
-# This template lives in the repo, but the real ~/.gitconfig.local stays machine-local.
-
 [user]
 	name = Your Name
 	email = you@example.com

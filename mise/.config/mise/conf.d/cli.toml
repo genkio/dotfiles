@@ -1,22 +1,3 @@
-# CLI tools the `core` phase installs, kept in their own config file rather than
-# as a comment block inside config.toml so that "what core installs" is a file
-# boundary and not a convention. mise merges every conf.d/*.toml into the global
-# config, so `mise activate` and a bare `mise install` still see all of it; only
-# opinionated-flow.sh treats this file as a group, by reading its keys.
-#
-# Every one of these was a Homebrew formula until Homebrew moved Intel macOS to
-# Tier 3 and stopped building x86_64 bottles. On an Intel Mac `brew install`
-# then means `compile`, and yazi pulled in rust, which pulls llvm@22 - hours of
-# build before a shell was usable. aqua fetches each project's own release
-# binary for either arch, at the same versions Homebrew ships.
-#
-# Every entry here must ship a darwin/amd64 asset. lnav was dropped for that
-# reason: 0.14 publishes only aarch64-macos, and the aqua registry marks it
-# unsupported on darwin/amd64, so `mise install` failed on Intel every time.
-#
-# Keys must stay quoted backend:repo strings: opinionated-flow.sh reads them
-# with a sed that expects exactly that shape.
-
 [tools]
 "aqua:fastfetch-cli/fastfetch" = "latest"
 "aqua:ip7z/7zip" = "latest"

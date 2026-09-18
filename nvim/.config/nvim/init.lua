@@ -1,54 +1,39 @@
--- Main Neovim 0.12 entrypoint for the stowed nvim config.
---
--- This file owns global editor defaults, early startup behavior, plugin
--- registration, and module wiring. Feature-specific behavior should usually
--- live in lua/config/*.lua so the startup path stays easy to scan.
---
--- Keep this config intentionally small: prefer built-ins, small local modules,
--- and behavior that is documented in README.md.
-
--- Use <space> as the leader key
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
--- General
 vim.o.wrap = false
-vim.o.mouse = 'a' -- enable mouse support
-vim.o.number = true -- show line numbers
+vim.o.mouse = 'a'
+vim.o.number = true
 vim.o.relativenumber = true
-vim.o.cursorline = true -- highlight the entire current line
-vim.o.cursorlineopt = 'number,screenline' -- highlight only cursor's screen row, not whole wrapped line
-vim.o.confirm = true -- raise dialog asking if you wish to save the current file
-vim.o.undofile = true -- save undo history
-vim.o.scrolloff = 10 -- keep 10 lines above/below cursor
-vim.o.sidescrolloff = 10 -- keep 10 lines to left/right cursor
-vim.o.updatetime = 250 -- decrease update time
-vim.o.signcolumn = 'yes' -- prevent gutter once diagnostics and lsp signs show up
-vim.o.inccommand = 'split' -- preview substitutions live as you type
-vim.o.termguicolors = true -- enable 24-bit rgb color in the terminal
-vim.o.list = true -- show trailing spaces
--- use .opt instead of .o to get option object instead or lua string
+vim.o.cursorline = true
+vim.o.cursorlineopt = 'number,screenline'
+vim.o.confirm = true
+vim.o.undofile = true
+vim.o.scrolloff = 10
+vim.o.sidescrolloff = 10
+vim.o.updatetime = 250
+vim.o.signcolumn = 'yes'
+vim.o.inccommand = 'split'
+vim.o.termguicolors = true
+vim.o.list = true
 vim.opt.listchars = {
   tab = '  ',
   trail = '+',
 }
-vim.opt.iskeyword:append '-' -- include - in-words
-vim.opt.clipboard:append 'unnamedplus' -- use system clipboard locally, OSC52 over SSH
+vim.opt.iskeyword:append '-'
+vim.opt.clipboard:append 'unnamedplus'
 
--- Tabs and indentation
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 vim.o.softtabstop = 2
 vim.o.expandtab = true
 vim.o.smartindent = true
 
--- Split
 vim.o.splitright = true
 vim.o.splitbelow = true
 
--- Search
-vim.o.ignorecase = true -- case insensitive search
-vim.o.smartcase = true -- case sensitive search if uppercase in string
+vim.o.ignorecase = true
+vim.o.smartcase = true
 
 local dotfiles_root = require('config.paths').dotfiles_root
 
@@ -56,9 +41,6 @@ local function detect_ssh()
   if vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY then
     return true
   end
-  -- When we attach to a pre-existing tmux session, the shell that spawned us may
-  -- predate the SSH attach and miss SSH_CONNECTION entirely. Tmux's session env
-  -- (kept current via update-environment) is the source of truth in that case.
   if vim.env.TMUX then
     local result = vim.system({ 'tmux', 'show-environment', 'SSH_CONNECTION' }, { text = true }):wait()
     if result.code == 0 and result.stdout and result.stdout:match '^SSH_CONNECTION=%S' then
@@ -122,16 +104,12 @@ if is_ssh and vim.env.TMUX and vim.fn.executable(osc52_helper) == 1 then
     cache_enabled = 0,
   }
 elseif is_ssh then
-  -- Over SSH on macOS, Neovim prefers pbcopy unless we force OSC52.
   vim.g.clipboard = 'osc52'
 end
 
--- Mark shells spawned by Neovim so zsh can load command helpers like `gpu()`
--- from `.zshenv` without requiring a full interactive shell startup.
 vim.env.NVIM_SHELL_ALIASES = '1'
 vim.env.ZDOTDIR = vim.fs.joinpath(dotfiles_root, 'zsh')
 
--- Plugins
 vim.pack.add({
   { src = 'https://github.com/nuvic/flexoki-nvim', version = 'main' },
   { src = 'https://github.com/folke/tokyonight.nvim', version = 'main' },

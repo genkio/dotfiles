@@ -1,13 +1,3 @@
-# The frozen set: language toolchains, bumped by hand and never by `make update`.
-#
-# A working toolchain buys nothing from a global bump, and project-local pins
-# resolve independently of these anyway. The counterpart is conf.d/, which
-# update.sh does track to latest - see conf.d/cli.toml (installed by `make
-# core`) and conf.d/dev.toml (installed by `make dev`).
-#
-# typescript-language-server sits here with typescript on purpose: an LSP that
-# drifts away from the compiler it serves is its own kind of bug.
-
 [tools]
 node = "lts"
 python = "latest"

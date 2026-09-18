@@ -1,25 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Browse files with fzf and paste the chosen path into the agent pane (Claude
-# Code). The CLI attaches an image from a bare path pasted into the
-# prompt, so this is drag-and-drop without the mouse or clipboard. Run inside
-# `display-popup -E` by `prefix + F` (see .tmux.conf). fzf, not yazi: yazi's
-# startup terminal probe never gets a reply through a popup overlay and wedges
-# the server (yazi#2308); fzf needs no such probe.
-#
-# fzf can't keep state across reloads, so the current dir lives in a temp file
-# and the navigation/preview logic is re-entered as the sub-commands below,
-# which fzf key-bindings call on every move.
-
 self=$0
 start_dir="${ATTACH_ROOT:-$HOME/box}"
 
-# One directory's entries, newest first (creation time, BSD stat), basenames
-# only since the caller tracks the dir. Dirs get a trailing / so navigation can
-# tell them from files; '../' leaves the dir. --hidden --no-ignore so it shows
-# everything a file manager would, minus the obvious noise. Per-file stat (not
-# xargs) so an empty dir can't trip pipefail and abort under set -e.
 browse() {
   local d=$1 p base
   printf '../\n'
@@ -30,8 +14,6 @@ browse() {
     done \
   | sort -rn | cut -f2- \
   | while IFS= read -r p; do
-      # fd suffixes dirs with /; that slash flags a dir for nav, but must be
-      # stripped or the basename comes out empty.
       case $p in
         */) base=${p%/}; printf '%s/\n' "${base##*/}" ;;
         *)  printf '%s\n' "${p##*/}" ;;
@@ -39,7 +21,6 @@ browse() {
     done
 }
 
-# clear-query so the old filter doesn't hide the new listing after navigating.
 go() {
   local state=$1 nd=$2
   printf '%s\n' "$nd" > "$state"
@@ -70,9 +51,6 @@ case ${1:-} in
     exit 0 ;;
 esac
 
-# display-popup leaves #{pane_id} empty in its shell-command, and $TMUX_PANE is
-# the popup's own pane, so resolve the underlying active pane with a fresh
-# query (it ignores the overlay). Verified on tmux 3.6.
 target_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)
 [ -n "$target_pane" ] || { tmux display-message "attach-file: no target pane"; exit 0; }
 for bin in fzf fd; do
@@ -94,10 +72,6 @@ selection=$(browse "$start_dir" | fzf --multi --reverse --border \
 dir=$(cat "$state")
 while IFS= read -r name; do
   [ -n "$name" ] || continue
-  # Bracketed paste (-p) of the raw path alone, like a clipboard paste, so the
-  # CLI's image-path detection fires on a clean path. Trailing Space is a
-  # separate keystroke so detection sees only the path; drop it if an agent
-  # fails to register the attachment.
   tmux set-buffer -b agent-attach -- "$dir/$name"
   tmux paste-buffer -b agent-attach -d -p -t "$target_pane"
   tmux send-keys -t "$target_pane" Space

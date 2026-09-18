@@ -1,24 +1,3 @@
--- Rcmd: right-Command app launcher, inspired by rcmd.app
---
--- Hold right-Command and press a letter key to launch or focus an app.
--- Bindings are defined in rcmd.config.lua as single-character keys mapped
--- to app definitions, multi-app pickers, or system actions.
---
--- Features:
---   - Single app bindings: RCmd+B → "Firefox" / { app = "Firefox", fullscreen = true }
---   - Multi-app picker: RCmd+M → choose between "Mail" / "Messages"
---   - System actions: window tiling, notification center, control center
---   - Config overlay: hold right-Command for 0.5s to see all bindings
---
--- How it works:
---   1. An event tap detects right-Command via raw modifier flag masks
---   2. While held, single-character hotkeys are enabled
---   3. Releasing right-Command disables the hotkeys
---   4. Apps are launched/focused and only sent to macOS fullscreen when configured
---   5. A cold launch is tiled to the left half unless the binding is fullscreen
---
--- AeroSpace owns right-Command while it runs (aerospace_leader.lua), so this
--- module sleeps whenever AeroSpace is up and wakes when it quits.
 
 local M = {}
 
@@ -266,7 +245,6 @@ local function hasOnlyRightCommandModifier(event)
     return event:getKeyCode() == hs.keycodes.map.rightcmd
   end
 
-  -- Raw flags distinguish left/right command keys; generic flags do not.
   return hasRawFlag(rawFlags, rightCommandMask) and not hasRawFlag(rawFlags, leftCommandMask)
 end
 
@@ -487,7 +465,6 @@ local function standardWindowsForApp(app)
     end
   end
 
-  -- Stable order so repeated presses cycle predictably; allWindows() order is not.
   table.sort(windows, function(left, right)
     return left:id() < right:id()
   end)
@@ -509,16 +486,9 @@ local function windowAfter(windows, currentWindow)
   return windows[1]
 end
 
--- A window in another Space is invisible to the Accessibility API, so an app's
--- windows can't be enumerated across Spaces directly. Instead we learn which
--- Spaces each app has a window on: while a Space is focused its windows are
--- visible, so we reconcile that Space's membership from the windows present.
--- This covers fullscreen windows (own Space) and tiled/desktop windows alike,
--- letting rcmd cycle an app across all of them.
 local appSpaces = {}
 local appSpacesSettingsKey = "rcmd.appSpaces"
 
--- Persist across config reloads; Space ids and pids survive a reload.
 local function persistAppSpaces()
   local serialized = {}
 
@@ -592,7 +562,6 @@ local function pidsOnFocusedSpace()
   return pids
 end
 
--- Make the focused Space's membership exact: add apps present, drop apps gone.
 local function reconcileFocusedSpace()
   if not hs.spaces then
     return
@@ -628,7 +597,6 @@ local function reconcileFocusedSpace()
   end
 end
 
--- Coalesce bursts of window/Space events into a single reconcile.
 local function scheduleReconcile()
   if reconcileTimer then
     reconcileTimer:stop()
@@ -683,8 +651,6 @@ end
 local function focusAppWindowOnCurrentSpace(app, retriesRemaining)
   app:activate(true)
 
-  -- allWindows is the current Space only, so this picks the window living here
-  -- rather than the app's main window (which may be on the Space we just left).
   local windows = standardWindowsForApp(app)
 
   if #windows > 0 then
@@ -699,9 +665,6 @@ local function focusAppWindowOnCurrentSpace(app, retriesRemaining)
   end
 end
 
--- Cycle an app across every Space it has a window on. Returns true if handled.
--- Focuses the first window on each Space; extra windows sharing one Space
--- aren't individually reachable while the app spans multiple Spaces.
 local function cycleAppSpaces(app)
   reconcileFocusedSpace()
 
@@ -727,8 +690,6 @@ local function cycleAppSpaces(app)
 
   hs.spaces.gotoSpace(nextSpace)
 
-  -- A fullscreen Space focuses its sole window on arrival; a desktop Space
-  -- needs the app's window there focused explicitly.
   if hs.spaces.spaceType(nextSpace) ~= "fullscreen" then
     hs.timer.doAfter(0.25, function()
       focusAppWindowOnCurrentSpace(app, 5)
@@ -769,8 +730,6 @@ local twoThirdsRight = hs.geometry.rect(1 / 3, 0, 2 / 3, 1)
 local oneThirdLeft = hs.geometry.rect(0, 0, 1 / 3, 1)
 local oneThirdRight = hs.geometry.rect(2 / 3, 0, 1 / 3, 1)
 
--- Tiled positions produced by keys 1/2/3. A window sitting in any of these is
--- considered already placed, so focusing its app must not fullscreen it.
 local snappedUnitRects = {
   hs.layout.left50,
   hs.layout.right50,
@@ -801,7 +760,6 @@ local function fullscreenWindow(window)
 end
 
 local function moveWindowToUnit(window, unitRect)
-  -- Leaving fullscreen animates, so tile only once the window has settled.
   if window:isFullScreen() then
     window:setFullScreen(false)
     hs.timer.doAfter(0.4, function()
@@ -821,9 +779,6 @@ local function focusApp(app, shouldFullscreen, placeLeft, retriesRemaining)
   local frontmostApp = hs.application.frontmostApplication()
   local appWasFrontmost = frontmostApp ~= nil and frontmostApp:pid() == app:pid()
 
-  -- Re-pressing the binding for the already-focused app cycles its windows.
-  -- Windows can live in separate Spaces (fullscreen or another desktop), so
-  -- cycle across the Spaces the app has windows on.
   if appWasFrontmost and cycleAppSpaces(app) then
     return
   end
@@ -1037,8 +992,6 @@ openBoundApp = function(appBinding)
   local appTarget = appTargetValue(appBinding)
   local shouldFullscreen = type(appBinding) == "table" and appBinding.fullscreen == true
   local lookupTarget = lookupTargetFor(appTarget)
-  -- A cold launch has no window placement of its own yet, so rcmd tiles it left
-  -- (unless the binding wants fullscreen). Focusing a running app never moves it.
   local placeLeft = hs.application.get(lookupTarget) == nil
   local app = hs.application.open(appTarget)
 
@@ -1094,8 +1047,6 @@ local function windowSideOnScreen(window)
   return "right"
 end
 
--- Frontmost standard window on the given side of a screen, ignoring the
--- reference window. The neighbor we shrink to 1/3 when growing to 2/3.
 local function frontmostWindowOnSide(referenceWindow, screen, side)
   local screenFrame = screen:frame()
   local screenCenterX = screenFrame.x + (screenFrame.w / 2)
@@ -1119,8 +1070,6 @@ local function frontmostWindowOnSide(referenceWindow, screen, side)
   return nil
 end
 
--- Grow the focused window to 2/3 of the side it currently sits on; shrink the
--- neighbor on the other side (if any) to the remaining 1/3.
 local function twoThirdsFocusedWindow(missingWindowMessage)
   local window = hs.window.focusedWindow()
 
@@ -1150,7 +1099,6 @@ local function twoThirdsFocusedWindow(missingWindowMessage)
     window:focus()
   end
 
-  -- Match moveFocusedWindow: leave fullscreen first, then tile once settled.
   if window:isFullScreen() then
     window:setFullScreen(false)
     hs.timer.doAfter(0.4, function()
@@ -1220,15 +1168,10 @@ local function moveFocusedWindowToNextScreen(missingWindowMessage)
   window:focus()
 end
 
--- Spawn windows inside the running Alacritty instance so they all live in one
--- process and rcmd+a can cycle them; `open -n` would create a separate process
--- whose windows the cycler can't enumerate. Fall back to a new instance when
--- no IPC socket answers (Alacritty not running).
 local function openAlacrittyWindow(alacrittyArgs)
   local _, msgStatus = hs.execute("/Applications/Alacritty.app/Contents/MacOS/alacritty msg create-window " .. alacrittyArgs)
 
   if msgStatus then
-    -- msg create-window doesn't raise the app
     local app = hs.application.get("Alacritty")
 
     if app then
@@ -1278,7 +1221,6 @@ end tell
   end
 
   local path = result[2]
-  -- Alacritty has no AppleScript window API, so spawn the window via CLI.
   local quoted = "'" .. tostring(path):gsub("'", "'\\''") .. "'"
   local status, output = openAlacrittyWindow("--working-directory " .. quoted)
 
@@ -1294,9 +1236,6 @@ local function runCommandInAlacritty(command)
     return
   end
 
-  -- Fresh window every press. Run via login+interactive zsh so the command
-  -- resolves like in a terminal (aliases, functions, PATH, ~ expansion); the
-  -- window closes when the command exits.
   local quoted = "'" .. command:gsub("'", "'\\''") .. "'"
   local status, output = openAlacrittyWindow("-e /bin/zsh -ilc " .. quoted)
 
@@ -1458,8 +1397,6 @@ function M.start()
     spacesWatcher = hs.spaces.watcher.new(scheduleReconcile)
     spacesWatcher:start()
 
-    -- A window created or tiled on the current Space fires no Space change, so
-    -- also relearn on window lifecycle events to keep memberships current.
     windowWatcher = hs.window.filter.new(true):subscribe({
       hs.window.filter.windowCreated,
       hs.window.filter.windowDestroyed,

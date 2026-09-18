@@ -45,10 +45,8 @@ local function reloadOnLuaChange(paths)
   end
 end
 
--- global: a local would be collected and the watcher would stop firing
 configWatcher = hs.pathwatcher.new(hs.fs.pathToAbsolute(hs.configdir), reloadOnLuaChange):start()
 
--- `hs -c` from a shell, for poking at module state
 require("hs.ipc")
 
 require("aerospace_leader").start()

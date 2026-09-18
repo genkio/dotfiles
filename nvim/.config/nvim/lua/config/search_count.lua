@@ -1,17 +1,7 @@
--- Search match counter.
---
--- Neovim already appends `[3/17]` to the search prompt, but `cmdheight = 0`
--- throws that message away before it can be read. Render the same count in a
--- tiny float at the top right of the current window instead: live while typing
--- `/pattern`, then kept in sync as `n`/`N` walk the matches, and gone as soon as
--- `:nohlsearch` (or `<Esc>`) drops the highlight.
-
 local M = {}
 
 local state = {}
 
--- Unlimited count would scan the whole buffer on every cursor move, so cap the
--- work by time and report `?` when the scan does not finish.
 local SEARCHCOUNT_TIMEOUT_MS = 100
 
 local function scratch_buf()
@@ -52,11 +42,8 @@ local function render(text)
     return
   end
 
-  -- `noautocmd` is rejected by nvim_win_set_config, so it only goes on the open.
   config.noautocmd = true
   state.win = vim.api.nvim_open_win(buf, false, config)
-  -- Borrow `Search` rather than a custom group: `:colorscheme` wipes custom
-  -- groups, and colors.lua re-picks the scheme when the theme flips.
   vim.wo[state.win].winhighlight = 'Normal:Search'
 end
 
@@ -66,7 +53,6 @@ local function count_text(pattern)
     opts.pattern = pattern
   end
 
-  -- A half-typed pattern (`foo\(`) is invalid and throws.
   local ok, result = pcall(vim.fn.searchcount, opts)
   if not ok or type(result) ~= 'table' or not result.total then
     return nil
@@ -80,11 +66,9 @@ local function count_text(pattern)
 end
 
 local function eligible()
-  -- '' is a plain window; skip pickers, cmdwin, quickfix, preview.
   return vim.fn.win_gettype() == ''
 end
 
--- Count for the pattern still being typed at the `/` or `?` prompt.
 local function preview(pattern)
   local text = eligible() and pattern ~= '' and count_text(pattern) or nil
   if text then
@@ -93,14 +77,10 @@ local function preview(pattern)
     M.hide()
   end
 
-  -- Cmdline mode won't necessarily redraw on its own, e.g. once the pattern
-  -- stops matching, which would leave the float stale on screen.
   pcall(vim.cmd.redraw)
 end
 
--- Count for the active search register, i.e. after `<CR>`, `n`, `N`, `*`.
 function M.refresh()
-  -- Never anchor the float to itself.
   if vim.api.nvim_get_current_win() == state.win then
     return
   end
@@ -132,13 +112,10 @@ function M.setup()
         M.hide()
         return
       end
-      -- `v:hlsearch` and the cursor only settle after the search runs.
       vim.schedule(M.refresh)
     end,
   })
 
-  -- The float is window-anchored, so scrolling needs no update; only a resize
-  -- moves the right edge it hangs from.
   vim.api.nvim_create_autocmd({ 'CursorMoved', 'InsertLeave', 'WinEnter', 'VimResized' }, {
     group = group,
     callback = function()

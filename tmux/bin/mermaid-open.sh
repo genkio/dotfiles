@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# copy-mode m: render the selected Mermaid source as Unicode box art via
-# tools.simonwillison.net/grok-mermaid (grok-build's Rust mermaid.rs compiled to
-# wasm). The source rides in the URL fragment, and browsers never put a fragment
-# on the wire, so the diagram itself stays on this machine.
-#
-# Reads the selection on stdin. That is screen rows, not the agent's markdown, so
-# it arrives wearing the TUI's left padding and usually the ``` fence lines:
-# strip both, else mermaid parses the fence as a node and the indent shifts
-# every row. Percent-encoding is done here rather than with jq/python because
-# awk is the only one guaranteed to be on run-shell's PATH.
 set -euo pipefail
 
 base="https://tools.simonwillison.net/grok-mermaid"
@@ -22,13 +12,9 @@ client_termname=${3:-}
 
 say() { tmux display-message -t "$pane" "$1" 2>/dev/null || true; }
 
-# LC_ALL=C keeps substr/length byte-wise, so multi-byte labels encode per UTF-8
-# byte the way decodeURIComponent expects
 frag=$(LC_ALL=C awk '
   BEGIN {
     for (i = 0; i < 256; i++) ord[sprintf("%c", i)] = i
-    # what encodeURIComponent leaves alone; 39 is the apostrophe, which cannot
-    # appear literally inside this single-quoted program
     safe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*()" sprintf("%c", 39)
     indent = -1
   }

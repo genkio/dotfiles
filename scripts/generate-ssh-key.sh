@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generate an SSH key for pasting into GitHub, Bitbucket, etc.
-#
-# Defaults to ed25519, stores the key at ~/.ssh/id_ed25519_<host>, adds it to
-# ssh-agent with the macOS keychain, appends an ~/.ssh/config block for the
-# host, prints the public key, and copies it to the clipboard.
-
 source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
 
 HOST="github"
@@ -41,7 +35,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Normalise to filename-safe label
 HOST="$(echo "$HOST" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '_' | sed 's/_*$//')"
 if [[ -z "$HOST" ]]; then
   err "invalid host label."
@@ -88,7 +81,6 @@ ssh-keygen "${KEYGEN_ARGS[@]}" -C "$EMAIL" -f "$KEY_PATH"
 chmod 600 "$KEY_PATH"
 chmod 644 "${KEY_PATH}.pub"
 
-# Add to ssh-agent (macOS: store passphrase in keychain)
 if [[ "$(uname -s)" == "Darwin" ]]; then
   eval "$(ssh-agent -s)" >/dev/null
   ssh-add --apple-use-keychain "$KEY_PATH" || ssh-add -K "$KEY_PATH" || true
@@ -97,7 +89,6 @@ else
   ssh-add "$KEY_PATH" || true
 fi
 
-# Append an ssh config block if no matching Host entry exists
 CONFIG="$SSH_DIR/config"
 touch "$CONFIG"
 chmod 600 "$CONFIG"
@@ -118,7 +109,6 @@ else
   echo "$CONFIG already has a Host entry for $HOSTNAME, leaving it alone."
 fi
 
-# Sync the name/email into ~/.gitconfig.local if it exists (seeded by opinionated-flow.sh).
 GITCONFIG_LOCAL="$HOME/.gitconfig.local"
 if [[ -f "$GITCONFIG_LOCAL" ]] && command -v git >/dev/null 2>&1; then
   CURRENT_EMAIL="$(git config -f "$GITCONFIG_LOCAL" user.email 2>/dev/null || true)"

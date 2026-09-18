@@ -6,12 +6,12 @@ Coordinate the work and delegate implementation to workers. Do not implement cha
 
 Give each agent its own pane. Create the pane with `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <dir> --label <name> --no-focus`, then start the agent in the returned pane.
 
-Use the command for the agent's role:
+Use the command for the agent's role. Explicit user model or budget choices override these defaults; record the choice in the handover.
 
 | Role | Start command |
 |---|---|
 | Executor | `herdr agent start <name> --kind claude --pane <id> -- --model opus --effort medium` |
-| Reviewer | `herdr agent start <name> --kind pi --pane <id> -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max` |
+| Reviewer | `herdr agent start <name> --kind pi --pane <id> -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max --tools read,grep,find,ls` |
 | Second reviewer for critical diffs; one-shot review | `herdr agent start <name> --kind pi --pane <id> -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` |
 | Advisor | `herdr agent start advisor --kind claude --pane <id> -- --model claude-fable-5-1 --effort high` |
 | Small read-only lookup | Use the Agent tool with `sonnet` or `haiku`, not Opus. |
@@ -26,7 +26,9 @@ Before starting a worker, write its brief at `plans/<topic>-brief.md`. Use this 
 
 Require a report at `plans/<topic>-report.md` and suggested commit messages. Workers must not commit.
 
-When two or more workers share interfaces, define those interfaces in `plans/<unit>-contract.md`. Assign one owner to each shared interface. Other workers raise findings rather than change it themselves. You resolve disagreements.
+Read-only reviewers cannot write report files. Have them return findings in their final response, then capture it with `herdr agent read <name> --source recent-unwrapped` and save the report yourself. Do not grant write or shell tools just to produce a report.
+
+When two or more workers share interfaces, define those interfaces in `plans/<unit>-contract.md`. Assign one owner to each shared interface and each set of files. Give one worker control of any shared test environment so parallel tasks cannot restart or reset it underneath each other. Other workers raise findings rather than change another owner's work. You resolve disagreements.
 
 Each report must end with a list of unclear contract lines and the interpretation the worker used for each. If none were unclear, say so.
 
@@ -36,13 +38,15 @@ Wait in the background with `herdr agent wait <name> --timeout 550000`. Keep one
 
 Prompts can arrive while a worker is still in a turn. Treat a unit as complete only when the worker is idle or done and its report file exists. Neither condition is sufficient alone.
 
-Resolve worker blockers yourself rather than passing them to the user. If a worker can no longer explain its earlier work clearly, end that phase and start a fresh one.
+Resolve routine worker blockers yourself. Do not bypass approval or expand the task's permissions to keep a worker moving. If the user is unavailable, continue independent work and record the blocked step.
+
+If a worker can no longer explain its earlier work clearly, end that phase and start a fresh one.
 
 ## Keep enough state to resume
 
 Update `plans/<project>-handover.md` on every state change. Rewrite the `NOW` block to reflect the current state, and keep an append-only log below it.
 
-At every agent start, record `agent_session.value` in the handover. It is the session handle that survives the loss of a pane.
+At every agent start, record `agent_session.value` in the handover. It is the session handle that survives the loss of a pane. For each assignment, also record the model, effort or thinking setting, dispatch time, and completion or stop time for the run summary.
 
 To resume Claude, use `-- --resume <id>`. To resume pi, use `-- --session <path>`.
 
@@ -50,8 +54,20 @@ Before leaving the handover, check whether a fresh session could continue from t
 
 ## Verify the work and commit
 
-Run the whole-tree verification gate yourself, once for the combined work rather than separately for each file.
+Review worker evidence and run the whole-tree verification gate yourself, once for the combined work rather than separately for each file. Distinguish checks that actually ran from source inspection and untested paths.
 
 Compare the diff stat with every worker report. Investigate any changed file that no report names.
 
 You make the commits, with one commit per concern. This instruction overrides the default prohibition on commits. Never push unless told.
+
+## Summarize the run
+
+After all agents finish or stop and verification is complete, write `plans/<run-id>-agent-stats.md` and link it in your final reply.
+
+Use a table with one row per agent assignment:
+
+- Agent, task, model, and effort or thinking setting.
+- Elapsed time from dispatch to completion or stop, and the outcome.
+- A one-sentence assessment of how the agent did.
+
+Use observed results and mark missing information as unknown. End with a few bullet points on how to improve the overall orchestration next time.

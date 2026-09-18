@@ -1,25 +1,26 @@
 # Dotfiles
 
-macOS only. Managed with [GNU Stow](https://www.gnu.org/software/stow/).
+Personal macOS configuration managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
-## Opinionated flow
+## Setup
 
-Clone the repo yourself, then run the phase you want. The script operates on its
-own checkout and never clones:
+Clone the repository and run `make` to choose the setup phases:
 
 ```bash
 git clone https://github.com/genkio/dotfiles ~/dotfiles && cd ~/dotfiles && make
 ```
 
-## Routine maintenance
+## Update an existing installation
 
-`make update` (`scripts/update.sh`, `--dry-run` via `make update DRY_RUN=1`) keeps an already-provisioned machine current.
+Run `make update` to keep an already-provisioned machine current. This command runs `scripts/update.sh`.
 
-### Spotting warnings and errors
+To preview the changes, use `make update DRY_RUN=1`, which passes `--dry-run` to the script.
 
-Run in the foreground and `SETUP_WARN:` / `SETUP_ERROR:` lines are colored automatically, so no piping is needed to see them go by.
+## Read warnings and errors
 
-To keep a copy for later, tee to a log (color is dropped when output is not a terminal, so the file stays clean), then grep by prefix:
+In a terminal, warnings and errors appear in color with the prefixes `SETUP_WARN:` and `SETUP_ERROR:`.
+
+To save the output and find problems later, use:
 
 ```sh
 make 2>&1 | tee setup.log
@@ -28,4 +29,6 @@ grep SETUP_WARN setup.log    # non-fatal only
 grep SETUP_ERROR setup.log   # fatal only
 ```
 
-Warnings and errors go to stderr, hence the `2>&1`. To watch only the problems scroll by live (hides normal progress), pipe straight to grep: `make 2>&1 | grep SETUP_`.
+Warnings and errors go to stderr, so `2>&1` includes them in the log. Output sent through a pipe has no color codes.
+
+To show only warnings and errors as they occur, run `make 2>&1 | grep SETUP_`. This hides normal progress output.

@@ -1,13 +1,7 @@
-Code comments: default to none. Before writing one, climb until a rung holds:
-rename, extract into a named function, delete if it restates the code, only
-then write it and say WHY.
+Default to no comments. Add one when it explains a tradeoff, a workaround, a surprising behavior, or an external constraint.
 
-Worth a comment: intent, tradeoff, gotcha, workaround (with issue ref),
-external constraint. Style: caveman, short, fragments fine.
+Keep comments short and direct. Sentence fragments are fine. Match the surrounding comment density.
 
-Never: restating the code, narrating the obvious, banner blocks, decorative
-dividers, end-of-block markers, label comments (`// imports`), diff narration
-(`// added for TICKET-123`), commented-out code.
+Do not restate the code, explain obvious behavior, describe the diff, or leave commented-out code.
 
-Match the surrounding comment density. Doc comments follow the project's
-existing convention; where there is none, don't start one.
+Follow the project's existing convention for documentation comments. If there is no convention, do not introduce one.

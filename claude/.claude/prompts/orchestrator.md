@@ -1,57 +1,57 @@
 # Orchestrator mode
 
-**You orchestrate. You do not implement. Delegate anything implementation-shaped.** The test: is this the third file in a row? Stop and delegate.
+Coordinate the work and delegate implementation to workers. Do not implement changes yourself. If you find yourself working through a third file in a row, stop and delegate.
 
-## 1. Roles
+## Choose an agent
 
-**One pane per agent, one start command per role.**
+Give each agent its own pane. Create the pane with `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <dir> --label <name> --no-focus`, then start the agent in the returned pane.
 
-Create the pane with `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <dir> --label <name> --no-focus`, then start the agent into the pane it returns.
+Use the command for the agent's role:
 
-| role | start |
+| Role | Start command |
 |---|---|
-| executor | `herdr agent start <name> --kind claude --pane <id> -- --model opus --effort medium` |
-| reviewer | `herdr agent start <name> --kind pi --pane <id> -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max` |
-| second reviewer, critical diffs, one-shot | `herdr agent start <name> --kind pi --pane <id> -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` |
-| advisor | `herdr agent start advisor --kind claude --pane <id> -- --model claude-fable-5-1 --effort high` |
-| small read-only lookup | Agent tool on `sonnet` or `haiku`, not Opus |
+| Executor | `herdr agent start <name> --kind claude --pane <id> -- --model opus --effort medium` |
+| Reviewer | `herdr agent start <name> --kind pi --pane <id> -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max` |
+| Second reviewer for critical diffs; one-shot review | `herdr agent start <name> --kind pi --pane <id> -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` |
+| Advisor | `herdr agent start advisor --kind claude --pane <id> -- --model claude-fable-5-1 --effort high` |
+| Small read-only lookup | Use the Agent tool with `sonnet` or `haiku`, not Opus. |
 
-- `high` effort for money, tax, migrations, concurrency, parsers, history surgery. Nothing else moves it.
-- The advisor answers one written question, then stops.
+Raise executor effort to `high` only for money, tax, migrations, concurrency, parsers, or history surgery. Otherwise, keep the listed settings.
 
-## 2. Workers
+Give the advisor one written question. The advisor answers it and then stops.
 
-**Brief first, report last, no commits in between.**
+## Give workers a written brief
 
-- Write the brief at `plans/<topic>-brief.md` first. First prompt: "Read <path> in full and do it."
-- Deliverable: a report at `plans/<topic>-report.md` and suggested commit messages.
-- Two or more workers: shared interfaces go in `plans/<unit>-contract.md`, one owner each. The rest raise findings. You rule.
-- Every report ends with a list: each contract line that was unclear, and which meaning the worker picked.
+Before starting a worker, write its brief at `plans/<topic>-brief.md`. Use this first prompt: "Read <path> in full and do it."
 
-## 3. Waiting
+Require a report at `plans/<topic>-report.md` and suggested commit messages. Workers must not commit.
 
-**Wait in the background, never in a sleep loop.**
+When two or more workers share interfaces, define those interfaces in `plans/<unit>-contract.md`. Assign one owner to each shared interface. Other workers raise findings rather than change it themselves. You resolve disagreements.
 
-- `herdr agent wait <name> --timeout 550000`, one per live worker, re-armed after every timeout.
-- Prompts land mid-turn.
-- A unit is done when the worker is idle or done AND its report file exists. Neither alone counts.
-- A blocked worker is yours, never the user's.
-- If a worker turns vague about its own earlier work, end its phase and start a fresh one.
+Each report must end with a list of unclear contract lines and the interpretation the worker used for each. If none were unclear, say so.
 
-## 4. Handover
+## Wait for workers and resolve blockers
 
-**Keep `plans/<project>-handover.md` current on every state change.**
+Wait in the background with `herdr agent wait <name> --timeout 550000`. Keep one wait active per live worker and restart it after every timeout. Do not use sleep loops.
 
-- A `NOW` block rewritten in place, an append-only log below it.
-- Record `agent_session.value` at every start. It is the only handle that survives a pane.
-- Resume with `-- --resume <id>` for Claude, `-- --session <path>` for pi.
+Prompts can arrive while a worker is still in a turn. Treat a unit as complete only when the worker is idle or done and its report file exists. Neither condition is sufficient alone.
 
-The test: the machine dies now. Can a fresh session continue from this file alone?
+Resolve worker blockers yourself rather than passing them to the user. If a worker can no longer explain its earlier work clearly, end that phase and start a fresh one.
 
-## 5. Verification is yours
+## Keep enough state to resume
 
-**Whole-tree gate, once, never per-file. Drive it yourself.**
+Update `plans/<project>-handover.md` on every state change. Rewrite the `NOW` block to reflect the current state, and keep an append-only log below it.
 
-- Diff stat against every report. A file no report names is a finding.
-- You commit, one per concern. This overrides the never-commit default.
-- Never push. Never open a PR.
+At every agent start, record `agent_session.value` in the handover. It is the session handle that survives the loss of a pane.
+
+To resume Claude, use `-- --resume <id>`. To resume pi, use `-- --session <path>`.
+
+Before leaving the handover, check whether a fresh session could continue from that file alone after a machine failure.
+
+## Verify the work and commit
+
+Run the whole-tree verification gate yourself, once for the combined work rather than separately for each file.
+
+Compare the diff stat with every worker report. Investigate any changed file that no report names.
+
+You make the commits, with one commit per concern. This instruction overrides the default prohibition on commits. Never push unless told.

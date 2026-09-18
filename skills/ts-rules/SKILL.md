@@ -1,70 +1,73 @@
 ---
 name: ts-rules
-description: TypeScript style and safety rules. Use when writing, reviewing, or refactoring TypeScript code. Bans type-system escape hatches (as, !, any, @ts-ignore, eslint-disable), enforces consistent patterns (discriminated unions, exhaustive switches, prefer-const, eqeqeq), and prescribes structural choices (no enum, no Record, pick interface or type).
-license: MIT
+description: "Write, review, and refactor TypeScript with accurate types and consistent patterns. Use for rules on assertions, suppression comments, equality, object types, discriminated unions, exhaustive switches, and promises."
 ---
 
-# TS Rules
+# TypeScript Rules
 
-Don't lie to the compiler. Fix types, never silence them.
+Fix type errors in the code or its types rather than bypassing the checker.
 
-## Type System Integrity
+## Handle type errors without suppressing them
 
-- **No `as` type assertions.** Prefer type guards and inference. `as` is legitimate only for narrowing `unknown` after validation or asserting a literal type.
-- **No `!` non-null assertion.** Use optional chaining (`?.`) or a type guard.
-- **No `any`.** Use `unknown` and narrow, or define a proper type.
-- **No `@ts-ignore` / `@ts-expect-error`.** Fix the types.
-- **No `eslint-disable` comments.** Fix the code, not the linter.
+Prefer inference and type guards. Use `as` only to narrow a validated `unknown` or assert a literal type, such as `as const`.
 
-If the compiler complains, it's usually right. Understand why before overriding.
+Do not use:
 
-## Equality and Mutability
+- Non-null assertions (`!`). Use a type guard, or optional chaining when an absent value is acceptable.
+- `any`. Define the type, or use `unknown` and narrow it.
+- `@ts-ignore` or `@ts-expect-error`. Fix the type error.
+- `eslint-disable` comments. Fix the code that violates the rule.
 
-- **`eqeqeq: always`.** No `==` / `!=`. Use `===` / `!==`.
-- **`prefer-const`.** Use `const` when never reassigned.
+Understand why the checker reports an error before changing the code.
 
-## Object Shapes
+## Use strict equality and prefer constants
 
-- **No `Record<K, V>`.** Use index signatures and mapped types:
-  - String-keyed: `{ [userId: string]: User }` with a semantic key name, not just `key`.
-  - Union-keyed: `{ [k in Status]: Handler }`.
-- **No `enum`.** Use `as const` arrays plus derived union types:
+Use `===` and `!==`, not `==` or `!=` (`eqeqeq: always`). Use `const` for variables that are never reassigned (`prefer-const`).
 
-  ```ts
-  const STATUSES = ['idle', 'loading', 'done'] as const;
-  type Status = typeof STATUSES[number];
-  ```
+## Choose consistent object types
 
-- **Pick `interface` OR `type` consistently** per file or project. Don't mix unless extension semantics require it.
+Use index signatures or mapped types instead of `Record<K, V>`:
 
-## State Modeling
+- For string keys, use a meaningful key name: `{ [userId: string]: User }`.
+- For union keys, use a mapped type: `{ [k in Status]: Handler }`.
 
-- **Discriminated unions over optional fields when state shape varies.**
+Use `as const` arrays and derived union types instead of `enum`:
 
-  ```ts
-  // Bad: invalid combinations representable.
-  type Result = { data?: User; error?: Error };
+```ts
+const STATUSES = ['idle', 'loading', 'done'] as const;
+type Status = typeof STATUSES[number];
+```
 
-  // Good: invariant enforced by the type.
-  type Result =
-    | { status: 'ok'; data: User }
-    | { status: 'err'; error: Error };
-  ```
+Use either `interface` or `type` consistently within a file or project. Mix them only when extension semantics require it.
 
-- **Exhaustive switch on unions.** Use `assertNever` as the default branch so adding a new variant fails the build:
+## Represent distinct states explicitly
 
-  ```ts
-  function assertNever(x: never): never {
-    throw new Error(`Unhandled case: ${JSON.stringify(x)}`);
-  }
+When fields depend on the current state, use a discriminated union rather than optional fields. This prevents combinations the application cannot handle.
 
-  switch (r.status) {
-    case 'ok': return r.data;
-    case 'err': throw r.error;
-    default: return assertNever(r);
-  }
-  ```
+```ts
+// Bad: invalid combinations representable.
+type Result = { data?: User; error?: Error };
 
-## Async
+// Good: invariant enforced by the type.
+type Result =
+  | { status: 'ok'; data: User }
+  | { status: 'err'; error: Error };
+```
 
-- **No floating promises.** `await` them or attach a `.catch()` handler. Unhandled rejections crash the process.
+Make switches on unions exhaustive. Use `assertNever` in the default branch so an unhandled variant fails the build:
+
+```ts
+function assertNever(x: never): never {
+  throw new Error(`Unhandled case: ${JSON.stringify(x)}`);
+}
+
+switch (r.status) {
+  case 'ok': return r.data;
+  case 'err': throw r.error;
+  default: return assertNever(r);
+}
+```
+
+## Handle every promise
+
+Do not leave floating promises. Use `await` or attach a `.catch()` handler. An unhandled rejection can terminate the process.

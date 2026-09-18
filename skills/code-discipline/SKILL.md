@@ -1,112 +1,72 @@
 ---
 name: code-discipline
-description: "Engineering discipline for writing code: understand before implementing, reuse before writing, change surgically, verify against explicit success criteria. Use when writing, reviewing, or refactoring code to avoid overcomplication, reach for existing/stdlib/native solutions before writing new code, make surgical changes, surface assumptions, define verifiable success criteria, prevent shortcuts that create technical debt, and respect the type system in typed languages."
-license: MIT
+description: "Write, review, and refactor code with minimal, verified changes. Use to understand the problem before implementing, reuse existing solutions, keep changes within scope, define success criteria, and fix type errors without bypassing the checker."
 ---
 
 # Code Discipline
 
-Behavioral guidelines to reduce common LLM coding mistakes, derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
+Understand the problem before changing code. Prefer an existing solution, limit changes to the task, and verify the result. For trivial tasks, keep the investigation and planning brief.
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+## Understand the task
 
-## 1. Think Before Coding
+Read the relevant code and trace its behavior from input to result. Check callers before changing a shared function so the fix covers more than the reported case.
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+State assumptions that affect the solution. If the request has multiple plausible meanings, explain them rather than silently choosing one. If uncertainty blocks a correct implementation, ask before proceeding.
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+Point out a simpler approach when one exists. Explain any tradeoff that changes the scope or behavior the user requested.
 
-## 2. Simplicity First
+## Use the simplest suitable solution
 
-**Minimum code that solves the problem. Nothing speculative.**
+Before writing new code, check these options in order. Stop at the first one that meets the requirements:
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+1. Confirm that the behavior is needed now. Skip speculative features and explain why.
+2. Look for an existing helper, type, or pattern in the codebase.
+3. Check the standard library.
+4. Check native platform features. Prefer a browser date input to a picker library, CSS to JavaScript, or a database constraint to application logic.
+5. Check dependencies already installed. Do not add a dependency for something a few clear lines can do.
+6. If one clear line solves the problem, use it.
+7. Otherwise, write only the code the task requires.
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+Do not add abstractions for single-use code, unrequested configuration, or error handling for impossible cases. If a shorter implementation is equally clear and correct, use it.
 
-### The ladder
+## Keep changes within scope
 
-Before writing new code, climb until a rung holds, then stop:
+Match the existing style. Do not reformat adjacent code, rewrite unrelated comments, or refactor working code outside the task.
 
-1. **Needs to exist?** Speculative need: skip it, say so. (YAGNI)
-2. **Already in this codebase?** Reuse the helper, util, type, or pattern that already lives here. Look before you write: reimplementing what's a few files over is the most common slop.
-3. **Stdlib does it?** Use it.
-4. **Native platform feature covers it?** `<input type="date">` over a picker lib, CSS over JS, a DB constraint over app code.
-5. **Already-installed dependency solves it?** Use it. Never add a new dependency for what a few lines do.
-6. **One line?** One line.
-7. **Only then:** the minimum code that works.
+Remove imports, variables, and functions that your changes make unused. If you find unrelated dead code, mention it instead of deleting it.
 
-The ladder runs *after* you understand the problem, not instead of it. Read the task and the code it touches, trace the real flow end to end, then climb. Two rungs work: take the higher one and move on.
+Before finishing, check that every changed line serves the user's request.
 
-## 3. Surgical Changes
+## Define how to verify the result
 
-**Touch only what you must. Clean up only your own mess.**
+Turn the request into checks you can run:
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+- For validation, write tests for invalid inputs and make them pass.
+- For a bug, write a test that reproduces it and make it pass.
+- For a refactor, check that tests pass before and after the change.
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+For a multi-step task, give a brief plan with a check for each step:
 
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-```
+```text
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+Use those checks to guide the work. Continue until they pass, or explain what prevents verification.
 
-## 5. Depth Over Speed
+## Fix the cause rather than hide the problem
 
-**Think deeply. Take the time. No shortcuts that mortgage the future.**
+Prefer a correct solution over a faster patch that leaves the underlying problem in place. Fix a shared cause where appropriate instead of adding the same workaround at each call site.
 
-Before reaching for a fix:
-- Understand the root cause before patching the symptom. Grep the callers of what you're about to change: one guard in the shared function beats a patch at every call site, and fixing only the reported path leaves sibling callers broken.
-- Don't optimize for finishing fast. Optimize for finishing right.
-- If a clean solution takes longer, take longer. Time is not the constraint — correctness is.
+Do not leave temporary hacks or cleanup TODOs in committed code. Do not suppress errors, silence warnings, or bypass types to make a build pass.
 
-Reject technical debt by default:
-- No workarounds, hacks, or "we'll fix it later" patches in committed code.
-- No `// TODO: clean this up` left behind to solve the immediate problem.
-- No suppressing errors, silencing warnings, or bypassing types to make something compile.
-- If the only path forward is a hack, stop and surface it — explain the tradeoff and ask before writing it.
+If the only available solution adds technical debt, stop before implementing it. Explain the tradeoff and ask for approval. State any deferred work explicitly.
 
-Ask yourself: "Am I solving this, or am I deferring it?" If deferring, say so explicitly rather than hiding it in code.
+## Keep types accurate
 
-## 6. Respect The Type System
+In typed languages, fix the mismatch between the types and the intended behavior. Do not widen a return type, loosen a parameter, or make a field optional just to remove an error.
 
-**In typed languages, types are the contract. Don't lie to the compiler.**
+Do not use `any`, casts through `unknown`, `@ts-ignore`, or `// @ts-expect-error` to bypass the checker. Prefer inference and type guards over `as` assertions.
 
-When working in TypeScript, Rust, Python with type hints, or similar:
-- Don't reach for `as` assertions to silence type errors. Fix the types instead.
-- Don't use `any`, `unknown` casts, `@ts-ignore`, or `// @ts-expect-error` to bypass the checker.
-- Don't widen a return type, loosen a parameter, or make a field optional just to make red squiggles go away.
-- If the compiler is complaining, it's usually right. Understand why before overriding it.
-
-Type assertions are legitimate when the compiler genuinely cannot infer something the developer knows — narrowing `unknown` after validation, asserting a literal type, interop with untyped libraries. They are not a tool for making errors disappear.
-
-Ask yourself: "Am I telling the compiler the truth, or telling it to shut up?" If the latter, fix the types.
+Use an assertion only when you have information the compiler cannot infer, such as a validated `unknown`, a literal type, or an untyped library boundary. Understand the error before deciding that an assertion is necessary.

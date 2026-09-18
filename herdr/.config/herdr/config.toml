@@ -57,3 +57,19 @@ command = "$HOME/.config/herdr/scripts/pane-close-others.sh"
 description = "close other panes"
 width = "40%"
 height = "20%"
+
+[[keys.command]]
+key = "prefix+shift+f"
+type = "popup"
+command = "$HOME/dotfiles/scripts/attach-file.sh"
+description = "attach file"
+width = "90%"
+height = "90%"
+
+[[keys.command]]
+key = "prefix+shift+p"
+type = "popup"
+command = "$HOME/dotfiles/scripts/attach-photo.sh"
+description = "attach photo"
+width = "90%"
+height = "90%"

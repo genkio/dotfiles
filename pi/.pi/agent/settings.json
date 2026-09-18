@@ -9,5 +9,10 @@
   "packages": [
     "npm:pi-web-access"
   ],
-  "tuiMode": "fullscreen"
+  "tuiMode": "fullscreen",
+  "modelThinkingLevels": {
+    "openai-codex/gpt-6-astra": "medium",
+    "deepseek/deepseek-flash": "max",
+    "openai-codex/gpt-5.6-sol": "medium"
+  }
 }

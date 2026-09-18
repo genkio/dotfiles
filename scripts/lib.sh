@@ -69,6 +69,12 @@ trust_brewfile_taps() {
   done
 }
 
+herdr_install_integration() {
+  command -v herdr >/dev/null 2>&1 || return 0
+  herdr integration install "$1" >/dev/null 2>&1 ||
+    warn "herdr integration install $1 failed; agent session restore may not work."
+}
+
 is_vm() {
   [[ "$(/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null)" == "1" ]] && return 0
   /usr/sbin/sysctl -n hw.model 2>/dev/null | grep -qiE 'VirtualMac|VMware|Parallels|QEMU'

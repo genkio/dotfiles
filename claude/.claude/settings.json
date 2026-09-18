@@ -21,7 +21,6 @@
       "Bash(git show:*)",
       "Bash(git status:*)",
       "Bash(head:*)",
-      "Bash(herdlet:*)",
       "Bash(ls:*)",
       "Bash(mise exec:*)",
       "Bash(npm run build:*)",
@@ -68,20 +67,12 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "^(startup|resume|clear|compact|fork)$",
         "hooks": [
           {
             "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
+            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
+            "timeout": 10
           }
         ]
       }
@@ -92,10 +83,6 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
-          },
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }
@@ -116,10 +103,6 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
-          },
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }
@@ -131,10 +114,6 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh"
-          },
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }
@@ -145,10 +124,6 @@
           {
             "type": "command",
             "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
-          },
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       },
@@ -157,16 +132,6 @@
           {
             "type": "command",
             "command": "command -v cc-imessage >/dev/null 2>&1 && cc-imessage notify || true"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "command -v herdlet >/dev/null 2>&1 && herdlet hook || true"
           }
         ]
       }

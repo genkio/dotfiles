@@ -186,6 +186,44 @@ if command -v mise >/dev/null 2>&1; then
   fi
 fi
 
+herdr_followups() {
+  command -v herdr >/dev/null 2>&1 || return 0
+
+  local running installed
+  running="$(herdr status server 2>/dev/null | sed -n 's/^version: //p')"
+  [[ -n "$running" ]] || return 0
+  installed="$(herdr --version 2>/dev/null | awk '{print $NF}')"
+  [[ -n "$installed" && "$running" != "$installed" ]] || return 0
+
+  note "the herdr server is still running $running; the installed binary is $installed. Restarting restores the layout and resumes agent sessions, but ends every process in it, so pick the moment:
+    herdr server stop && herdr"
+}
+herdr_followups
+
+herdr_refresh_integrations() {
+  command -v herdr >/dev/null 2>&1 || return 0
+
+  local target line
+  for target in claude pi; do
+    line="$(herdr integration status 2>/dev/null | grep -E "^$target: (current|outdated)")" ||
+      continue
+    if [[ "$DRY_RUN" == 1 ]]; then
+      echo "would refresh the herdr $target integration ($line)"
+    else
+      herdr_install_integration "$target"
+    fi
+  done
+}
+herdr_refresh_integrations
+
+if [[ "$DRY_RUN" == 1 ]]; then
+  section "skills"
+  bash scripts/install-agent-skills.sh --dry-run --update
+else
+  bash scripts/install-agent-skills.sh --update >"$LOG" 2>&1 ||
+    fail "remote agent skills install failed."
+  report skills 'up to date|Updating |Checking skills'
+fi
 
 if [[ "$DRY_RUN" == 1 ]]; then
   section "alacritty"
@@ -295,14 +333,6 @@ seed_or_diff() {
     SEED_LINES+=("${missing%$'\n'}")
   fi
 }
-
-if [[ "$DRY_RUN" == 1 ]]; then
-  herdlet_links="$(bash scripts/link-herdlet.sh --dry-run)"
-else
-  herdlet_links="$(bash scripts/link-herdlet.sh)" ||
-    fail "could not link herdlet's extension and skill."
-fi
-[[ -n "$herdlet_links" ]] && SEED_LINES+=("$(printf '%s\n' "$herdlet_links" | sed 's/^/  /')")
 
 seed_or_diff "$HOME/.gitconfig.local" "$REPO_ROOT/git/.gitconfig.local.example" \
   git_keys "edit ~/.gitconfig.local: it still holds the example identity."

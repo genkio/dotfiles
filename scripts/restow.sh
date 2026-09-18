@@ -22,7 +22,7 @@ esac
 
 cd "$REPO_ROOT"
 
-mkdir -p "$HOME/.config/mpv"
+mkdir -p "$HOME/.config/mpv" "$HOME/.config/herdr"
 mkdir -p "$HOME/.claude" "$HOME/.claude/skills"
 mkdir -p "$HOME/.pi/agent" "$HOME/.pi/agent/extensions" "$HOME/.pi/agent/skills"
 
@@ -84,7 +84,7 @@ run_stow() {
   return "$rc"
 }
 
-HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon aerospace sketchybar mise claude pi vim)
+HOME_PKGS=(alacritty brew mpv nvim tmux yazi zsh hammerspoon aerospace sketchybar mise claude pi vim herdr)
 for pkg in "${HOME_PKGS[@]}"; do
   run_stow "$HOME" "$pkg into ~" "$pkg"
 done

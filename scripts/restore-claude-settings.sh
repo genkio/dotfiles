@@ -20,4 +20,4 @@ echo "Restored Claude Code settings into ~/.claude"
 stow -t "$HOME/.claude/skills" skills
 echo "Restored shared coding-agent skills into ~/.claude/skills"
 
-bash "$SCRIPT_DIR/link-herdlet.sh"
+herdr_install_integration claude

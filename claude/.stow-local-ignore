@@ -1,2 +1,2 @@
-^/\.claude/(?!settings\.json$|statusline-command\.sh$|keybindings\.json$|rules(/|$)|hooks(/|$)|prompts(/|$)|agents(/|$)).*
+^/\.claude/(?!settings\.json$|statusline-command\.sh$|keybindings\.json$|rules(/|$)|prompts(/|$)|agents(/|$)).*
 \.DS_Store$

@@ -189,8 +189,8 @@ fi
 trust_brewfile_taps brew/Brewfile.base
 
 brew_bundle_install brew/Brewfile.base
-mkdir -p "$HOME/.config/mpv"
-stow -t "$HOME" brew mise mpv nvim tmux vim yazi zsh
+mkdir -p "$HOME/.config/mpv" "$HOME/.config/herdr"
+stow -t "$HOME" brew herdr mise mpv nvim tmux vim yazi zsh
 
 export PATH="$HOME/.local/bin:$PATH"
 bash scripts/install-mise.sh
@@ -203,7 +203,7 @@ done < <(sed -n 's/^[[:space:]]*"\([^"]*\)"[[:space:]]*=.*/\1/p' \
 if [[ ${#MISE_CLI[@]} -eq 0 ]]; then
   warn "no tools found in mise/.config/mise/conf.d/cli.toml; skipping the CLI set."
 else
-  echo "mise: installing ${#MISE_CLI[@]} CLI tools (neovim, yazi, fzf, fastfetch, 7zip)..."
+  echo "mise: installing ${#MISE_CLI[@]} CLI tools (neovim, yazi, fzf, fastfetch, 7zip, herdr)..."
   mise install --quiet "${MISE_CLI[@]}" \
     || warn "some mise CLI tools failed; rerun 'mise install' later."
 fi

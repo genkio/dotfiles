@@ -20,6 +20,8 @@ echo "Restored Pi settings, keybindings, and extensions into ~/.pi/agent"
 stow -t "$HOME/.pi/agent/skills" skills
 echo "Restored shared coding-agent skills into ~/.pi/agent/skills"
 
+herdr_install_integration pi
+
 if ! command -v pi >/dev/null 2>&1; then
   warn "pi not found; skipping the pi-web-access install. Later: pi install npm:pi-web-access"
 elif [[ -d "$HOME/.pi/agent/npm/node_modules/pi-web-access" ]]; then
@@ -51,4 +53,3 @@ merge_json_defaults() {
 
 merge_json_defaults "$HOME/.pi/agent/web-search.json" \
   "$REPO_ROOT/pi/.pi/agent/web-search.json.example" "~/.pi/agent/web-search.json"
-bash "$SCRIPT_DIR/link-herdlet.sh"

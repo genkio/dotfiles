@@ -24,7 +24,7 @@ cc() {
   fi
 }
 alias ccf="cc -m claude-fable-5-1"
-alias cco="cc -o -m claude-fable-5-1"
+alias cco="cc -o -eh -m 'opus[1m]'"
 alias ccx="claude --dangerously-skip-permissions"
 alias pcx="pi --provider openai-codex --model gpt-5.6-sol --thinking medium"
 alias pds="pi --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max"
@@ -455,6 +455,7 @@ kip() {
 }
 
 alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
+alias her="herdr"
 alias txp="tmuxp load -y"
 alias txl="tmux ls"
 alias src="source ~/.zshrc"

@@ -1,0 +1,59 @@
+onboarding = false
+
+[theme]
+name = "terminal"
+
+[update]
+version_check = false
+
+[keys]
+split_horizontal = "prefix+h"
+focus_pane_left = ""
+zoom = ["prefix+z", "ctrl+z"]
+close_pane = "ctrl+x"
+close_tab = "prefix+x"
+move_tab_previous = "ctrl+shift+left"
+move_tab_next = "ctrl+shift+right"
+copy_mode = ["prefix+[", "ctrl+minus"]
+previous_tab = ["prefix+p", "ctrl+p"]
+next_tab = ["prefix+n", "ctrl+n"]
+previous_workspace = "shift+up"
+next_workspace = "shift+down"
+
+[[keys.command]]
+key = "ctrl+h"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/pane-cycle.sh left"
+description = "cycle pane left"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/pane-cycle.sh down"
+description = "cycle pane down"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/pane-cycle.sh up"
+description = "cycle pane up"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/pane-cycle.sh right"
+description = "cycle pane right"
+
+[[keys.command]]
+key = "prefix+t"
+type = "shell"
+command = "$HOME/dotfiles/scripts/theme-toggle.sh"
+description = "toggle light/dark theme"
+
+[[keys.command]]
+key = "ctrl+shift+x"
+type = "popup"
+command = "$HOME/.config/herdr/scripts/pane-close-others.sh"
+description = "close other panes"
+width = "40%"
+height = "20%"

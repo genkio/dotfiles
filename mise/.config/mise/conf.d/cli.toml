@@ -1,5 +1,6 @@
 [tools]
 "aqua:fastfetch-cli/fastfetch" = "latest"
+"aqua:herdrdev/herdr" = "latest"
 "aqua:ip7z/7zip" = "latest"
 "aqua:junegunn/fzf" = "latest"
 "aqua:neovim/neovim" = "latest"

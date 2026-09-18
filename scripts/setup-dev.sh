@@ -58,3 +58,5 @@ if ! claude plugin marketplace list 2>/dev/null | grep -q 'claude-plugins-offici
 fi
 
 bash scripts/restore-pi-settings.sh
+
+bash scripts/install-agent-skills.sh

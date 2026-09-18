@@ -117,6 +117,7 @@ gaps.outer.right =      8
     c = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Calendar'
     f = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Finder'
     m = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Mail'
+    p = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Preview'
     s = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh "Sublime Text"'
     t = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh TablePlus'
     w = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh WeChat'

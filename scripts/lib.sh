@@ -92,7 +92,7 @@ clt_installed_major() {
 }
 
 ensure_clt_current() {
-  local want have label sentinel listing attempt
+  local want have label sentinel listing attempt waited
   want="$(clt_required_major)"
 
   [[ "$(xcode-select -p 2>/dev/null)" == *Xcode.app* ]] && return 0
@@ -106,6 +106,13 @@ ensure_clt_current() {
     echo "Command Line Tools: not installed; installing (~500MB)..."
   else
     echo "Command Line Tools: $have is too old for macOS $(sw_vers -productVersion), need $want; updating (~500MB)..."
+  fi
+
+  if [[ -n "$have" && -d /Library/Developer/CommandLineTools ]]; then
+    echo "  Removing the stale CLT first; softwareupdate only offers the"
+    echo "  install-on-demand package when no receipt is present."
+    sudo_pw rm -rf /Library/Developer/CommandLineTools || true
+    sudo_pw pkgutil --forget com.apple.pkg.CLTools_Executables >/dev/null 2>&1 || true
   fi
 
   sentinel=/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
@@ -133,6 +140,18 @@ ensure_clt_current() {
     warn "softwareupdate offered no Command Line Tools package after 3 tries."
     warn "its last output was:"
     printf '%s\n' "$listing" | sed 's/^/    /' >&2
+    echo "  Falling back to 'xcode-select --install' (a GUI installer window)."
+    xcode-select --install >/dev/null 2>&1 || true
+    waited=0
+    while [[ "$waited" -lt 1800 ]]; do
+      have="$(clt_installed_major)"
+      [[ -n "$have" && "$have" -ge "$want" ]] && break
+      sleep 15
+      waited=$((waited + 15))
+      if [[ $((waited % 300)) -eq 0 ]]; then
+        echo "  Still waiting on the Command Line Tools installer (${waited}s)..."
+      fi
+    done
   fi
   rm -f "$sentinel"
 
@@ -145,8 +164,8 @@ ensure_clt_current() {
   err "Command Line Tools are ${have:-absent}, but macOS $(sw_vers -productVersion) needs $want."
   err "Homebrew refuses to install anything until this is fixed, so stopping here."
   err "This is usually a catalog fetch that did not land; 'make core' again is"
-  err "the first thing to try. Failing that, install them by hand:"
-  err "  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"
+  err "the first thing to try. Failing that, grab the matching 'Command Line"
+  err "Tools for Xcode $want' package from https://developer.apple.com/download/all/"
   return 1
 }
 

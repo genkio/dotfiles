@@ -61,7 +61,7 @@ optional() {
     return 0
   fi
 
-  if "$@" >/dev/null 2>&1; then
+  if ( "$@" ) >/dev/null 2>&1; then
     return 0
   fi
 
@@ -222,8 +222,13 @@ defaults_write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
 echo "Menu bar: Automatically hide and show"
 defaults_write NSGlobalDomain _HIHideMenuBar -bool true
+MENUBAR_SKIPPED_BEFORE=${#SKIPPED[@]}
 optional perl -e 'alarm shift; exec @ARGV' 15 \
   osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to true'
+if [[ ${#SKIPPED[@]} -gt $MENUBAR_SKIPPED_BEFORE ]]; then
+  echo "  System Events refused (no Automation permission, or nobody answered the"
+  echo "  consent prompt). _HIHideMenuBar above still applies at next login."
+fi
 
 echo "Dock: Automatically hide and show"
 defaults_write com.apple.dock autohide -bool true

@@ -41,69 +41,10 @@ local function detect_ssh()
   if vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY then
     return true
   end
-  if vim.env.TMUX then
-    local result = vim.system({ 'tmux', 'show-environment', 'SSH_CONNECTION' }, { text = true }):wait()
-    if result.code == 0 and result.stdout and result.stdout:match '^SSH_CONNECTION=%S' then
-      return true
-    end
-  end
   return false
 end
 
-local is_ssh = detect_ssh()
-local osc52_helper = vim.fs.joinpath(dotfiles_root, 'tmux', 'bin', 'osc52-copy.sh')
-
-if is_ssh and vim.env.TMUX and vim.fn.executable(osc52_helper) == 1 then
-  local clipboard_cache = {
-    ['+'] = { lines = {}, regtype = 'v' },
-    ['*'] = { lines = {}, regtype = 'v' },
-  }
-
-  local function make_copy(reg)
-    return function(lines, regtype)
-      clipboard_cache[reg] = {
-        lines = vim.deepcopy(lines),
-        regtype = regtype,
-      }
-
-      vim.system({ osc52_helper }, {
-        stdin = table.concat(lines, '\n'),
-        text = true,
-      }, function(result)
-        if result.code == 0 then
-          return
-        end
-
-        vim.schedule(function()
-          vim.notify(
-            string.format('Clipboard copy failed via %s (exit %d)', osc52_helper, result.code),
-            vim.log.levels.WARN
-          )
-        end)
-      end)
-    end
-  end
-
-  local function make_paste(reg)
-    return function()
-      local cached = clipboard_cache[reg]
-      return { cached.lines or {}, cached.regtype or 'v' }
-    end
-  end
-
-  vim.g.clipboard = {
-    name = 'osc52-tmux-helper',
-    copy = {
-      ['+'] = make_copy '+',
-      ['*'] = make_copy '*',
-    },
-    paste = {
-      ['+'] = make_paste '+',
-      ['*'] = make_paste '*',
-    },
-    cache_enabled = 0,
-  }
-elseif is_ssh then
+if detect_ssh() then
   vim.g.clipboard = 'osc52'
 end
 

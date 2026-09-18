@@ -139,7 +139,7 @@ if has_phase macos; then
 fi
 
 if has_phase core; then
-phase_start "core: homebrew packages, stow, tmux plugins, git"
+phase_start "core: homebrew packages, stow, git"
 
 ensure_clt_current || exit 1
 
@@ -190,7 +190,7 @@ trust_brewfile_taps brew/Brewfile.base
 
 brew_bundle_install brew/Brewfile.base
 mkdir -p "$HOME/.config/mpv" "$HOME/.config/herdr"
-stow -t "$HOME" brew herdr mise mpv nvim tmux vim yazi zsh
+stow -t "$HOME" brew herdr mise mpv nvim vim yazi zsh
 
 export PATH="$HOME/.local/bin:$PATH"
 bash scripts/install-mise.sh
@@ -215,25 +215,6 @@ if [[ -e "$HOME/.ssh/config" && ! -L "$HOME/.ssh/config" ]]; then
   echo "Move it aside and run 'cd $REPO_ROOT && stow ssh' when you're ready."
 else
   stow -t "$HOME" ssh
-fi
-
-TPM_DIR="$HOME/.tmux/plugins/tpm"
-if [[ -d "$TPM_DIR/.git" ]]; then
-  echo "TPM already installed at $TPM_DIR"
-elif [[ -e "$TPM_DIR" ]]; then
-  echo "Skipping TPM install: $TPM_DIR exists and is not a git repo."
-else
-  mkdir -p "$(dirname "$TPM_DIR")"
-  git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
-fi
-if [[ -x "$TPM_DIR/bin/install_plugins" ]]; then
-  if ! command -v tmux >/dev/null 2>&1; then
-    warn "tmux is not installed; skipping tmux plugin install."
-  elif "$TPM_DIR/bin/install_plugins"; then
-    echo "Installed tmux plugins from ~/.tmux.conf"
-  else
-    warn "tmux plugin install failed; run '$TPM_DIR/bin/install_plugins' later."
-  fi
 fi
 
 if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then

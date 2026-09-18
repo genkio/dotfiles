@@ -12,18 +12,9 @@ occupied="$(
 )"
 
 attention=""
-if tmux list-panes -a -F '#{@agent_pane_state}' 2>/dev/null | grep -qx attention; then
-  attention="$(aerospace list-windows --all --format '%{app-name}|%{workspace}' \
-                 | awk -F'|' '$1 == "Alacritty" { print $2 }' \
-                 | sort -u)"
-fi
 
-if [ -n "$attention" ]; then
-  visible="$(printf '%s\n%s\n' "$occupied" "$attention" | grep . | sort -u)"
-else
-  visible="$occupied"
-  [ "$(printf '%s\n' "$visible" | grep -c .)" -gt 1 ] || visible=""
-fi
+visible="$occupied"
+[ "$(printf '%s\n' "$visible" | grep -c .)" -gt 1 ] || visible=""
 
 visible="$(printf '%s' "$visible" | paste -sd, -)"
 attention="$(printf '%s' "$attention" | paste -sd, -)"

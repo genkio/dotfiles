@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/lib.sh"
 PHASES=(macos core apps dev touchid)
 WHAT=(
   "system prefs, remote login, updates off"
-  "homebrew + mise, CLI tools, stow, tmux"
+  "homebrew + mise, CLI tools, stow"
   "GUI casks, hammerspoon, sublime, mpv"
   "Brewfile.dev, mise toolchains, agents"
   "pam_tid for sudo"

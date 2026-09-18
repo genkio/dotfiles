@@ -23,7 +23,7 @@ osc52 = "CopyPaste"
 bindings = [
   { key = "Enter", mods = "Shift", chars = "\u001B\r" },
   { key = "Space", mods = "Command|Shift", action = "ToggleViMode" },
-  { key = "Y", mods = "Command|Shift", command = { program = "/bin/sh", args = ["-c", "$HOME/dotfiles/tmux/bin/unwrap-clipboard.sh"] } },
+  { key = "Y", mods = "Command|Shift", command = { program = "/bin/sh", args = ["-c", "$HOME/dotfiles/scripts/unwrap-clipboard.sh"] } },
   { key = "N", mods = "Command|Shift", chars = "\u001B[120~" },
   { key = "P", mods = "Command|Shift", chars = "\u001B[121~" },
   { key = "1", mods = "Command", chars = "\u001B[122~" },

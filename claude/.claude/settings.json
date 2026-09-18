@@ -31,8 +31,7 @@
       "Bash(pnpm lint:*)",
       "Bash(pnpm test:*)",
       "Bash(rg:*)",
-      "Bash(tail:*)",
-      "Bash(tmux:*)"
+      "Bash(tail:*)"
     ],
     "deny": [
       "Bash(rm -rf *)",
@@ -77,56 +76,7 @@
         ]
       }
     ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-busy.sh"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "permission_prompt|elicitation_dialog",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-attention.sh"
-          }
-        ]
-      }
-    ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/dotfiles/tmux/bin/agent-idle.sh"
-          }
-        ]
-      },
       {
         "hooks": [
           {

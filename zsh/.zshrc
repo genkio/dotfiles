@@ -16,10 +16,6 @@ export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()
 
-if [[ -o interactive && -n "$SSH_CONNECTION" && -z "$TMUX" && -z "$NO_AUTO_TMUX" ]] && command -v tmux >/dev/null 2>&1; then
-  exec tmux new -A -s "${TMUX_DEFAULT_SESSION:-tmp}"
-fi
-
 if [ ! -d "$ZSH" ]; then
   if command -v curl >/dev/null 2>&1; then
     echo "Oh My Zsh not found. Installing to $ZSH..."
@@ -38,20 +34,6 @@ command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
 [[ -f ~/.zsh_prompt ]] && source ~/.zsh_prompt
 
 command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
-
-if [[ -n "$TMUX" ]]; then
-  _tmux_refresh_ssh_env() {
-    local line
-    for line in "${(@f)$(command tmux show-environment 2>/dev/null)}"; do
-      case "$line" in
-        SSH_CONNECTION=*|SSH_CLIENT=*|SSH_TTY=*) export "$line" ;;
-        -SSH_CONNECTION|-SSH_CLIENT|-SSH_TTY) unset "${line#-}" ;;
-      esac
-    done
-  }
-  autoload -Uz add-zsh-hook
-  add-zsh-hook precmd _tmux_refresh_ssh_env
-fi
 
 set -o vi
 setopt HIST_IGNORE_SPACE

@@ -13,8 +13,6 @@ brew "pngpaste" unless in_vm
 brew "ripgrep"
 brew "stow"
 brew "tlrc"
-brew "tmux"
-brew "tmuxp"
 brew "unar"
 brew "viu"
 brew "zoxide"

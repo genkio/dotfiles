@@ -51,14 +51,6 @@ if [ "$mode" = "print" ]; then
   exit 0
 fi
 
-if command -v tmux > /dev/null 2>&1 && tmux info > /dev/null 2>&1; then
-  while IFS= read -r tty; do
-    if [ -n "$tty" ] && [ -w "$tty" ]; then
-      printf '%s' "$osc" > "$tty" 2> /dev/null || true
-    fi
-  done < <(tmux list-clients 2> /dev/null | sed -n 's/^\([^:]*\):.*/\1/p' | sort -u)
-fi
-
-if [ -z "${TMUX:-}" ] && [ -w /dev/tty ]; then
+if [ -w /dev/tty ]; then
   printf '%s' "$osc" > /dev/tty 2> /dev/null || true
 fi

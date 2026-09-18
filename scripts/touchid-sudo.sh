@@ -69,7 +69,7 @@ else
       || warn "could not install pam-reattach"
     PAM_REATTACH="$(pam_reattach_so || true)"
   fi
-  [[ -n "$PAM_REATTACH" ]] || warn "pam_reattach.so not found; writing pam_tid only, so Touch ID for sudo will not work inside tmux"
+  [[ -n "$PAM_REATTACH" ]] || warn "pam_reattach.so not found; writing pam_tid only, so Touch ID for sudo will not work inside session wrappers"
 
   if [[ -f /etc/pam.d/sudo_local ]]; then
     if diff -q <(sudo_local_body) /etc/pam.d/sudo_local >/dev/null 2>&1; then

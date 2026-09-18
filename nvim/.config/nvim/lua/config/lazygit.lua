@@ -12,10 +12,6 @@ local function osc52_clip_path()
   return '/tmp/nvim-next-lazygit-osc52-clip.sh'
 end
 
-local function osc52_copy_helper()
-  return require('config.paths').join('tmux', 'bin', 'osc52-copy.sh')
-end
-
 local function ensure_delta_config()
   local path = delta_config_path()
   local apple_terminal = vim.env.TERM_PROGRAM == 'Apple_Terminal'
@@ -62,11 +58,6 @@ local function ensure_delta_config()
 end
 
 local function ensure_osc52_clip_script()
-  local copy_helper = osc52_copy_helper()
-  if vim.fn.executable(copy_helper) ~= 1 then
-    return nil
-  end
-
   local path = osc52_clip_path()
   vim.fn.writefile({
     '#!/usr/bin/env bash',
@@ -76,8 +67,17 @@ local function ensure_osc52_clip_script()
     'if [ -z "$text" ]; then',
     '  text=$(cat)',
     'fi',
+    '[ -z "$text" ] && exit 0',
     '',
-    string.format('printf -- \'%%s\' "$text" | %s', copy_helper),
+    'encoded=$(printf -- \'%s\' "$text" | base64 | tr -d \'\\r\\n\')',
+    '',
+    'if { : > /dev/tty; } 2>/dev/null; then',
+    '  printf -- \'\\033]52;c;%s\\a\' "$encoded" > /dev/tty',
+    'fi',
+    '',
+    'if [ -z "${SSH_CONNECTION:-}" ]; then',
+    '  printf -- \'%s\' "$text" | pbcopy',
+    'fi',
   }, path)
   return path
 end

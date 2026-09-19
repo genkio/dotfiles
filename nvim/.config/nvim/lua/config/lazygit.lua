@@ -8,8 +8,8 @@ local function delta_config_path()
   return '/tmp/nvim-next-delta.gitconfig'
 end
 
-local function osc52_clip_path()
-  return '/tmp/nvim-next-lazygit-osc52-clip.sh'
+local function clip_path()
+  return require('config.paths').join('scripts', 'clip.sh')
 end
 
 local function ensure_delta_config()
@@ -54,31 +54,6 @@ local function ensure_delta_config()
     }
   end
   vim.fn.writefile(lines, path)
-  return path
-end
-
-local function ensure_osc52_clip_script()
-  local path = osc52_clip_path()
-  vim.fn.writefile({
-    '#!/usr/bin/env bash',
-    'set -euo pipefail',
-    '',
-    'text=${1:-}',
-    'if [ -z "$text" ]; then',
-    '  text=$(cat)',
-    'fi',
-    '[ -z "$text" ] && exit 0',
-    '',
-    'encoded=$(printf -- \'%s\' "$text" | base64 | tr -d \'\\r\\n\')',
-    '',
-    'if { : > /dev/tty; } 2>/dev/null; then',
-    '  printf -- \'\\033]52;c;%s\\a\' "$encoded" > /dev/tty',
-    'fi',
-    '',
-    'if [ -z "${SSH_CONNECTION:-}" ]; then',
-    '  printf -- \'%s\' "$text" | pbcopy',
-    'fi',
-  }, path)
   return path
 end
 
@@ -130,11 +105,11 @@ local function ensure_override_config(kind, opts)
 
   table.insert(lines, 'promptToReturnFromSubprocess: false')
 
-  local osc52_clip = ensure_osc52_clip_script()
-  if osc52_clip then
+  local clip = clip_path()
+  if vim.fn.executable(clip) == 1 then
     vim.list_extend(lines, {
       'os:',
-      '  copyToClipboardCmd: "bash ' .. osc52_clip .. ' {{text}}"',
+      '  copyToClipboardCmd: "bash ' .. clip .. ' {{text}}"',
     })
   end
 

@@ -284,6 +284,15 @@ else
 fi
 : >"$LOG"
 
+if [[ "$DRY_RUN" == 1 ]]; then
+  section "clipboard bridge"
+  bash scripts/install-clipboard-bridge.sh --dry-run
+else
+  bash scripts/install-clipboard-bridge.sh >"$LOG" 2>&1 ||
+    warn "clipboard bridge not loaded; rerun scripts/install-clipboard-bridge.sh."
+  : >"$LOG"
+fi
+
 SEED_LINES=()
 seed_say() { SEED_LINES+=("  $*"); }
 

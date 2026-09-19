@@ -351,5 +351,5 @@ gdc() {
     echo "usage: gdc <commit>" >&2
     return 1
   fi
-  git show --format= "$1" | pbcopy
+  git show --format= "$1" | "$HOME/dotfiles/scripts/clip.sh"
 }

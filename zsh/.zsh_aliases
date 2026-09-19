@@ -432,7 +432,8 @@ kip() {
   killport "$@"
 }
 
-alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | pbcopy"
+alias clip="$HOME/dotfiles/scripts/clip.sh"
+alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | $HOME/dotfiles/scripts/clip.sh"
 alias her="herdr"
 alias src="source ~/.zshrc"
 alias his="vi ~/.zsh_history"

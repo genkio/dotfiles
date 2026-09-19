@@ -35,17 +35,20 @@ vim.o.splitbelow = true
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
-local dotfiles_root = require('config.paths').dotfiles_root
+local paths = require 'config.paths'
+local dotfiles_root = paths.dotfiles_root
 
-local function detect_ssh()
-  if vim.env.SSH_CONNECTION or vim.env.SSH_CLIENT or vim.env.SSH_TTY then
-    return true
+local clip = paths.join('scripts', 'clip.sh')
+if vim.fn.executable(clip) == 1 then
+  local paste = vim.fn.executable 'pbpaste' == 1 and { 'pbpaste' } or function()
+    return vim.split(vim.fn.getreg '"', '\n')
   end
-  return false
-end
-
-if detect_ssh() then
-  vim.g.clipboard = 'osc52'
+  vim.g.clipboard = {
+    name = 'clip',
+    copy = { ['+'] = { clip }, ['*'] = { clip } },
+    paste = { ['+'] = paste, ['*'] = paste },
+    cache_enabled = 1,
+  }
 end
 
 vim.env.NVIM_SHELL_ALIASES = '1'

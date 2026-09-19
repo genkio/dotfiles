@@ -42,6 +42,27 @@ Resolve routine worker blockers yourself. Do not bypass approval or expand the t
 
 If a worker can no longer explain its earlier work clearly, end that phase and start a fresh one.
 
+## Keep a reusable agent warm
+
+Claude Code writes 1h-TTL prompt cache entries. An idle session's cache lapses an hour after its last request, and the next message rewrites the whole prefix at the cache-write rate: twice the input rate, against a cache read at a fortieth of it.
+
+Ping any agent you intend to come back to, every 50 minutes it sits idle:
+
+```bash
+herdr agent prompt advisor "Reply with exactly: ok"
+```
+
+Keep the text fixed and free of variable content. It then carries no injection surface and adds almost nothing to the prefix.
+
+Stop pinging once you do not expect to return to that agent. End its session and close its pane:
+
+```bash
+herdr agent prompt advisor "/exit"
+herdr tab close <tab_id>
+```
+
+Read cache behavior from the transcript at `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl`. Each assistant record carries `message.usage.cache_read_input_tokens` and `cache_creation_input_tokens`. A resume that reads near zero has gone cold.
+
 ## Keep enough state to resume
 
 Update `plans/<project>-handover.md` on every state change. Rewrite the `NOW` block to reflect the current state, and keep an append-only log below it.

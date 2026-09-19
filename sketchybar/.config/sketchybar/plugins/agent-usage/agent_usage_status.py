@@ -63,6 +63,7 @@ PI_BINARY_CANDIDATES = (
     Path("/opt/homebrew/bin/pi"),
     Path("/usr/local/bin/pi"),
     Path.home() / ".local" / "bin" / "pi",
+    Path.home() / ".local" / "share" / "mise" / "shims" / "pi",
 )
 
 PROVIDERS = ("claude", "codex")

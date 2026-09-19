@@ -31,3 +31,5 @@ skills/.DS_Store
 
 /hammerspoon/.hammerspoon/logs/
 plans/
+__pycache__/
+*.py[cod]

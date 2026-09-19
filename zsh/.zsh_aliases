@@ -433,8 +433,55 @@ kip() {
 }
 
 alias clip="$HOME/dotfiles/scripts/clip.sh"
-alias cp1="fc -ln -1 | awk '{\$1=\$1;print}' | $HOME/dotfiles/scripts/clip.sh"
 alias her="herdr"
+
+# hma ssh://user@machine --label machine
+hma() {
+  local a prev="" target=""
+  for a in "$@"; do
+    if [[ "$a" != -* && "$prev" != (--label|-l) ]]; then
+      target="$a"
+      break
+    fi
+    prev="$a"
+  done
+
+  herdr machine add "$@" || return
+
+  bash "$HOME/dotfiles/scripts/install-clipboard-bridge.sh" || return
+
+  local id
+  id=$(herdr machine list | awk -F'\t' -v t="$target" '$3 == t { print $1 }')
+  if [[ -z "$id" ]]; then
+    echo "hma: no saved machine matching '$target'; reconnect it by hand to start forwarding" >&2
+    return 1
+  fi
+
+  herdr machine disable "$id" >/dev/null &&
+    herdr machine enable "$id" >/dev/null &&
+    echo "hma: $target reconnected with clipboard forwarding"
+}
+
+# hmr machine
+hmr() {
+  if [[ -z "$1" ]]; then
+    echo "usage: hmr <label|id|target>" >&2
+    return 1
+  fi
+
+  local id
+  id=$(herdr machine list |
+    awk -F'\t' -v m="$1" '$1 == m || $2 == m || $3 == m { print $1; exit }')
+  if [[ -z "$id" ]]; then
+    echo "hmr: no saved machine matching '$1'" >&2
+    return 1
+  fi
+
+  herdr machine remove "$id" || return
+
+  bash "$HOME/dotfiles/scripts/install-clipboard-bridge.sh"
+}
+
 alias src="source ~/.zshrc"
 alias his="vi ~/.zsh_history"
 

@@ -21,7 +21,16 @@ case ",$ATTENTION_WORKSPACES," in
     ;;
 esac
 
+eval "apps=\${APPS_$1:-}"
+
+if [ -n "$apps" ]; then
+  label="$1  $apps"
+else
+  label="$1"
+fi
+
 sketchybar --set "$NAME" \
            drawing="$drawing" \
+           label="$label" \
            background.border_color="$border" \
            background.color="$fill"

@@ -47,7 +47,7 @@ sketchybar --add item clock right \
            --set clock update_freq=10 script="$PLUGIN_DIR/clock.sh"
 
 sketchybar --add item input_source right \
-           --set input_source update_freq=3 \
+           --set input_source \
                  script="$PLUGIN_DIR/input-source.sh" \
            --subscribe input_source front_app_switched
 
@@ -71,16 +71,11 @@ sketchybar --add item maestral right \
            --subscribe maestral system_woke
 
 sketchybar --add item network right \
-           --set network update_freq=2 drawing=off \
+           --set network update_freq=10 drawing=off \
                  script="$PLUGIN_DIR/network.sh"
 
-sketchybar --add item wechat right \
-           --set wechat update_freq=10 drawing=off \
-                 script="$PLUGIN_DIR/wechat.sh" \
-           --subscribe wechat front_app_switched
-
 sketchybar --add item spaces_heartbeat right \
-           --set spaces_heartbeat drawing=off update_freq=2 \
+           --set spaces_heartbeat drawing=off update_freq=30 \
                  script="$HOME/.config/aerospace/scripts/spaces-sync.sh"
 
 sketchybar --update

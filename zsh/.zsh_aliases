@@ -470,7 +470,6 @@ hma() {
     echo "hma: $target reconnected with clipboard forwarding"
 }
 
-# hmr machine
 hmr() {
   if [[ -z "$1" ]]; then
     echo "usage: hmr <label|id|target>" >&2

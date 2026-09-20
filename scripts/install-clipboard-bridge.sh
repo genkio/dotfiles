@@ -9,7 +9,8 @@ source "$SCRIPT_DIR/lib.sh"
 LABEL="com.genkio.clipboard-bridge"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LISTEN_PORT=52527
-VIEWER_PORT=52528
+VIEWER_BASE=52528
+VIEWER_SLOTS=8
 SSH_CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/ssh"
 SSH_CONF="$SSH_CONF_DIR/clipboard-bridge.conf"
 
@@ -39,9 +40,21 @@ while IFS= read -r host; do
   [[ -n "$host" ]] && HOSTS+=("$host")
 done < <(machine_hosts)
 
+SELF="$(hostname -s)"
+
+viewer_port() {
+  local i=0 name
+  while IFS= read -r name; do
+    [[ "$name" == "$SELF" ]] && break
+    i=$((i + 1))
+  done < <(printf '%s\n' "$SELF" "${HOSTS[@]:-}" | grep -v '^$' | sort -u)
+  printf '%s' "$((VIEWER_BASE + i % VIEWER_SLOTS))"
+}
+VIEWER_PORT="$(viewer_port)"
+
 if [[ "$DRY_RUN" -eq 1 ]]; then
   echo "  [dry-run] would reload $LABEL from $PLIST"
-  echo "  [dry-run] would forward port $VIEWER_PORT from: ${HOSTS[*]:-no saved machines}"
+  echo "  [dry-run] would forward port $VIEWER_PORT ($SELF's slot) from: ${HOSTS[*]:-no saved machines}"
   exit 0
 fi
 
@@ -70,7 +83,7 @@ DOMAIN="gui/$(id -u)"
 launchctl bootout "$DOMAIN/$LABEL" >/dev/null 2>&1 || true
 
 if launchctl bootstrap "$DOMAIN" "$PLIST" 2>/dev/null; then
-  echo "clipboard bridge listening on 127.0.0.1:$LISTEN_PORT for: ${HOSTS[*]:-no saved machines}"
+  echo "clipboard bridge listening on 127.0.0.1:$LISTEN_PORT, slot $VIEWER_PORT on: ${HOSTS[*]:-no saved machines}"
 else
   warn "could not load $LABEL; load it with 'launchctl bootstrap $DOMAIN $PLIST'."
 fi

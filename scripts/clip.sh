@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Herdr's remote server handles OSC 52 itself and writes to the clipboard of the
-# machine the panes run on, so copies from a remote pane never reach the viewing
-# machine. ~/.ssh/config forwards VIEWER_PORT back to the viewing machine's
-# clipboard-bridge agent; use it when it is there.
-VIEWER_PORT=52528
+VIEWER_BASE=52528
+VIEWER_SLOTS=8
 
 TMP="$(mktemp -t clip)"
 trap 'rm -f "$TMP"' EXIT
@@ -20,9 +17,11 @@ fi
 
 copied=0
 
-if { cat "$TMP" >"/dev/tcp/127.0.0.1/$VIEWER_PORT"; } 2>/dev/null; then
-  copied=1
-fi
+for ((port = VIEWER_BASE; port < VIEWER_BASE + VIEWER_SLOTS; port++)); do
+  if { cat "$TMP" >"/dev/tcp/127.0.0.1/$port"; } 2>/dev/null; then
+    copied=1
+  fi
+done
 
 if command -v pbcopy >/dev/null 2>&1; then
   pbcopy <"$TMP" && copied=1

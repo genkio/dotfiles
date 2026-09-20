@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+
 _attach_bin=${HERDR_BIN_PATH:-herdr}
 
 attach_target() { printf '%s\n' "${HERDR_ACTIVE_PANE_ID:-}"; }

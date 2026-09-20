@@ -1,0 +1,19 @@
+#!/bin/sh
+
+DIR="$HOME/dotfiles/sketchybar/.config/sketchybar"
+ENGINE="$DIR/plugins/agent-usage/agent_usage_status.py"
+
+[ -f "$ENGINE" ] || { echo "au: engine not found: $ENGINE" >&2; exit 1; }
+
+[ $# -gt 0 ] || set -- claude codex
+
+out=""
+for provider in "$@"; do
+  part=$(CONFIG_DIR="$DIR" AGENT_USAGE_VIEW=all AGENT_USAGE_CLAUDE_FABLE=1 \
+    AGENT_USAGE_PROVIDERS="$provider" python3 "$ENGINE" 2>/dev/null)
+  [ -n "$part" ] || continue
+  out="${out:+$out   }$part"
+done
+
+[ -n "$out" ] || { echo "au: no usage data" >&2; exit 1; }
+echo "$out"

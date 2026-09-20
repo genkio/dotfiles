@@ -184,17 +184,18 @@ lr() {
     for f in $cdir/*.jsonl(N.); do
       zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
       id=${f:t:r}
-      title=$(grep -m1 -o '"customTitle":"[^"]*"' "$f" 2>/dev/null)
+      # titles are stamped per-line; renames append, so the last one wins
+      title=$(grep -o '"customTitle":"[^"]*"' "$f" 2>/dev/null | tail -1)
       title=${title#'"customTitle":"'}; title=${title%'"'}
       if [[ -z $title ]]; then
-        title=$(grep -m1 -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null)
+        title=$(grep -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null | tail -1)
         title=${title#'"aiTitle":"'}; title=${title%'"'}
       fi
       _lr_age $mt; age=$REPLY
       _lr_clean "$title"; ct=$REPLY
       agent=claude
       disp="${(r:6:)agent} ${(l:6:)age}  $ct"
-      rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id" )
+      rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id"$'\t'"$f" )
     done
   fi
 
@@ -202,7 +203,7 @@ lr() {
     head -c 1024 "$f" 2>/dev/null | grep -qF "\"cwd\":\"$PWD\"" || continue
     zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
     id=${f:t:r}; id=${id#*_}
-    title=$(grep -m1 '"type":"session_info"' "$f" 2>/dev/null | jq -r '.name // empty' 2>/dev/null)
+    title=$(grep '"type":"session_info"' "$f" 2>/dev/null | tail -1 | jq -r '.name // empty' 2>/dev/null)
     if [[ -z $title ]]; then
       title=$(grep -m1 '"type":"message"' "$f" 2>/dev/null | jq -r 'select(.message.role == "user") | [.message.content[]? | select(.type == "text") | .text] | first // empty' 2>/dev/null)
     fi
@@ -210,7 +211,7 @@ lr() {
     _lr_clean "$title"; ct=$REPLY
     agent=pi
     disp="${(r:6:)agent} ${(l:6:)age}  $ct"
-    rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id" )
+    rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id"$'\t'"$f" )
   done
 
   (( ${#rows} )) || { print -u2 "lr: no Claude or Pi sessions for $PWD"; return 1; }
@@ -218,24 +219,33 @@ lr() {
   local -a lines
   lines=( "${(@f)$(print -rl -- "${rows[@]}" | sort -t$'\t' -k1,1nr | cut -f2-)}" )
 
-  local line
-  if (( ${#lines} > 1 )); then
-    if (( $+commands[fzf] )); then
-      line=$(print -rl -- "${lines[@]}" | fzf --delimiter=$'\t' --with-nth=1 \
-        --height=60% --reverse --no-sort --prompt='resume ' \
-        --header='claude / pi sessions in this dir · enter resumes') || return
-    else
-      local pick PS3='resume> '
-      select pick in "${lines[@]%%$'\t'*}"; do
-        [[ -n $pick ]] && { line=$lines[$REPLY]; break; }
-      done
-    fi
+  local line key out
+  if (( $+commands[fzf] )); then
+    out=$(print -rl -- "${lines[@]}" | fzf --delimiter=$'\t' --with-nth=1 \
+      --height=60% --reverse --no-sort --prompt='resume ' --expect=alt-d \
+      --header='claude / pi sessions in this dir · enter resumes · alt-d deletes') || return
+    key=${out%%$'\n'*}
+    line=${out#*$'\n'}
+  elif (( ${#lines} > 1 )); then
+    local pick PS3='resume> '
+    select pick in "${lines[@]%%$'\t'*}"; do
+      [[ -n $pick ]] && { line=$lines[$REPLY]; break; }
+    done
   else
     line=$lines[1]
   fi
   [[ -n $line ]] || { print -u2 "lr: nothing selected"; return 1; }
 
   local -a parts=( "${(@ps:\t:)line}" )
+
+  if [[ $key == alt-d ]]; then
+    read -q "?lr: delete '$parts[1]'? [y/N] " || { print; return 1 }
+    print
+    rm -f -- "$parts[4]" || return 1
+    lr
+    return
+  fi
+
   case $parts[2] in
     claude) claude --resume "$parts[3]" ;;
     pi)     pi --session "$parts[3]" ;;

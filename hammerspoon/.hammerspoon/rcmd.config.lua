@@ -7,7 +7,7 @@ return {
   a = "Alacritty",
   c = "Calendar",
   f = "Finder",
-  i = "iPhone Mirroring",
+  h = "Helium",
   m = "Mail",
   n = { action = "notification_center" },
   o = { action = "finder_in_alacritty" },

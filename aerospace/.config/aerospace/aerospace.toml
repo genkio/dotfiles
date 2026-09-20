@@ -82,6 +82,7 @@ gaps.outer.right =      8
     a = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Alacritty'
     c = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Calendar'
     f = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Finder'
+    h = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Helium'
     m = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Mail'
     p = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh Preview'
     s = 'exec-and-forget $HOME/.config/aerospace/scripts/launch.sh "Sublime Text"'

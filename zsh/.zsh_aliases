@@ -444,6 +444,9 @@ alias clip="$HOME/dotfiles/scripts/clip.sh"
 alias her="herdr"
 
 # hma ssh://user@machine --label machine
+# Then on every other machine in the mesh:
+#   - hma ssh://user@<new-machine> --label <new-machine>
+#   - pkill -f 'ssh .*remote-client-bridge'
 hma() {
   local a prev="" target=""
   for a in "$@"; do

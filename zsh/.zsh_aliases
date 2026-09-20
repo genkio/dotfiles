@@ -446,14 +446,14 @@ alias her="herdr"
 # hma ssh://user@machine --label machine
 # Then on every other machine in the mesh:
 #   - hma ssh://user@<new-machine> --label <new-machine>
-#   - pkill -f 'ssh .*remote-client-bridge'
+#   - hmb
 #
 # WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
 #   - ssh-keygen -R <host>
 #   - ssh <host> true
 #   - hmr <host>
 #   - hma ssh://user@<host> --label <host>
-#   - pkill -f 'ssh .*remote-client-bridge'
+#   - hmb
 #   - repeat on every other machine in the mesh
 hma() {
   local a prev="" target=""
@@ -498,6 +498,14 @@ hmr() {
   herdr machine remove "$id" || return
 
   bash "$HOME/dotfiles/scripts/install-clipboard-bridge.sh"
+}
+
+hmb() {
+  if pkill -f 'ssh .*remote-client-bridge'; then
+    echo "hmb: bridge sessions killed; herdr will reconnect"
+  else
+    echo "hmb: no bridge sessions running"
+  fi
 }
 
 alias src="source ~/.zshrc"

@@ -512,18 +512,3 @@ alias src="source ~/.zshrc"
 alias his="vi ~/.zsh_history"
 
 [[ -f "${${(%):-%N}:A:h}/.zsh_git_aliases" ]] && source "${${(%):-%N}:A:h}/.zsh_git_aliases"
-
-ccim-ping() {
-  local pane="%0"
-  python3 -c 'import json,os,sys,time; open(os.path.expanduser("~/.cc-imessage/outbox/%d-ping.json"%time.time_ns()),"w").write(json.dumps({"target":sys.argv[1],"label":"ping","text":"cc-imessage test ping. Reply to confirm inbound routing."})); print("queued for daemon")' "$pane"
-  echo "approve the 'control Messages' popover if it appears"
-  echo "watch: tail -f $(brew --prefix)/var/log/cc-imessage.log   (expect: sent outbox)"
-}
-
-ccim-toggle() {
-  if cc-imessage status | grep -q '^outbound: on'; then
-    cc-imessage disable
-  else
-    cc-imessage enable
-  fi
-}

@@ -5,7 +5,6 @@ brew "bat"
 brew "eza"
 brew "fd"
 brew "genkio/tap/carbonyl"
-brew "genkio/tap/cc-imessage"
 brew "htop"
 brew "jq"
 brew "pam-reattach" unless in_vm

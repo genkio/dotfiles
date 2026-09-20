@@ -75,16 +75,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "command -v cc-imessage >/dev/null 2>&1 && cc-imessage notify || true"
-          }
-        ]
-      }
     ]
   },
   "statusLine": {
@@ -119,5 +109,10 @@
   "autoScrollEnabled": false,
   "skipAutoPermissionPrompt": true,
   "disableDeepLinkRegistration": "disable",
-  "diffsidebarOpen": false
+  "diffsidebarOpen": false,
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  }
 }

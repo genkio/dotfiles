@@ -9,6 +9,13 @@ overlay0 = "#dad8ce"
 [update]
 version_check = false
 
+[ui]
+host_cursor = "native"
+
+[experimental]
+reveal_hidden_cursor_for_cjk_ime = true
+cjk_ime_cursor_shape = "underline"
+
 [keys]
 split_horizontal = "prefix+h"
 focus_pane_left = ""

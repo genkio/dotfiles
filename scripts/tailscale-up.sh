@@ -29,10 +29,12 @@ fi
 
 if [[ "$(backend_state)" == "Running" ]]; then
   echo "Already logged in."
+  bash "$SCRIPT_DIR/install-taildrop.sh" || warn "taildrop receiver not loaded."
   tailscale status
   exit 0
 fi
 
 echo "A login URL follows; authorize this machine in the browser."
 sudo tailscale up --ssh --operator="$OPERATOR"
+bash "$SCRIPT_DIR/install-taildrop.sh" || warn "taildrop receiver not loaded."
 tailscale status

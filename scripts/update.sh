@@ -287,9 +287,14 @@ fi
 if [[ "$DRY_RUN" == 1 ]]; then
   section "clipboard bridge"
   bash scripts/install-clipboard-bridge.sh --dry-run
+  section "taildrop"
+  bash scripts/install-taildrop.sh --dry-run
 else
   bash scripts/install-clipboard-bridge.sh >"$LOG" 2>&1 ||
     warn "clipboard bridge not loaded; rerun scripts/install-clipboard-bridge.sh."
+  : >"$LOG"
+  bash scripts/install-taildrop.sh >"$LOG" 2>&1 ||
+    warn "taildrop receiver not loaded; rerun scripts/install-taildrop.sh."
   : >"$LOG"
 fi
 

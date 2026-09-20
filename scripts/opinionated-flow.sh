@@ -193,6 +193,8 @@ mkdir -p "$HOME/.config/mpv" "$HOME/.config/herdr" "$HOME/Library/LaunchAgents"
 stow -t "$HOME" brew herdr launchd mise mpv nvim vim yazi zsh
 bash scripts/install-clipboard-bridge.sh \
   || warn "clipboard bridge not loaded; rerun scripts/install-clipboard-bridge.sh."
+bash scripts/install-taildrop.sh \
+  || warn "taildrop receiver not loaded; rerun scripts/install-taildrop.sh."
 
 export PATH="$HOME/.local/bin:$PATH"
 bash scripts/install-mise.sh

@@ -253,8 +253,6 @@ lr() {
   esac
 }
 
-alias box="maestral"
-
 zip() {
   if [[ $# -ne 1 || "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: zip <file-or-folder>"

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+MAESTRAL=$(command -v maestral 2>/dev/null)
+[ -n "$MAESTRAL" ] || MAESTRAL="$HOME/.local/bin/maestral"
+
+[ -x "$MAESTRAL" ] || { echo "box: maestral not found" >&2; exit 1; }
+
+exec "$MAESTRAL" "$@"

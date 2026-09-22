@@ -105,9 +105,11 @@
   "theme": "auto",
   "editorMode": "vim",
   "autoScrollEnabled": false,
+  "remoteControlAtStartup": true,
   "skipAutoPermissionPrompt": true,
   "disableDeepLinkRegistration": "disable",
   "diffsidebarOpen": false,
+  "agentPushNotifEnabled": true
   "modelSettings": {
     "claude-opus-5": {
       "effortLevel": "high"

@@ -97,7 +97,7 @@
   },
   "outputStyle": "Concise",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "high",
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
@@ -109,7 +109,7 @@
   "skipAutoPermissionPrompt": true,
   "disableDeepLinkRegistration": "disable",
   "diffsidebarOpen": false,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
   "modelSettings": {
     "claude-opus-5": {
       "effortLevel": "high"

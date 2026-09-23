@@ -45,7 +45,7 @@ Parallel writers use separate worktrees. Worktrees isolate source ownership; the
 
 The orchestrator owns the canonical integration environment and integrates accepted commits there. Provision dependencies and generated state according to project procedure, such as `pnpm install` for a monorepo. Run combined dependency, build, lint, typecheck, and suitable unit/integration checks there. Validate lockfile, workspace dependency, generated interface, and other shared changes in the combined tree; isolated worker success is insufficient.
 
-The orchestrator also owns the canonical service/e2e acceptance environment unless the user assigns it elsewhere. Follow user-supplied skills or project procedures for services, databases, fixtures, ports, containers, and e2e tests. Workers may not restart, reset, or reseed it without delegated temporary ownership. The advisor defines and judges the evidence; the orchestrator operates the environment and gathers it.
+The orchestrator also owns the canonical service/e2e acceptance environment unless the user assigns it elsewhere. Follow user-supplied skills or project procedures for services, databases, fixtures, ports, containers, and e2e tests. Workers may not restart, reset, or reseed it without delegated temporary ownership. The advisor defines and judges the evidence; the orchestrator operates the environment and gathers it. The advisor pane has full tools, so state in every advisor packet that it may read files and inspect state but must not edit files, run tests or services, or otherwise change the canonical environments; it names missing evidence for the orchestrator to gather instead.
 
 ## 8. Brief workers in writing
 

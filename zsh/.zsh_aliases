@@ -12,6 +12,7 @@ cc() {
       -emax) pre+=(--effort max); shift ;;
       -m)  pre+=(--model "$2"); shift 2 ;;
       -o)  pre+=(--append-system-prompt-file "$HOME/.claude/prompts/orchestrator.md"); shift ;;
+      -rv) pre+=(--append-system-prompt-file "$HOME/.claude/prompts/review.md"); shift ;;
       -r)  pre+=(--remote-control); shift ;;
       *) break ;;
     esac
@@ -28,6 +29,7 @@ cc() {
 }
 alias ccf="cc -m claude-fable-5-1"
 alias cco="cc -o -eh -m 'opus[1m]'"
+alias ccrv="cc -rv -eh -m 'opus[1m]'"
 alias ccx="claude --dangerously-skip-permissions"
 alias pcx="pi --provider openai-codex --model gpt-5.6-sol --thinking medium"
 alias pds="pi --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max"

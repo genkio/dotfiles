@@ -19,8 +19,24 @@ HERDR="${HERDR_BIN:-}"
 [ -n "$HERDR" ] || HERDR="$HOME/.local/share/mise/shims/herdr"
 [ -x "$HERDR" ] || { echo "ccr: herdr not found" >&2; exit 1; }
 
-arg="${1:-}"
-[ -n "$arg" ] || { echo "ccr: usage: ccr <path-under-home>" >&2; exit 1; }
+usage="ccr: usage: ccr <path-under-home> [-el|-em|-eh|-ex|-emax] [-o]"
+arg=""
+effort=""
+orch=""
+# Flags may come before or after the path.
+for a in "$@"; do
+  case "$a" in
+    -el) effort=low ;;
+    -em) effort=medium ;;
+    -eh) effort=high ;;
+    -ex) effort=xhigh ;;
+    -emax) effort=max ;;
+    -o) orch=1 ;;
+    -*) echo "ccr: unknown option: $a" >&2; echo "$usage" >&2; exit 1 ;;
+    *) [ -z "$arg" ] || { echo "$usage" >&2; exit 1; }; arg="$a" ;;
+  esac
+done
+[ -n "$arg" ] || { echo "$usage" >&2; exit 1; }
 
 # Paths are relative to home so the phone only has to send "code/hq-dev".
 case "$arg" in
@@ -97,7 +113,11 @@ import json, sys
 print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])
 ')"
 
-if ! "$HERDR" agent start "$name" --kind claude --pane "$pane" -- --remote-control "$name" >/dev/null 2>&1; then
+# --remote-control takes an optional value, so it goes last.
+set --
+[ -z "$effort" ] || set -- --effort "$effort"
+[ -z "$orch" ] || set -- "$@" --append-system-prompt-file "$HOME/.claude/prompts/orchestrator.md"
+if ! "$HERDR" agent start "$name" --kind claude --pane "$pane" -- "$@" --remote-control "$name" >/dev/null 2>&1; then
   echo "ccr: claude did not come up in $pane - check that tab on the mac" >&2
   exit 1
 fi

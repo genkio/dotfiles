@@ -20,8 +20,10 @@ Create an isolated worktree for each concurrent writer and choose its cwd before
 ```bash
 herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <absolute-worktree-or-repo-dir> --label <name> --no-focus
 herdr agent start <name> --kind claude --pane <returned-pane-id> -- --model opus --effort medium
-herdr agent prompt <name> "Read <absolute-brief-path> in full and execute it."
+herdr agent prompt <name> "Read <absolute-brief-path> in full and execute it." --wait --timeout 550000
 ```
+
+Dispatch with `--wait`: it requires observed `working` or `blocked` activity before it accepts a settled state. A standalone `agent wait` issued right after a prompt sent without `--wait` can return immediately on the agent's previous `idle` or `done` state while the new turn is still starting. If you dispatch without `--wait`, confirm with `herdr agent get <name>` that the agent is `working` before starting a standalone wait.
 
 For the advisor, substitute its routing row and send the structured planning packet. Keep its agent/session handle for acceptance. For a reviewer, substitute the read-only routing row and send a complete review packet accessible through its allowed read tools; supply a full diff including untracked/new files. Reviewers cannot run shell commands or write reports. Capture their final response yourself.
 

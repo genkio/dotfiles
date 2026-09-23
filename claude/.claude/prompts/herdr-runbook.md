@@ -40,6 +40,8 @@ herdr agent read <name> --source recent-unwrapped
 
 Use lifecycle waits while other independent work continues; a wait timeout does not mean failure. Restart a wait when appropriate, without a sleep loop or a status prompt. A completion signal requires idle/done lifecycle state plus a report or captured final response that names the current task **and attempt**. An old report is not completion. Inspect the latest transcript, worktree, and report before replaying any prompt after a disconnect.
 
+`agent read` can lose most of a long response, especially in a narrow pane. When it does not show the complete final response, take it from the session transcript instead of asking the agent to repeat itself. For Claude, read `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl` and take the text blocks of the last `type: assistant` record's `message.content`. For pi, `agent_session.value` is the session file path; take the text blocks of the last record whose `message.role` is `assistant`. Verify the schema in the current installation.
+
 Capture read-only reviewer responses in full and save them under `plans/<run-id>/`. A reviewer may receive a packet but must not be given write or shell tools merely to save its response. Freeze the reviewed source snapshot so the packet corresponds to the diff being judged.
 
 When recovering a session, use the recorded handle and consult installed CLI help for the current resume syntax. The original setup used these forms:

@@ -1,6 +1,6 @@
 # herdr runbook
 
-Operational companion to `prompts/orchestrator.md`. Use the user's per-run model, effort, budget, and environment choices when they differ from these defaults. Check installed `herdr` help and actual session metadata before relying on a command or interpreting a field; CLI behavior and provider aliases may change.
+Operational companion to `prompts/orchestrator.md` and `prompts/review.md`. Use the user's per-run model, effort, budget, and environment choices when they differ from these defaults. Check installed `herdr` help and actual session metadata before relying on a command or interpreting a field; CLI behavior and provider aliases may change.
 
 ## Routing
 
@@ -10,6 +10,7 @@ Operational companion to `prompts/orchestrator.md`. Use the user's per-run model
 | Executor | `--kind claude -- --model opus --effort medium` | Implementation and local fix loop |
 | Reviewer | `--kind pi -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max --tools read,grep,find,ls` | Read-only focused review |
 | Critical second reviewer | `--kind pi -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` | Independent read-only review |
+| Opus reviewer (review mode) | `--kind claude -- --model opus --effort high --tools Read,Grep,Glob --strict-mcp-config` | Independent read-only review |
 
 The orchestrator runs as Claude Opus high effort, configured by the invoking session; it is not a pane launched by this runbook. Small read-only lookups can use the Agent tool with Sonnet or Haiku. Preserve explicit per-run overrides. Check effective provider/model/effort from launch and available session evidence: fuzzy model selection and provider capabilities can change the effective setting. Never use an agent's self-description as proof.
 
@@ -42,7 +43,7 @@ Use lifecycle waits while other independent work continues; a wait timeout does 
 
 `agent read` can lose most of a long response, especially in a narrow pane. When it does not show the complete final response, take it from the session transcript instead of asking the agent to repeat itself. For Claude, read `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl` and take the text blocks of the last `type: assistant` record's `message.content`. For pi, `agent_session.value` is the session file path; take the text blocks of the last record whose `message.role` is `assistant`. Verify the schema in the current installation.
 
-Capture read-only reviewer responses in full and save them under `.agents/runs/<run-id>/`. A reviewer may receive a packet but must not be given write or shell tools merely to save its response. Freeze the reviewed source snapshot so the packet corresponds to the diff being judged.
+Capture read-only reviewer responses in full and save them under `.agents/runs/<run-id>/`, or `.agents/reviews/pr<N>/round-<k>/` in review mode. A reviewer may receive a packet but must not be given write or shell tools merely to save its response. Freeze the reviewed source snapshot so the packet corresponds to the diff being judged.
 
 When recovering a session, use the recorded handle and consult installed CLI help for the current resume syntax. The original setup used these forms:
 

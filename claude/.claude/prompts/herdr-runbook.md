@@ -17,6 +17,8 @@ The orchestrator runs as Claude Opus high effort, configured by the invoking ses
 
 Create an isolated worktree for each concurrent writer and choose its cwd before creating a pane. Ensure the worker can access its absolute brief and report paths. Keep the canonical integration/service environment under orchestrator ownership.
 
+The first Claude launch in a new directory can stop at the folder-trust dialog, and `agent start` then returns `agent_not_ready`. Read the pane to confirm the dialog. Accept it only for a directory the orchestrator created for the run or the user has authorized; otherwise ask the user. Wait for `idle` before sending the first prompt.
+
 ```bash
 herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <absolute-worktree-or-repo-dir> --label <name> --no-focus
 herdr agent start <name> --kind claude --pane <returned-pane-id> -- --model opus --effort medium

@@ -5,9 +5,11 @@ cc() {
   local -a pre
   while true; do
     case "$1" in
+      -el) pre+=(--effort low); shift ;;
+      -em) pre+=(--effort medium); shift ;;
       -eh) pre+=(--effort high); shift ;;
       -ex) pre+=(--effort xhigh); shift ;;
-      -em) pre+=(--effort max); shift ;;
+      -emax) pre+=(--effort max); shift ;;
       -m)  pre+=(--model "$2"); shift 2 ;;
       -o)  pre+=(--append-system-prompt-file "$HOME/.claude/prompts/orchestrator.md"); shift ;;
       -r)  pre+=(--remote-control); shift ;;

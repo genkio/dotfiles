@@ -29,7 +29,7 @@ Dispatch with `--wait`: it requires observed `working` or `blocked` activity bef
 
 For the advisor, substitute its routing row and send the structured planning packet. Keep its agent/session handle for acceptance. For a reviewer, substitute the read-only routing row and send a complete review packet accessible through its allowed read tools; supply a full diff including untracked/new files. Reviewers cannot run shell commands or write reports. Capture their final response yourself.
 
-Record the actual pane ID, session handle (`agent_session.value` when supplied), cwd, baseline, branch, routing, task/attempt ID, dispatch timestamp, and report path in `plans/<run-id>/handover.md`. Do not infer that `start` alone submitted an assignment. Dispatch once; after an uncertain prompt outcome, inspect state and transcript before retrying.
+Record the actual pane ID, session handle (`agent_session.value` when supplied), cwd, baseline, branch, routing, task/attempt ID, dispatch timestamp, and report path in `.agents/runs/<run-id>/handover.md`. Do not infer that `start` alone submitted an assignment. Dispatch once; after an uncertain prompt outcome, inspect state and transcript before retrying.
 
 ## Wait, capture, and resume
 
@@ -42,7 +42,7 @@ Use lifecycle waits while other independent work continues; a wait timeout does 
 
 `agent read` can lose most of a long response, especially in a narrow pane. When it does not show the complete final response, take it from the session transcript instead of asking the agent to repeat itself. For Claude, read `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl` and take the text blocks of the last `type: assistant` record's `message.content`. For pi, `agent_session.value` is the session file path; take the text blocks of the last record whose `message.role` is `assistant`. Verify the schema in the current installation.
 
-Capture read-only reviewer responses in full and save them under `plans/<run-id>/`. A reviewer may receive a packet but must not be given write or shell tools merely to save its response. Freeze the reviewed source snapshot so the packet corresponds to the diff being judged.
+Capture read-only reviewer responses in full and save them under `.agents/runs/<run-id>/`. A reviewer may receive a packet but must not be given write or shell tools merely to save its response. Freeze the reviewed source snapshot so the packet corresponds to the diff being judged.
 
 When recovering a session, use the recorded handle and consult installed CLI help for the current resume syntax. The original setup used these forms:
 
@@ -79,4 +79,4 @@ Name reports with unique task and attempt IDs, and verify the IDs inside the rep
 
 Record dispatch/completion boundaries per assignment, especially when sessions are reused. Measure elapsed time from those boundaries; avoid counting one session's cumulative usage twice. Claude transcript records commonly expose `message.usage` fields such as `input_tokens`, `output_tokens`, `cache_read_input_tokens`, and `cache_creation_input_tokens`. The previous setup located Claude transcripts at `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl`; verify the path and schema in the current installation. Pi session usage has a different schema and can include events outside ordinary assistant messages. Inspect actual records and aggregate usage within assignment boundaries, including corrections and maintenance turns as separately labeled activity.
 
-Record effective route, model, effort/thinking, outcome, elapsed time, input/output/cache-read/cache-creation tokens when available, and correction cycles in `plans/<run-id>/agent-stats.md`. Mark absent or incomparable telemetry `unknown`; do not delay otherwise completed work for token accounting. Compare keep-warm cost and observed cache reads before claiming it saved money.
+Record effective route, model, effort/thinking, outcome, elapsed time, input/output/cache-read/cache-creation tokens when available, and correction cycles in `.agents/runs/<run-id>/agent-stats.md`. Mark absent or incomparable telemetry `unknown`; do not delay otherwise completed work for token accounting. Compare keep-warm cost and observed cache reads before claiming it saved money.

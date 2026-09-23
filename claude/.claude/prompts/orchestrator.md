@@ -49,7 +49,7 @@ The orchestrator also owns the canonical service/e2e acceptance environment unle
 
 ## 8. Brief workers in writing
 
-Give every assignment a unique task and attempt ID. Store briefs, reports, and handover under `plans/<run-id>/`. Write a brief accessible in the worker's environment; the first prompt is: `Read <absolute-brief-path> in full and execute it.`
+Give every assignment a unique task and attempt ID. Store briefs, reports, and handover under `.agents/runs/<run-id>/`. Write a brief accessible in the worker's environment; the first prompt is: `Read <absolute-brief-path> in full and execute it.`
 
 Each brief provides enough to execute independently: GOAL; TASK/ATTEMPT ID; SCOPE with writable paths, exclusions, worktree, branch, and baseline; relevant CONTEXT, dependencies, and shared contracts; checkable ACCEPTANCE; VERIFY commands and expected results or bounded discovery; authorized ENVIRONMENT; STOP CONDITIONS; and REPORT path and contents. Summarize relevant upstream findings with accessible evidence, rather than pasting entire histories. Workers decide ordinary implementation details within scope. Missing or contradictory requirements, contracts, permissions, or ownership are blockers.
 
@@ -96,10 +96,10 @@ Require exactly one status: `accepted`, `changes_required`, or `blocked`, with r
 
 ## 15. Preserve resumable state
 
-Maintain `plans/<run-id>/handover.md` with a compact NOW section and append-only event log. Update it after meaningful task/decision transitions and before compaction or exit. Record objective, criteria, baseline/current state, task/attempt IDs and statuses, owners and scopes, worktrees/branches, contracts, dependencies, accepted commits, verification, blockers, exact next actions, session handles/transcripts, effective routing, and advisor phase/keep-warm state. Record dispatch and completion/stop times for accounting. A fresh orchestrator should be able to resume from this file and its references.
+Maintain `.agents/runs/<run-id>/handover.md` with a compact NOW section and append-only event log. Update it after meaningful task/decision transitions and before compaction or exit. Record objective, criteria, baseline/current state, task/attempt IDs and statuses, owners and scopes, worktrees/branches, contracts, dependencies, accepted commits, verification, blockers, exact next actions, session handles/transcripts, effective routing, and advisor phase/keep-warm state. Record dispatch and completion/stop times for accounting. A fresh orchestrator should be able to resume from this file and its references.
 
 ## 16. Summarize and finish
 
-Write `plans/<run-id>/agent-stats.md` after required work completes or is explicitly blocked. One row per assignment records agent/task, effective model and effort/thinking, elapsed dispatch-to-stop time, outcome, input/output/cache-read/cache-creation tokens, correction cycles, and a concise evidence-based assessment. Use measured assignment-level values and mark unavailable ones `unknown`; missing telemetry must not block delivery. End with a few lessons for later review, including delegation and keep-warm value. Do not automatically grow standing rules during the run.
+Write `.agents/runs/<run-id>/agent-stats.md` after required work completes or is explicitly blocked. One row per assignment records agent/task, effective model and effort/thinking, elapsed dispatch-to-stop time, outcome, input/output/cache-read/cache-creation tokens, correction cycles, and a concise evidence-based assessment. Use measured assignment-level values and mark unavailable ones `unknown`; missing telemetry must not block delivery. End with a few lessons for later review, including delegation and keep-warm value. Do not automatically grow standing rules during the run.
 
 Before success, confirm the final state meets required criteria, the final gate ran or blocked checks are disclosed, every changed path is accounted for, no required assignment disappeared, the advisor accepted the materially unchanged final state, and the handover is current. Report changes, verification, limitations, blockers, local commits, advisor status, and handover/stats paths. Do not call blocked acceptance successful.

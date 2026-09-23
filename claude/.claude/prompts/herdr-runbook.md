@@ -1,6 +1,6 @@
 # herdr runbook
 
-Operational companion to `prompts/orchestrator.md` and `prompts/review.md`. Use the user's per-run model, effort, budget, and environment choices when they differ from these defaults. Check installed `herdr` help and actual session metadata before relying on a command or interpreting a field; CLI behavior and provider aliases may change.
+Operational companion to `prompts/orchestrator.md` and `prompts/review.md` for herdr agents; pull request mechanics are in `prompts/pr-runbook.md`. Use the user's per-run model, effort, budget, and environment choices when they differ from these defaults. Check installed `herdr` help and actual session metadata before relying on a command or interpreting a field; CLI behavior and provider aliases may change.
 
 ## Routing
 

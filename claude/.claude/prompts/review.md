@@ -130,4 +130,4 @@ Record agent sessions, dispatch and stop times, and token usage per the runbook 
 
 ## 11. Finish the round
 
-Report the verdict, the final findings list, how many findings the ladder or the filters dropped, reproduction results if any, and the paths of the result and the handover. Stop warming the advisor when the round is done and the session will not continue.
+Report the verdict, the final findings list, how many findings the ladder or the filters dropped, reproduction results if any, and the paths of the result and the handover. Disarm the advisor's keep-warm when the round is done and the session will not continue.

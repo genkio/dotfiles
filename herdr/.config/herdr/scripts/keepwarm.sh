@@ -33,7 +33,18 @@ badge() {
   fi
 }
 
-pidfile() { printf '%s/%s.pid' "$state" "$(printf '%s' "$1" | tr ':/' '__')"; }
+# Arm/disarm confirmations; KEEPWARM_QUIET=1 keeps scripted callers from spamming notifications.
+confirm() {
+  echo "$1"
+  [ -n "${KEEPWARM_QUIET:-}" ] || notify "$1"
+}
+
+pane_file() { printf '%s/%s.%s' "$state" "$(printf '%s' "$1" | tr ':/' '__')" "$2"; }
+pidfile() { pane_file "$1" pid; }
+# Present while a ping may be in flight: transcript path, then the last turn time before the ping.
+pingfile() { pane_file "$1" ping; }
+
+log() { echo "$(date '+%F %T') $pane $*"; }
 
 armed_pid() {
   f=$(pidfile "$1")
@@ -67,6 +78,19 @@ last_turn() {
   [ -n "$ts" ] && date -j -u -f '%Y-%m-%dT%H:%M:%S' "${ts%%.*}" +%s 2>/dev/null
 }
 
+# Prints "read write" cache counts of the first turn after $2, retrying $3 times.
+# herdr can report idle before Claude flushes the reply to the transcript.
+ping_usage() {
+  i=0
+  until [ "$(last_turn "$1" || echo 0)" -gt "$2" ]; do
+    [ "$i" -lt "$3" ] || return 1
+    sleep 1
+    i=$((i + 1))
+  done
+  jq -c 'select(.type == "assistant") | .message.usage' "$1" | tail -1 \
+    | jq -r '"\(.cache_read_input_tokens // 0) \(.cache_creation_input_tokens // 0)"'
+}
+
 # Check every herdr and transcript field the runner reads, so an upgrade fails loudly at arm time.
 preflight() {
   fail() { echo "$pane: $1" >&2; [ -n "${quiet:-}" ] || notify "$pane: $1"; exit 1; }
@@ -87,6 +111,11 @@ preflight() {
     *--wait*--timeout*) ;;
     *) fail "herdr agent prompt lacks --wait/--timeout" ;;
   esac
+  help=$("$herdr" agent wait --help 2>&1)
+  case "$help" in
+    *--until*--timeout*) ;;
+    *) fail "herdr agent wait lacks --until/--timeout" ;;
+  esac
   transcript="$HOME/.claude/projects/$(printf '%s' "$cwd" | tr '/.' '--')/$session.jsonl"
   [ -f "$transcript" ] || fail "transcript not found: $transcript"
   last_turn "$transcript" >/dev/null || fail "no parseable assistant timestamp in transcript"
@@ -99,7 +128,7 @@ arm() {
   pane="$1"
   secs=$(seconds "${2:-${default_hours}h}")
   if armed_pid "$pane" >/dev/null; then
-    notify "$pane already armed"
+    confirm "$pane already armed"
     return 0
   fi
   preflight
@@ -112,17 +141,44 @@ arm() {
   warn=
   [ -n "$("$herdr" pane get "$pane" 2>/dev/null | jq -r '.result.pane.tokens.warm // empty')" ] \
     || warn=", sidebar badge failed"
-  notify "$pane armed until $(date -r "$deadline" +%H:%M)$warn"
+  confirm "$pane armed until $(date -r "$deadline" +%H:%M)$warn"
 }
 
 disarm() {
-  if pid=$(armed_pid "$1"); then
+  pane="$1"
+  if pid=$(armed_pid "$pane"); then
     # Remove the pidfile first so the runner's EXIT trap treats this as a disarm.
-    rm -f "$(pidfile "$1")"
+    rm -f "$(pidfile "$pane")"
     kill "$pid" 2>/dev/null || true
-    badge "$1"
-    notify "$1 disarmed"
+    i=0
+    while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 50 ]; do
+      sleep 0.1
+      i=$((i + 1))
+    done
+    settle_ping
+    badge "$pane"
+    confirm "$pane disarmed"
+  else
+    settle_ping
   fi
+}
+
+# Return only once no ping can collide with the caller's next prompt.
+# Killing the runner does not kill its herdr child, and herdr shows a submitted ping as working only after a moment.
+settle_ping() {
+  f=$(pingfile "$pane")
+  [ -f "$f" ] || return 0
+  echo "$pane: waiting for in-flight ping" >&2
+  transcript=$(sed -n 1p "$f") last=$(sed -n 2p "$f")
+  tries=0
+  if "$herdr" agent wait "$pane" --until working --timeout 5000 >/dev/null 2>&1; then
+    "$herdr" agent wait "$pane" --timeout 300000 >/dev/null 2>&1 || true
+    tries=30
+  fi
+  if u=$(ping_usage "$transcript" "$last" "$tries" 2>/dev/null); then
+    log "ping read=${u% *} write=${u#* } (disarm)" >>"$state/log"
+  fi
+  rm -f "$f"
 }
 
 run() {
@@ -137,7 +193,6 @@ run() {
     badge "$pane"
   }
   trap cleanup EXIT
-  log() { echo "$(date '+%F %T') $pane $*"; }
   stop() { stopped=1; log "$1"; notify "$pane stopped: $1"; exit 0; }
 
   while :; do
@@ -160,18 +215,13 @@ run() {
       *) sleep 60; continue ;;
     esac
 
+    # Left behind on any exit before the log line, so the next disarm waits the ping out.
+    printf '%s\n%s\n' "$transcript" "$last" >"$(pingfile "$pane")"
     "$herdr" agent prompt "$pane" "$ping_text" --wait --timeout 300000 >/dev/null || stop "ping failed"
-    # herdr can report idle before Claude flushes the reply to the transcript.
-    i=0
-    until [ "$(last_turn "$transcript" || echo 0)" -gt "$last" ]; do
-      [ "$i" -lt 30 ] || stop "ping reply never reached the transcript"
-      sleep 1
-      i=$((i + 1))
-    done
-    usage=$(jq -c 'select(.type == "assistant") | .message.usage' "$transcript" | tail -1)
-    read_t=$(printf '%s' "$usage" | jq -r '.cache_read_input_tokens // 0')
-    write_t=$(printf '%s' "$usage" | jq -r '.cache_creation_input_tokens // 0')
+    u=$(ping_usage "$transcript" "$last" 30) || stop "ping reply never reached the transcript"
+    read_t=${u% *} write_t=${u#* }
     log "ping read=$read_t write=$write_t"
+    rm -f "$(pingfile "$pane")"
     if [ "$read_t" -eq 0 ] || [ $(( write_t * 10 )) -ge "$read_t" ]; then
       stop "ping read $read_t, wrote $write_t"
     fi
@@ -243,7 +293,7 @@ case "${1:-}" in
     ;;
   arm) [ $# -ge 2 ] || usage; arm "$2" "${3:-${default_hours}h}" ;;
   disarm) [ $# -eq 2 ] || usage; disarm "$2" ;;
-  check) [ $# -eq 2 ] || usage; pane="$2"; preflight; echo "$pane: ok" ;;
+  check) [ $# -eq 2 ] || usage; pane="$2"; quiet=1 preflight; echo "$pane: ok" ;;
   run) [ $# -eq 5 ] || usage; run "$2" "$3" "$4" "$5" ;;
   status) status ;;
   *) usage ;;

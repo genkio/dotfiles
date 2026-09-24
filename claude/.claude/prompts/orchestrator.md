@@ -29,7 +29,7 @@ For substantial work, create one persistent advisor session for planning and fin
 
 ## 3. Keep the advisor warm
 
-Keep the same advisor session available through implementation and acceptance. If an idle interval makes loss of its prompt cache uneconomical, use the fixed keep-warm procedure in `prompts/herdr-runbook.md`. Never ping a working advisor, interpret a ping response as work evidence, or put task-dependent content in a keep-warm prompt. Record its session handle and keep-warm state in the handover. Stop warming after acceptance or when the session will not be reused. Do not send status prompts to agents.
+Keep the same advisor session available through implementation and acceptance. If an idle interval makes loss of its prompt cache uneconomical, keep it warm with the keep-warm script as described in `prompts/herdr-runbook.md`, disarming before and re-arming after every advisor prompt. Never send keep-warm pings by hand or interpret a ping response as work evidence. Record its session handle and keep-warm state in the handover. Disarm after acceptance or when the session will not be reused. Do not send status prompts to agents.
 
 ## 4. Plan assignments
 

@@ -56,13 +56,23 @@ Re-read the current brief, handover, and routing before resuming. Never attach t
 
 ## Keep the advisor warm
 
-Reuse one Fable session from planning through final acceptance. While it is idle and still needed, assess whether its prompt cache is likely to expire before the next meaningful turn. The original workflow used a **50-minute idle interval** as its initial operating setting; adjust from observed cache behavior and route-specific costs, rather than assuming a universal TTL or price multiplier.
+Reuse one Fable session from planning through final acceptance. Keep it warm with `~/.config/herdr/scripts/keepwarm.sh`, never with hand-sent pings. While armed, it sends the fixed text `Reply with exactly: ok` after 50 minutes without an assistant turn, only while the advisor is idle, checks that each ping read the cache, and stops itself when the cache went cold, the window ends, or the session leaves the pane. Its arguments are the advisor's pane ID, not its agent name.
+
+Run `keepwarm.sh check <pane>` after the advisor's first turn (the planning packet), not right after launch: a fresh session has no transcript until its first turn. If the check fails, do not warm the advisor; record the reason in the handover.
+
+A ping can collide with a real prompt, and `agent prompt --wait` may then accept the ping's turn as the reply. Once the check passes, wrap every later advisor prompt:
 
 ```bash
-herdr agent prompt advisor "Reply with exactly: ok"
+KEEPWARM_QUIET=1 ~/.config/herdr/scripts/keepwarm.sh disarm <pane>
+herdr agent prompt advisor "<packet>" --wait --timeout 550000
+KEEPWARM_QUIET=1 ~/.config/herdr/scripts/keepwarm.sh arm <pane>
 ```
 
-Send only this fixed text, never to an advisor already working. Wait for the ping turn to finish before another prompt. A ping response is maintenance, not progress, approval, or acceptance evidence. Record the last meaningful turn, last keep-warm turn, and session handle in the handover. Stop warming after acceptance or when the session will not be reused. On final acceptance, resume this session but send a fresh evidence packet rather than relying solely on memory.
+`disarm` returns only after any in-flight ping has finished. `arm` keeps the advisor warm for 8 hours by default; pass a duration such as `2h` or `90m` when you know when the advisor is next needed. `KEEPWARM_QUIET=1` skips the arm/disarm notifications; stop and failure notifications still reach the user.
+
+The runner can stop on its own; check `keepwarm.sh status` rather than assuming it is still armed. A ping response is maintenance, not progress, approval, or acceptance evidence. Record the session handle, armed state, and deadline in the handover. Disarm after acceptance or when the session will not be reused. On final acceptance, resume this session but send a fresh evidence packet rather than relying solely on memory.
+
+Each ping's cache read and write counts are logged in `~/.local/state/herdr-keepwarm/log`, including pings that `disarm` waited out (marked `(disarm)`); use them for keep-warm accounting.
 
 ## Monorepo verification environments
 

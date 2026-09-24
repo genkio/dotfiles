@@ -242,6 +242,8 @@ if has_phase apps; then
   trust_brewfile_taps brew/Brewfile.apps
   brew_bundle_install brew/Brewfile.apps
   stow -t "$HOME" hammerspoon aerospace sketchybar
+  brew services start sketchybar \
+    || warn "SketchyBar service failed to start; run 'brew services start sketchybar' later."
   bash scripts/setup-sublime.sh \
     || warn "Sublime Package Control setup failed; run 'make sublime' later."
   phase_end apps

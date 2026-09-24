@@ -4,11 +4,6 @@ PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 MEMO="${TMPDIR:-/tmp}/aerospace-chrome-state"
 
-if [ "$1" != force ] && command -v sketchybar >/dev/null 2>&1 &&
-   ! pgrep -x sketchybar >/dev/null 2>&1; then
-  sketchybar &
-fi
-
 if [ "$(aerospace list-windows --focused --format '%{window-is-fullscreen}')" = "true" ]; then
   fullscreen_display="$(aerospace list-monitors --focused \
                           --format '%{monitor-appkit-nsscreen-screens-id}')"

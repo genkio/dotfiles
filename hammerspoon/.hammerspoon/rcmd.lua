@@ -715,14 +715,68 @@ local function absoluteFrameForUnit(screenFrame, unitRect)
   )
 end
 
-local function windowMatchesUnitRect(window, unitRect)
-  local screen = window:screen()
+local sketchybarBinary = nil
 
-  if not screen then
-    return false
+for _, path in ipairs({ "/opt/homebrew/bin/sketchybar", "/usr/local/bin/sketchybar" }) do
+  if hs.fs.attributes(path, "mode") == "file" then
+    sketchybarBinary = path
+    break
+  end
+end
+
+local function sketchybarBar()
+  if not sketchybarBinary then
+    return nil
   end
 
-  return frameWithinTolerance(window:frame(), absoluteFrameForUnit(screen:frame(), unitRect), 12)
+  local output, ok = hs.execute(sketchybarBinary .. " --query bar 2>/dev/null")
+
+  if not ok then
+    return nil
+  end
+
+  local parsed, bar = pcall(hs.json.decode, output)
+
+  if not parsed or type(bar) ~= "table" or bar.hidden == "on" or bar.drawing == "off" then
+    return nil
+  end
+
+  return bar
+end
+
+-- macOS only reserves space for the menu bar and Dock, so carve out SketchyBar ourselves.
+local function usableScreenFrame(screen)
+  local frame = screen:frame()
+  local bar = sketchybarBar()
+
+  if not bar then
+    return frame
+  end
+
+  local fullFrame = screen:fullFrame()
+  local reserved = (tonumber(bar.height) or 0) + (tonumber(bar.y_offset) or 0)
+  local top = frame.y
+  local bottom = frame.y + frame.h
+
+  if bar.position == "bottom" then
+    bottom = math.min(bottom, fullFrame.y + fullFrame.h - reserved)
+  elseif bar.position == "top" then
+    top = math.max(top, fullFrame.y + reserved)
+  end
+
+  return hs.geometry.rect(frame.x, top, frame.w, bottom - top)
+end
+
+local function windowMatchesUnitRect(window, screenFrame, unitRect)
+  return frameWithinTolerance(window:frame(), absoluteFrameForUnit(screenFrame, unitRect), 12)
+end
+
+local function placeWindowInUnit(window, unitRect)
+  local screen = window:screen()
+
+  if screen then
+    window:setFrame(absoluteFrameForUnit(usableScreenFrame(screen), unitRect), 0)
+  end
 end
 
 local twoThirdsLeft = hs.geometry.rect(0, 0, 2 / 3, 1)
@@ -740,8 +794,16 @@ local snappedUnitRects = {
 }
 
 local function windowIsSnapped(window)
+  local screen = window:screen()
+
+  if not screen then
+    return false
+  end
+
+  local screenFrame = usableScreenFrame(screen)
+
   for _, unitRect in ipairs(snappedUnitRects) do
-    if windowMatchesUnitRect(window, unitRect) then
+    if windowMatchesUnitRect(window, screenFrame, unitRect) then
       return true
     end
   end
@@ -764,14 +826,14 @@ local function moveWindowToUnit(window, unitRect)
     window:setFullScreen(false)
     hs.timer.doAfter(0.4, function()
       if window:id() then
-        window:moveToUnit(unitRect, 0)
+        placeWindowInUnit(window, unitRect)
         window:focus()
       end
     end)
     return
   end
 
-  window:moveToUnit(unitRect, 0)
+  placeWindowInUnit(window, unitRect)
   window:focus()
 end
 
@@ -1092,10 +1154,10 @@ local function twoThirdsFocusedWindow(missingWindowMessage)
     local neighbor = frontmostWindowOnSide(window, screen, neighborSide)
 
     if neighbor then
-      neighbor:moveToUnit(neighborUnit, 0)
+      placeWindowInUnit(neighbor, neighborUnit)
     end
 
-    window:moveToUnit(focusedUnit, 0)
+    placeWindowInUnit(window, focusedUnit)
     window:focus()
   end
 

@@ -16,7 +16,8 @@ default=(
 )
 sketchybar --default "${default[@]}"
 
-sketchybar --add event aerospace_workspace_change
+sketchybar --add event aerospace_workspace_change \
+           --add event aerospace_state_change
 
 for sid in 1 2 3 4 5 6 7 8 9
 do
@@ -40,7 +41,7 @@ do
 done
 
 sketchybar --add item quit right \
-           --set quit label="-" \
+           --set quit label="-" drawing=off \
                  click_script="$HOME/.config/aerospace/scripts/quit.sh"
 
 sketchybar --add item clock right \
@@ -74,10 +75,9 @@ sketchybar --add item network right \
            --set network update_freq=10 drawing=off \
                  script="$PLUGIN_DIR/network.sh"
 
-sketchybar --add item spaces_heartbeat right \
-           --set spaces_heartbeat drawing=off update_freq=30 \
-                 script="$HOME/.config/aerospace/scripts/spaces-sync.sh"
+sketchybar --add item aerospace_state right \
+           --set aerospace_state drawing=off update_freq=30 \
+                 script="$PLUGIN_DIR/aerospace-state.sh" \
+           --subscribe aerospace_state aerospace_state_change
 
 sketchybar --update
-
-"$HOME/.config/aerospace/scripts/sync.sh" force

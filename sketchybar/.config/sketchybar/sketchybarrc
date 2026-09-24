@@ -40,6 +40,16 @@ do
              --subscribe space."$sid" aerospace_workspace_change
 done
 
+sketchybar --add item mail left \
+           --set mail update_freq=30 drawing=off \
+                 script="$PLUGIN_DIR/mail.sh" \
+           --subscribe mail front_app_switched system_woke aerospace_state_change
+
+sketchybar --add item wechat left \
+           --set wechat update_freq=10 drawing=off \
+                 script="$PLUGIN_DIR/wechat.sh" \
+           --subscribe wechat front_app_switched system_woke
+
 sketchybar --add item quit right \
            --set quit label="-" drawing=off \
                  click_script="$HOME/.config/aerospace/scripts/quit.sh"

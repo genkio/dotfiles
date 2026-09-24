@@ -12,6 +12,12 @@ version_check = false
 [ui]
 host_cursor = "native"
 
+[ui.sidebar.agents]
+rows = [
+  ["state_icon", "machine", "workspace", "tab"],
+  ["agent", { token = "$warm", fg = "#da702c" }],
+]
+
 [experimental]
 reveal_hidden_cursor_for_cjk_ime = true
 cjk_ime_cursor_shape = "underline"
@@ -66,6 +72,14 @@ key = "prefix+o"
 type = "shell"
 command = "$HOME/.config/herdr/scripts/open-pr.sh"
 description = "open pull request"
+
+[[keys.command]]
+key = "prefix+w"
+type = "popup"
+command = "$HOME/.config/herdr/scripts/keepwarm.sh prompt"
+description = "keep this pane warm"
+width = "40%"
+height = "20%"
 
 [[keys.command]]
 key = "ctrl+shift+x"

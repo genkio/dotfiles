@@ -22,6 +22,7 @@ focus_pane_left = ""
 zoom = ["prefix+z", "ctrl+z"]
 close_pane = "ctrl+x"
 close_tab = "prefix+x"
+open_notification_target = "prefix+shift+o"
 move_tab_previous = "ctrl+shift+left"
 move_tab_next = "ctrl+shift+right"
 copy_mode = ["prefix+[", "ctrl+minus"]
@@ -59,6 +60,12 @@ key = "prefix+t"
 type = "shell"
 command = "$HOME/dotfiles/scripts/theme-toggle.sh"
 description = "toggle light/dark theme"
+
+[[keys.command]]
+key = "prefix+o"
+type = "shell"
+command = "$HOME/.config/herdr/scripts/open-pr.sh"
+description = "open pull request"
 
 [[keys.command]]
 key = "ctrl+shift+x"

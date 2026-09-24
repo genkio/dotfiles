@@ -181,31 +181,39 @@ lr() {
   zmodload zsh/stat 2>/dev/null
 
   local -a rows st
-  local f id title mt age ct disp agent
+  local f id title mt age ct agent cwd grp
 
-  local enc=${PWD//\//-}; enc=${enc//./-}; enc=${enc//_/-}
-  local cdir=$HOME/.claude/projects/$enc
-  if [[ -d $cdir ]]; then
-    for f in $cdir/*.jsonl(N.); do
-      zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
-      id=${f:t:r}
-      # titles are stamped per-line; renames append, so the last one wins
-      title=$(grep -o '"customTitle":"[^"]*"' "$f" 2>/dev/null | tail -1)
-      title=${title#'"customTitle":"'}; title=${title%'"'}
-      if [[ -z $title ]]; then
-        title=$(grep -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null | tail -1)
-        title=${title#'"aiTitle":"'}; title=${title%'"'}
-      fi
-      _lr_age $mt; age=$REPLY
-      _lr_clean "$title"; ct=$REPLY
-      agent=claude
-      disp="${(r:6:)agent} ${(l:6:)age}  $ct"
-      rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id"$'\t'"$f" )
-    done
-  fi
+  for f in $HOME/.claude/projects/*/*.jsonl(N.); do
+    cwd=$(grep -m1 -o '"cwd":"[^"]*"' "$f" 2>/dev/null)
+    cwd=${cwd#'"cwd":"'}; cwd=${cwd%'"'}
+    [[ -n $cwd ]] || continue
+    if [[ $cwd == $PWD ]]; then grp=0
+    elif [[ -d $cwd ]]; then grp=1
+    else continue
+    fi
+    zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
+    id=${f:t:r}
+    # titles are stamped per-line; renames append, so the last one wins
+    title=$(grep -o '"customTitle":"[^"]*"' "$f" 2>/dev/null | tail -1)
+    title=${title#'"customTitle":"'}; title=${title%'"'}
+    if [[ -z $title ]]; then
+      title=$(grep -o '"aiTitle":"[^"]*"' "$f" 2>/dev/null | tail -1)
+      title=${title#'"aiTitle":"'}; title=${title%'"'}
+    fi
+    _lr_age $mt; age=$REPLY
+    _lr_clean "$title"; ct=$REPLY
+    agent=claude
+    rows+=( "$grp"$'\t'"$mt"$'\t'"${(r:6:)agent} ${(l:6:)age}  $ct"$'\t'"$agent"$'\t'"$id"$'\t'"$f"$'\t'"$cwd" )
+  done
 
   for f in $HOME/.pi/agent/sessions/*/*.jsonl(N.); do
-    head -c 1024 "$f" 2>/dev/null | grep -qF "\"cwd\":\"$PWD\"" || continue
+    cwd=$(head -c 1024 "$f" 2>/dev/null | grep -m1 -o '"cwd":"[^"]*"')
+    cwd=${cwd#'"cwd":"'}; cwd=${cwd%'"'}
+    [[ -n $cwd ]] || continue
+    if [[ $cwd == $PWD ]]; then grp=0
+    elif [[ -d $cwd ]]; then grp=1
+    else continue
+    fi
     zstat -A st +mtime "$f" 2>/dev/null || continue; mt=$st[1]
     id=${f:t:r}; id=${id#*_}
     title=$(grep '"type":"session_info"' "$f" 2>/dev/null | tail -1 | jq -r '.name // empty' 2>/dev/null)
@@ -215,20 +223,37 @@ lr() {
     _lr_age $mt; age=$REPLY
     _lr_clean "$title"; ct=$REPLY
     agent=pi
-    disp="${(r:6:)agent} ${(l:6:)age}  $ct"
-    rows+=( "$mt"$'\t'"$disp"$'\t'"$agent"$'\t'"$id"$'\t'"$f" )
+    rows+=( "$grp"$'\t'"$mt"$'\t'"${(r:6:)agent} ${(l:6:)age}  $ct"$'\t'"$agent"$'\t'"$id"$'\t'"$f"$'\t'"$cwd" )
   done
 
-  (( ${#rows} )) || { print -u2 "lr: no Claude or Pi sessions for $PWD"; return 1; }
+  (( ${#rows} )) || { print -u2 "lr: no Claude or Pi sessions found"; return 1; }
 
-  local -a lines
-  lines=( "${(@f)$(print -rl -- "${rows[@]}" | sort -t$'\t' -k1,1nr | cut -f2-)}" )
+  local -a sorted lines parts
+  sorted=( "${(@f)$(print -rl -- "${rows[@]}" | sort -t$'\t' -k1,1n -k2,2nr)}" )
+
+  local r p w=0 maxw=32
+  for r in "${sorted[@]}"; do
+    parts=( "${(@ps:\t:)r}" )
+    [[ $parts[1] == 1 ]] || continue
+    p=${parts[7]/#$HOME/\~}
+    (( ${#p} > w )) && w=${#p}
+  done
+  (( w > maxw )) && w=$maxw
+  for r in "${sorted[@]}"; do
+    parts=( "${(@ps:\t:)r}" )
+    if [[ $parts[1] == 1 ]]; then
+      p=${parts[7]/#$HOME/\~}
+      (( ${#p} > w )) && p="…${p[-(w-1),-1]}"
+      parts[3]="${(r:w:)p}  $parts[3]"
+    fi
+    lines+=( "${(pj:\t:)parts[3,-1]}" )
+  done
 
   local line key out
   if (( $+commands[fzf] )); then
     out=$(print -rl -- "${lines[@]}" | fzf --delimiter=$'\t' --with-nth=1 \
       --height=60% --reverse --no-sort --prompt='resume ' --expect=alt-d \
-      --header='claude / pi sessions in this dir · enter resumes · alt-d deletes') || return
+      --header='claude / pi sessions, this dir first · enter resumes · alt-d deletes') || return
     key=${out%%$'\n'*}
     line=${out#*$'\n'}
   elif (( ${#lines} > 1 )); then
@@ -241,7 +266,7 @@ lr() {
   fi
   [[ -n $line ]] || { print -u2 "lr: nothing selected"; return 1; }
 
-  local -a parts=( "${(@ps:\t:)line}" )
+  parts=( "${(@ps:\t:)line}" )
 
   if [[ $key == alt-d ]]; then
     read -q "?lr: delete '$parts[1]'? [y/N] " || { print; return 1 }
@@ -249,6 +274,10 @@ lr() {
     rm -f -- "$parts[4]" || return 1
     lr
     return
+  fi
+
+  if [[ $parts[5] != $PWD ]]; then
+    cd -- "$parts[5]" || return 1
   fi
 
   case $parts[2] in

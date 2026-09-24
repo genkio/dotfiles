@@ -15,7 +15,9 @@ Nobody in this mode changes the pull request's code. Do not commit to, push to, 
 | Reviewer C | Claude Opus, high effort, read-only |
 | Small read-only lookup | Agent tool with Sonnet or Haiku |
 
-Read `prompts/herdr-runbook.md` before launching or resuming agents. It contains the launch arguments, dispatch, wait, capture, keep-warm, and telemetry procedures. Confirm each agent's effective model and effort from launch configuration and session evidence, not from its self-description.
+Read `prompts/herdr-runbook.md` before launching or resuming agents. It contains the launch arguments, naming, dispatch, wait, capture, close, keep-warm, and telemetry procedures. Confirm each agent's effective model and effort from launch configuration and session evidence, not from its self-description.
+
+Name every herdr agent `herd-pr<N>-<role>`, and use that name for its tab and session too, so the user can filter herd sessions. Close each reviewer's tab as soon as its response is captured, and each reproduction worker's once its report is saved; a later round starts fresh reviewers. Keep the advisor open only while the round still needs its judgment or the user continues the session.
 
 ## 1. Start from the worktree
 
@@ -130,4 +132,4 @@ Record agent sessions, dispatch and stop times, and token usage per the runbook 
 
 ## 11. Finish the round
 
-Report the verdict, the final findings list, how many findings the ladder or the filters dropped, reproduction results if any, and the paths of the result and the handover. Disarm the advisor's keep-warm when the round is done and the session will not continue.
+Report the verdict, the final findings list, how many findings the ladder or the filters dropped, reproduction results if any, and the paths of the result and the handover. Disarm the advisor's keep-warm and close its tab when the round is done and the session will not continue. Confirm no other herd agent from the round is still open.

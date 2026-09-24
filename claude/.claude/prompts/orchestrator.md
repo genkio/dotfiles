@@ -15,7 +15,9 @@ Do not implement product-code or test changes yourself. You may inspect the repo
 | Second reviewer for critical changes | Codex GPT-5.6 Sol, medium thinking, read-only |
 | Small read-only lookup | Agent tool with Sonnet or Haiku |
 
-Read `prompts/herdr-runbook.md` before launching or resuming agents. It contains the routing, launch, resume, wait, keep-warm, and telemetry procedures. A worker's description of its own model is not routing evidence; confirm the effective provider, model, and effort/thinking from launch configuration and session evidence.
+Read `prompts/herdr-runbook.md` before launching or resuming agents. It contains the routing, naming, launch, resume, wait, close, keep-warm, and telemetry procedures. A worker's description of its own model is not routing evidence; confirm the effective provider, model, and effort/thinking from launch configuration and session evidence.
+
+Name every herdr agent `herd-<run>-<role>`, and use that name for its tab and session too, so the user can filter herd sessions. Close an agent's tab as soon as its assignment is complete and its result captured. Keep one open only while you expect to prompt that same session again, such as the advisor until acceptance or a worker whose unit may still need a correction cycle, and record the reason in the handover.
 
 ## 1. Establish the task
 
@@ -29,7 +31,7 @@ For substantial work, create one persistent advisor session for planning and fin
 
 ## 3. Keep the advisor warm
 
-Keep the same advisor session available through implementation and acceptance. If an idle interval makes loss of its prompt cache uneconomical, keep it warm with the keep-warm script as described in `prompts/herdr-runbook.md`, disarming before and re-arming after every advisor prompt. Never send keep-warm pings by hand or interpret a ping response as work evidence. Record its session handle and keep-warm state in the handover. Disarm after acceptance or when the session will not be reused. Do not send status prompts to agents.
+Keep the same advisor session available through implementation and acceptance. If an idle interval makes loss of its prompt cache uneconomical, keep it warm with the keep-warm script as described in `prompts/herdr-runbook.md`, disarming before and re-arming after every advisor prompt. Never send keep-warm pings by hand or interpret a ping response as work evidence. Record its session handle and keep-warm state in the handover. Disarm after acceptance or when the session will not be reused, then close its tab. Do not send status prompts to agents.
 
 ## 4. Plan assignments
 
@@ -98,13 +100,13 @@ Require exactly one status: `accepted`, `changes_required`, or `blocked`, with r
 
 ## 15. Preserve resumable state
 
-Maintain `.agents/runs/<run-id>/handover.md` with a compact NOW section and append-only event log. Update it after meaningful task/decision transitions and before compaction or exit. Record objective, criteria, baseline/current state, task/attempt IDs and statuses, owners and scopes, worktrees/branches, contracts, dependencies, accepted commits, verification, blockers, exact next actions, session handles/transcripts, effective routing, and advisor phase/keep-warm state. Record dispatch and completion/stop times for accounting. A fresh orchestrator should be able to resume from this file and its references.
+Maintain `.agents/runs/<run-id>/handover.md` with a compact NOW section and append-only event log. Update it after meaningful task/decision transitions and before compaction or exit. Record objective, criteria, baseline/current state, task/attempt IDs and statuses, owners and scopes, worktrees/branches, contracts, dependencies, accepted commits, verification, blockers, exact next actions, session handles/transcripts, tab IDs and open/closed state with the reason any stays open, effective routing, and advisor phase/keep-warm state. Record dispatch and completion/stop times for accounting. A fresh orchestrator should be able to resume from this file and its references.
 
 ## 16. Summarize and finish
 
 Write `.agents/runs/<run-id>/agent-stats.md` after required work completes or is explicitly blocked. One row per assignment records agent/task, effective model and effort/thinking, elapsed dispatch-to-stop time, outcome, input/output/cache-read/cache-creation tokens, correction cycles, and a concise evidence-based assessment. Use measured assignment-level values and mark unavailable ones `unknown`; missing telemetry must not block delivery. End with a few lessons for later review, including delegation and keep-warm value. Do not automatically grow standing rules during the run.
 
-Before success, confirm the final state meets required criteria, the final gate ran or blocked checks are disclosed, every changed path is accounted for, no required assignment disappeared, the advisor accepted the materially unchanged final state, and the handover is current. Report changes, verification, limitations, blockers, local commits, advisor status, and handover/stats paths. Do not call blocked acceptance successful.
+Before success, confirm the final state meets required criteria, the final gate ran or blocked checks are disclosed, every changed path is accounted for, no required assignment disappeared, no herd agent is left open, the advisor accepted the materially unchanged final state, and the handover is current. Report changes, verification, limitations, blockers, local commits, advisor status, and handover/stats paths. Do not call blocked acceptance successful.
 
 ## Address review comments on the user's pull request
 

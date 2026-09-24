@@ -20,17 +20,19 @@ Create an isolated worktree for each concurrent writer and choose its cwd before
 
 The first Claude launch in a new directory can stop at the folder-trust dialog, and `agent start` then returns `agent_not_ready`. Read the pane to confirm the dialog. Accept it only for a directory the orchestrator created for the run or the user has authorized; otherwise ask the user. Wait for `idle` before sending the first prompt.
 
+Name every agent `herd-<run>-<role>`, where `<run>` is the run ID or `pr<N>` and `<role>` is unique within it (`herd-pr6232-advisor`, `herd-pr6232-rev-a`, `herd-r9-exec-1`). Use that one string as the tab label, the herdr agent name, and the session display name (`--name`, which both `claude` and `pi` accept), so the user can filter herd sessions in the tab bar, `herdr agent list`, and the resume picker.
+
 ```bash
-herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <absolute-worktree-or-repo-dir> --label <name> --no-focus
-herdr agent start <name> --kind claude --pane <returned-pane-id> -- --model opus --effort medium
-herdr agent prompt <name> "Read <absolute-brief-path> in full and execute it." --wait --timeout 550000
+herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <absolute-worktree-or-repo-dir> --label herd-<run>-<role> --no-focus
+herdr agent start herd-<run>-<role> --kind claude --pane <returned-pane-id> -- --name herd-<run>-<role> --model opus --effort medium
+herdr agent prompt herd-<run>-<role> "Read <absolute-brief-path> in full and execute it." --wait --timeout 550000
 ```
 
 Dispatch with `--wait`: it requires observed `working` or `blocked` activity before it accepts a settled state. A standalone `agent wait` issued right after a prompt sent without `--wait` can return immediately on the agent's previous `idle` or `done` state while the new turn is still starting. If you dispatch without `--wait`, confirm with `herdr agent get <name>` that the agent is `working` before starting a standalone wait.
 
 For the advisor, substitute its routing row and send the structured planning packet. Keep its agent/session handle for acceptance. For a reviewer, substitute the read-only routing row and send a complete review packet accessible through its allowed read tools; supply a full diff including untracked/new files. Reviewers cannot run shell commands or write reports. Capture their final response yourself.
 
-Record the actual pane ID, session handle (`agent_session.value` when supplied), cwd, baseline, branch, routing, task/attempt ID, dispatch timestamp, and report path in `.agents/runs/<run-id>/handover.md`. Do not infer that `start` alone submitted an assignment. Dispatch once; after an uncertain prompt outcome, inspect state and transcript before retrying.
+Record the actual tab ID, pane ID, session handle (`agent_session.value` when supplied), cwd, baseline, branch, routing, task/attempt ID, dispatch timestamp, and report path in `.agents/runs/<run-id>/handover.md`. Do not infer that `start` alone submitted an assignment. Dispatch once; after an uncertain prompt outcome, inspect state and transcript before retrying.
 
 ## Wait, capture, and resume
 
@@ -54,6 +56,16 @@ herdr agent start <pi-name> --kind pi --pane <id> -- --session <pi-session-path>
 
 Re-read the current brief, handover, and routing before resuming. Never attach two active writers to the same writable scope. Confirm the old worker is stopped or isolated before replacement; reconcile any late work against the current integration state.
 
+## Close finished agents
+
+Close an agent's tab as soon as its assignment is complete: its lifecycle is idle/done, its report or final response is captured and saved, and its session handle and stop time are in the handover. The transcript stays on disk, so the session can still be resumed or accounted for after the tab is gone.
+
+```bash
+herdr tab close <tab-id>
+```
+
+Keep an agent open only while you expect to prompt that same session again: the advisor until its final acceptance or judgment, or a worker whose unit is still in review and may get a correction cycle. Record the reason in the handover, and close the tab when the reason ends. Reviewers never qualify, because a later round starts fresh reviewers. Before closing, confirm the agent is not `working` and disarm its keep-warm. Close only tabs you created, never the orchestrator's own pane or a user's tab.
+
 ## Keep the advisor warm
 
 Reuse one Fable session from planning through final acceptance. Keep it warm with `~/.config/herdr/scripts/keepwarm.sh`, never with hand-sent pings. While armed, it sends the fixed text `Reply with exactly: ok` after 50 minutes without an assistant turn, only while the advisor is idle, checks that each ping read the cache, and stops itself when the cache went cold, the window ends, or the session leaves the pane. Its arguments are the advisor's pane ID, not its agent name.
@@ -64,13 +76,13 @@ A ping can collide with a real prompt, and `agent prompt --wait` may then accept
 
 ```bash
 KEEPWARM_QUIET=1 ~/.config/herdr/scripts/keepwarm.sh disarm <pane>
-herdr agent prompt advisor "<packet>" --wait --timeout 550000
+herdr agent prompt herd-<run>-advisor "<packet>" --wait --timeout 550000
 KEEPWARM_QUIET=1 ~/.config/herdr/scripts/keepwarm.sh arm <pane>
 ```
 
 `disarm` returns only after any in-flight ping has finished. `arm` keeps the advisor warm for 8 hours by default; pass a duration such as `2h` or `90m` when you know when the advisor is next needed. `KEEPWARM_QUIET=1` skips the arm/disarm notifications; stop and failure notifications still reach the user.
 
-The runner can stop on its own; check `keepwarm.sh status` rather than assuming it is still armed. A ping response is maintenance, not progress, approval, or acceptance evidence. Record the session handle, armed state, and deadline in the handover. Disarm after acceptance or when the session will not be reused. On final acceptance, resume this session but send a fresh evidence packet rather than relying solely on memory.
+The runner can stop on its own; check `keepwarm.sh status` rather than assuming it is still armed. A ping response is maintenance, not progress, approval, or acceptance evidence. Record the session handle, armed state, and deadline in the handover. Disarm after acceptance or when the session will not be reused, then close its tab. On final acceptance, resume this session but send a fresh evidence packet rather than relying solely on memory.
 
 Each ping's cache read and write counts are logged in `~/.local/state/herdr-keepwarm/log`, including pings that `disarm` waited out (marked `(disarm)`); use them for keep-warm accounting.
 

@@ -1075,8 +1075,10 @@ def render_status_line() -> str:
     parts: list[str] = []
     for provider in providers:
         # A failed fetch or a bare placeholder means we have nothing worth
-        # showing; drop the whole segment rather than render a gap.
+        # showing; drop the whole segment rather than render a gap. Keep
+        # retrying in the background so the marker can clear.
         if provider_fetch_failed(provider):
+            refresh_in_background(provider)
             continue
         placeholder = missing_provider_segment(provider)
         data = get_provider_status(provider)

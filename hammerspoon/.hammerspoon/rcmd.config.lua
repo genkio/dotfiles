@@ -3,6 +3,7 @@ return {
   ["1"] = { action = "window_left" },
   ["2"] = { action = "window_right" },
   ["3"] = { action = "window_two_thirds" },
+  ["9"] = { action = "window_fill" },
   ["`"] = { action = "window_next_screen" },
   a = "Alacritty",
   c = "Calendar",

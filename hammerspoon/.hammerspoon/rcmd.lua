@@ -330,6 +330,7 @@ local function actionTargetLabel(actionTarget, actionOptions)
     window_right = "Action: Move Window Right",
     window_two_thirds = "Action: Grow Window to Two Thirds",
     window_maximize = "Action: Enter Full Screen",
+    window_fill = "Action: Fill Screen",
     window_next_screen = "Action: Move Window to Next Screen",
     finder_in_alacritty = "Action: Open Finder Path in Alacritty",
   }
@@ -1329,6 +1330,9 @@ local function runAction(actionTarget, actionOptions)
     end,
     window_maximize = function()
       fullscreenFocusedWindow("No focused window to enter full screen")
+    end,
+    window_fill = function()
+      moveFocusedWindow(hs.layout.maximized, "No focused window to fill screen")
     end,
     window_next_screen = function()
       moveFocusedWindowToNextScreen("No focused window to move")

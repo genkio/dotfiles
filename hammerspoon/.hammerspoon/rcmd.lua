@@ -838,7 +838,7 @@ local function moveWindowToUnit(window, unitRect)
   window:focus()
 end
 
-local function focusApp(app, shouldFullscreen, placeLeft, retriesRemaining)
+local function focusApp(app, shouldFullscreen, retriesRemaining)
   local frontmostApp = hs.application.frontmostApplication()
   local appWasFrontmost = frontmostApp ~= nil and frontmostApp:pid() == app:pid()
 
@@ -865,8 +865,6 @@ local function focusApp(app, shouldFullscreen, placeLeft, retriesRemaining)
   if window then
     if shouldFullscreen and not windowIsSnapped(window) then
       fullscreenWindow(window)
-    elseif placeLeft and not shouldFullscreen then
-      moveWindowToUnit(window, hs.layout.left50)
     else
       focusWindow(window)
     end
@@ -880,7 +878,7 @@ local function focusApp(app, shouldFullscreen, placeLeft, retriesRemaining)
   end
 
   hs.timer.doAfter(0.2, function()
-    focusApp(app, shouldFullscreen, placeLeft, retriesRemaining - 1)
+    focusApp(app, shouldFullscreen, retriesRemaining - 1)
   end)
 end
 
@@ -1055,11 +1053,10 @@ openBoundApp = function(appBinding)
   local appTarget = appTargetValue(appBinding)
   local shouldFullscreen = type(appBinding) == "table" and appBinding.fullscreen == true
   local lookupTarget = lookupTargetFor(appTarget)
-  local placeLeft = hs.application.get(lookupTarget) == nil
   local app = hs.application.open(appTarget)
 
   if app then
-    focusApp(app, shouldFullscreen, placeLeft, 15)
+    focusApp(app, shouldFullscreen, 15)
     return
   end
 
@@ -1071,7 +1068,7 @@ openBoundApp = function(appBinding)
 
     if runningApp then
       poller:stop()
-      focusApp(runningApp, shouldFullscreen, placeLeft, 15)
+      focusApp(runningApp, shouldFullscreen, 15)
       return
     end
 

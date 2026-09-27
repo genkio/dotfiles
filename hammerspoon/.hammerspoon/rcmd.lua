@@ -232,8 +232,17 @@ local function hasRawFlag(rawFlags, mask)
   return mask ~= 0 and (rawFlags & mask) ~= 0
 end
 
+local function hasOnlyHyperModifiers(flags)
+  return flags.cmd and flags.alt and flags.ctrl and flags.shift and not flags.fn
+end
+
 local function hasOnlyRightCommandModifier(event)
   local flags = event:getFlags()
+
+  -- Deskflow can't tell left from right modifiers, so the server remaps right cmd to hyper via Karabiner.
+  if hasOnlyHyperModifiers(flags) then
+    return true
+  end
 
   if not hasOnlyCommandModifier(flags) then
     return false
@@ -253,7 +262,7 @@ local function setLauncherHotkeysEnabled(enabled)
     return
   end
 
-  for _, hotkey in pairs(launcherHotkeys) do
+  for _, hotkey in ipairs(launcherHotkeys) do
     if enabled then
       hotkey:enable()
     else
@@ -1407,9 +1416,12 @@ function M.start()
   end
 
   for key, binding in pairs(bindings) do
-    launcherHotkeys[key] = hs.hotkey.new({ "cmd" }, key, function()
+    local function trigger()
       triggerBinding(key, binding)
-    end)
+    end
+
+    table.insert(launcherHotkeys, hs.hotkey.new({ "cmd" }, key, trigger))
+    table.insert(launcherHotkeys, hs.hotkey.new({ "cmd", "alt", "ctrl", "shift" }, key, trigger))
   end
 
   currentBindings = bindings

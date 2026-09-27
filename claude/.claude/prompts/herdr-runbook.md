@@ -1,105 +1,213 @@
 # herdr runbook
 
-Operational companion to `prompts/orchestrator.md` and `prompts/review.md` for herdr agents; pull request mechanics are in `prompts/pr-runbook.md`. Use the user's per-run model, effort, budget, and environment choices when they differ from these defaults. Check installed `herdr` help and actual session metadata before relying on a command or interpreting a field; CLI behavior and provider aliases may change.
+Mechanics for herdr agents, reviewer output, and saved state in `~/.claude/prompts/orchestrator.md` and `~/.claude/prompts/review.md`; PR commands are in `~/.claude/prompts/pr-runbook.md`. Check installed `herdr` help and real session metadata before relying on a command or field.
 
-## Routing
+## Roles and launch arguments
 
-| Role | Default launch arguments | Purpose |
-|---|---|---|
-| Advisor | `--kind claude -- --model claude-fable-5-1 --effort medium` | Persistent planning and final acceptance |
-| Executor | `--kind claude -- --model opus --effort medium` | Implementation and local fix loop |
-| Reviewer | `--kind pi -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max --tools read,grep,find,ls` | Read-only focused review |
-| Critical second reviewer | `--kind pi -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` | Independent read-only review |
-| Opus reviewer (review mode) | `--kind claude -- --model opus --effort high --tools Read,Grep,Glob --strict-mcp-config` | Independent read-only review |
+This is the single source for roles, default models, and permissions. Per-run user choices win.
 
-The orchestrator runs as Claude Opus high effort, configured by the invoking session; it is not a pane launched by this runbook. Small read-only lookups can use the Agent tool with Sonnet or Haiku. Preserve explicit per-run overrides. Check effective provider/model/effort from launch and available session evidence: fuzzy model selection and provider capabilities can change the effective setting. Never use an agent's self-description as proof.
+| Role | Used by | Default model | Launch arguments |
+|---|---|---|---|
+| Orchestrator | both modes | Claude Opus, high effort | the invoking session, not launched here |
+| Advisor | both modes | Claude Fable, medium effort | `--kind claude -- --model claude-fable-5-1 --effort medium` |
+| Executor | orchestrator; review reproduction | Claude Opus, medium effort | `--kind claude -- --model opus --effort medium` |
+| Reviewer (Reviewer A in review mode) | both modes | DeepSeek Flash, maximum thinking, read-only | `--kind pi -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash --thinking max --tools read,grep,find,ls` |
+| Second reviewer (critical changes; Reviewer B in review mode) | both modes | Codex GPT-5.6 Sol, medium thinking, read-only | `--kind pi -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` |
+| Reviewer C | review mode | Claude Opus, high effort, read-only | `--kind claude -- --model opus --effort high --tools Read,Grep,Glob --strict-mcp-config` |
+| Small read-only lookup | both modes | Sonnet or Haiku | Agent tool, not a pane |
+
+Reviewers get read-only tools only; never add write or shell tools, even to let one save its response. The advisor launches with full tools but is read-only by instruction: it must not edit files, run tests or services, or change any environment.
+
+Confirm effective provider, model, and effort from launch configuration and session evidence, never self-description. Claude transcripts record the model but not the effort, so the launch arguments you passed are the effort evidence; a pi session file appears only after the first turn, with `model_change` and `thinking_level_change` records. If a route is unavailable or resolves to another model, stop and ask the user. Never fall back without permission, and record any approved substitution.
+
+## Names and workspace
+
+Use one name as tab label, agent name, and session name (`--name`), so the user can filter herd sessions:
+
+- Orchestrator mode: `herd-<run>-<role>`, such as `herd-r9-exec-1`.
+- Review mode: `herd-pr<N>-advisor` for the advisor, and the round for everyone else, such as `herd-pr6232-r2-rev-a`.
+- At most 32 characters of lowercase letters, digits, `_`, and `-`. Check `herdr agent list` first and add `-2` only if the name is taken by a live agent; a new session's advisor reuses the base name when it is free.
+
+Take the workspace from `HERDR_WORKSPACE_ID`, else from the current pane, never the focused workspace. If both are empty, stop and ask.
+
+```bash
+herdr pane current --current   # workspace is .result.pane.workspace_id
+```
 
 ## Launch and dispatch
 
-Create an isolated worktree for each concurrent writer and choose its cwd before creating a pane. Ensure the worker can access its absolute brief and report paths. Keep the canonical integration/service environment under orchestrator ownership.
-
-The first Claude launch in a new directory can stop at the folder-trust dialog, and `agent start` then returns `agent_not_ready`. Read the pane to confirm the dialog. Accept it only for a directory the orchestrator created for the run or the user has authorized; otherwise ask the user. Wait for `idle` before sending the first prompt.
-
-Name every agent `herd-<run>-<role>`, where `<run>` is the run ID or `pr<N>` and `<role>` is unique within it (`herd-pr6232-advisor`, `herd-pr6232-rev-a`, `herd-r9-exec-1`). Use that one string as the tab label, the herdr agent name, and the session display name (`--name`, which both `claude` and `pi` accept), so the user can filter herd sessions in the tab bar, `herdr agent list`, and the resume picker.
+Before launching a parallel implementation writer, create its worktree from the integration repository. Choose and record an absolute path, a new branch, and the baseline commit. A serial writer can use its assigned integration tree. A review reproduction worker uses the review worktree with the temporary-file limits in `review.md`. Every agent must be able to read its brief or packet.
 
 ```bash
-herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <absolute-worktree-or-repo-dir> --label herd-<run>-<role> --no-focus
-herdr agent start herd-<run>-<role> --kind claude --pane <returned-pane-id> -- --name herd-<run>-<role> --model opus --effort medium
-herdr agent prompt herd-<run>-<role> "Read <absolute-brief-path> in full and execute it." --wait --timeout 550000
+git worktree add -b <branch> <absolute-worktree-path> <baseline-oid>
 ```
 
-Dispatch with `--wait`: it requires observed `working` or `blocked` activity before it accepts a settled state. A standalone `agent wait` issued right after a prompt sent without `--wait` can return immediately on the agent's previous `idle` or `done` state while the new turn is still starting. If you dispatch without `--wait`, confirm with `herdr agent get <name>` that the agent is `working` before starting a standalone wait.
+```bash
+herdr tab create --workspace <workspace-id> --cwd <absolute-dir> --label <name> --no-focus
+herdr agent start <name> --kind claude --pane <returned-pane-id> -- --name <name> --model opus --effort medium
+herdr agent prompt <name> "Read <absolute-brief-path> in full and execute it." --wait --timeout 550000
+```
 
-For the advisor, substitute its routing row and send the structured planning packet. Keep its agent/session handle for acceptance. For a reviewer, substitute the read-only routing row and send a complete review packet accessible through its allowed read tools; supply a full diff including untracked/new files. Reviewers cannot run shell commands or write reports. Capture their final response yourself.
+Substitute the role's launch arguments, always after `--name <name>`. A first Claude launch in a new directory can stop at the folder-trust dialog, and `agent start` returns `agent_not_ready`. Read the pane to confirm it. Accept only for a directory you created for this run or the worktree the user started the session in; otherwise ask. The dialog defaults to "No, exit", so select "Yes, I trust this folder", then wait; the agent keeps its name, so do not start it again:
 
-Record the actual tab ID, pane ID, session handle (`agent_session.value` when supplied), cwd, baseline, branch, routing, task/attempt ID, dispatch timestamp, and report path in `.agents/runs/<run-id>/handover.md`. Do not infer that `start` alone submitted an assignment. Dispatch once; after an uncertain prompt outcome, inspect state and transcript before retrying.
+```bash
+herdr agent send-keys <name> down enter
+herdr agent wait <name> --until idle --timeout 60000
+```
 
-## Wait, capture, and resume
+A worker brief names its own TASK/ATTEMPT. Dispatch an advisor or reviewer packet with `Read <absolute-packet-path> in full and execute it. Your TASK/ATTEMPT is <task>/<attempt>.`, so one packet can serve several reviewers.
+
+`start` does not submit work; the prompt does. Dispatch with `--wait`, which requires observed `working` or `blocked` before it accepts a settled state; a bare `agent wait` after an unwaited prompt can return at once on the previous state. To run several agents in parallel, send each prompt without `--wait`, confirm it started with `herdr agent wait <name> --until working --timeout 30000` (a single `agent get` right after the prompt can still show `idle`), and record the dispatch time; then wait on each. Dispatch once; if the outcome is uncertain, inspect lifecycle, transcript, worktree, and report before sending anything again.
+
+## Agent records
+
+Record in the handover, for every agent: name, tab and pane IDs returned by `tab create`, session handle (`agent_session.value` from the `agent start` result), cwd, baseline, branch, effective routing, task and attempt, dispatch and stop times, report path, keep-warm state, and whether the tab is open and why.
+
+## Wait and capture
 
 ```bash
 herdr agent wait <name> --timeout 550000
 herdr agent read <name> --source recent-unwrapped
 ```
 
-Use lifecycle waits while other independent work continues; a wait timeout does not mean failure. Restart a wait when appropriate, without a sleep loop or a status prompt. A completion signal requires idle/done lifecycle state plus a report or captured final response that names the current task **and attempt**. An old report is not completion. Inspect the latest transcript, worktree, and report before replaying any prompt after a disconnect.
+A wait timeout is not failure: wait again rather than sleep-looping or sending a status prompt, and never interrupt healthy long work. A unit completes only when the agent is `idle` or `done` and its report or captured response names the current task and attempt. An older report is not completion.
 
-`agent read` can lose most of a long response, especially in a narrow pane. When it does not show the complete final response, take it from the session transcript instead of asking the agent to repeat itself. For Claude, read `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl` and take the text blocks of the last `type: assistant` record's `message.content`. For pi, `agent_session.value` is the session file path; take the text blocks of the last record whose `message.role` is `assistant`. Verify the schema in the current installation.
+`agent read` can lose most of a long response; then take it from the transcript instead of asking the agent to repeat it:
 
-Capture read-only reviewer responses in full and save them under `.agents/runs/<run-id>/`, or `.agents/reviews/pr<N>/round-<k>/` in review mode. A reviewer may receive a packet but must not be given write or shell tools merely to save its response. Freeze the reviewed source snapshot so the packet corresponds to the diff being judged.
+- Claude: `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl`; assistant records have `type: assistant` with text blocks in `message.content`. One message can span several records that share a `message.id`.
+- pi: `agent_session.value` is the session file; assistant records have `message.role: assistant`, and the turn's last one has `stopReason: "stop"`.
 
-When recovering a session, use the recorded handle and consult installed CLI help for the current resume syntax. The original setup used these forms:
+Find the user record of the prompt you dispatched. The response is the final assistant text of that turn; early commentary before tool calls is allowed and is not part of it. Skip tool-only records and keep-warm `ok` replies. The response should begin with `TASK/ATTEMPT: <task>/<attempt>`. If the header is missing but the text clearly answers this dispatch, record a protocol deviation and use it; if a different ID appears, it is not this assignment's response. Verify the schema in the current installation.
+
+Save read-only responses in full yourself under `.agents/runs/<run-id>/`, or in review mode as `review.md` describes.
+
+## Reviewer output format
+
+Both modes use this one format. Put the block below, verbatim, in every review packet, and dispatch with the packet line from "Launch and dispatch", using IDs such as `auth-review/1` or `pr6232-r2-rev-a/1`.
+
+````markdown
+Start your response with one line: `TASK/ATTEMPT: <task>/<attempt>`, using the IDs you were
+assigned when this packet was dispatched. After it, return a flat list, highest severity first.
+One finding per line and nothing else: no preamble, no summary, no "looks good overall".
+
+```
+[blocker|major|minor|nit] path/to/file.ext:LINE | what is wrong and its consequence | proof (file:line, before/now, or repro) | fix
+```
+
+- blocker: must fix before merge (bug, data loss, security hole, breaks the build).
+- major: should fix (wrong approach, missing edge case, real correctness risk).
+- minor: worth fixing (clarity, small correctness issue, missing test).
+- nit: optional polish.
+
+For an open previous finding, prepend its ID to the schema above:
+`F3 [major] path:LINE | issue | proof | fix`. A previous finding you consider fixed gets no line.
+For a blocker or major in unchanged code, explain in the proof why earlier rounds missed it.
+Apart from this packet and the files it names, do not open `.agents/`; it holds other
+reviews. You can read files but not run code. When a proof depends on behavior, give the input, the
+expected result, and the result the code produces.
+
+A few real bugs beat ten defensive comments. Leave out confirmations that correct code is
+correct, linter nits, speculative performance concerns, and defensive code for impossible
+cases. If a finding is not worth the author's time, do not write it.
+
+If there are no findings, the line after TASK/ATTEMPT says exactly `No findings.` and nothing
+follows it.
+````
+
+## Recover and resume
+
+A long turn is not a stall; repetition without new evidence or state change may be. Fix the cause before retrying. The default budget is one recovery retry: same task ID, new attempt ID, and renaming never resets it. Record every attempt and outcome.
+
+Before resuming a session, re-read the brief, handover, and routing. Original forms (check installed help):
 
 ```bash
 herdr agent start <claude-name> --kind claude --pane <id> -- --resume <claude-session-id>
 herdr agent start <pi-name> --kind pi --pane <id> -- --session <pi-session-path>
 ```
 
-Re-read the current brief, handover, and routing before resuming. Never attach two active writers to the same writable scope. Confirm the old worker is stopped or isolated before replacement; reconcile any late work against the current integration state.
+Never attach two writers to one writable scope. Stop or isolate the old worker before a replacement starts, and reconcile late work against the current integration state.
+
+### Reconcile agents
+
+Run `herdr agent list` and match each agent named for this run or PR against its handover record, including the pane ID. Classify each one, and recover or replace only after any state comparison the mode requires:
+
+- `working`: let it finish and wait on it. Never launch a replacement for a live agent.
+- `idle` or `done`: find the user record of the recorded dispatch in its transcript. If there is none, the dispatch never landed: send it now under the same attempt and record it. Otherwise, if its response is not saved, capture it as in "Wait and capture".
+- Missing and recorded as closed with its output saved: expected; no action.
+- Missing while the handover shows its attempt unfinished: the attempt was interrupted. Inspect its transcript, report, and worktree, then use the recovery budget.
+- Not in the handover: the log is behind. Identify its task from its transcript and record it; if you cannot, stop and ask the user.
+
+## Saved state and resume (orchestrator mode)
+
+Save state after each of your own actions that changes a tree (creating a worktree, freezing, staging, committing, cherry-picking) and before compaction or exit. Save the integration tree as `state-integration.txt`, and each worker worktree that still holds uncommitted work as `state-<worktree-dir-name>.txt`, in `.agents/runs/<run-id>/`. Run each tree's save as its own `bash -euo pipefail` process, so any failing command aborts it; `set -e` inside a subshell of your own shell is not reliable (it is off on the left of `&&`, and some harness shells ignore it):
+
+```bash
+bash -euo pipefail -c '
+  git -C <dir> rev-parse HEAD
+  git -C <dir> diff --full-index --binary HEAD | git hash-object --stdin
+  git -C <dir> diff --cached --full-index --binary HEAD | git hash-object --stdin
+  git -C <dir> -c core.quotePath=false ls-files -o --exclude-standard -- . ":!.agents"
+  git -C <dir> -c core.quotePath=false ls-files -o --exclude-standard -- . ":!.agents" | git -C <dir> hash-object --stdin-paths
+' > <run-dir>/state-<label>.txt.tmp && mv <run-dir>/state-<label>.txt.tmp <run-dir>/state-<label>.txt
+```
+
+The two diff hashes cover working-tree content and the index separately, and the untracked listing covers the whole tree, so new files outside a worker's scope show up too. On a nonzero exit, keep the previous state file, record the failure, and never use the partial output. After a successful save, append `<time> state saved: <labels>; working agents: <names or none>` to the event log and set `State saved: <time>` in NOW. That line is the boundary resume compares against.
+
+To resume, read the handover NOW section, event log, and saved state before any other action: no dispatch, sync, staging, or commit. Then:
+
+1. Reconcile agents as above.
+2. Produce each state again with the same commands and compare it with the saved file using `diff`.
+3. The integration tree must match. A difference is explained only by an orchestrator action the event log records after the last `state saved` line, such as a commit; confirm that action's result and record it.
+4. In a worker worktree, `HEAD` and the index must match unless the event log records your own staging or commit there, because workers never commit or stage. A recorded freeze moves the new files from the untracked listing into the working-tree hash and leaves the index hash unchanged. Other working-tree and untracked changes inside the worker's scope are explained when the worker is still `working`, or its report for the current attempt accounts for them. Changes outside its scope are not.
+5. Stop and tell the user about any unexplained difference. Never reset, stash, clean, or overwrite to make the state match; the difference is evidence.
+6. Save fresh state, log the reconciliation, and continue from the recorded next action.
 
 ## Close finished agents
 
-Close an agent's tab as soon as its assignment is complete: its lifecycle is idle/done, its report or final response is captured and saved, and its session handle and stop time are in the handover. The transcript stays on disk, so the session can still be resumed or accounted for after the tab is gone.
+Close a tab once the agent is `idle` or `done`, its output is saved, and its records are in the handover; the transcript stays on disk. Keep a tab open only while you will prompt that session again: the advisor until its last verdict or judgment, or a worker until its unit is committed. Reviewers never qualify. A later fix, such as one for `changes_required`, is a new attempt and can resume the recorded session.
 
-```bash
-herdr tab close <tab-id>
-```
-
-Keep an agent open only while you expect to prompt that same session again: the advisor until its final acceptance or judgment, or a worker whose unit is still in review and may get a correction cycle. Record the reason in the handover, and close the tab when the reason ends. Reviewers never qualify, because a later round starts fresh reviewers. Before closing, confirm the agent is not `working` and disarm its keep-warm. Close only tabs you created, never the orchestrator's own pane or a user's tab.
+Before closing, confirm with `herdr agent get <name>` that it is not `working` and its pane matches the recorded pane ID, and disarm keep-warm if it is armed. Then `herdr tab close <recorded-tab-id>`. Close only tabs you created, never your own pane or a user's tab.
 
 ## Keep the advisor warm
 
-Reuse one Fable session from planning through final acceptance. Keep it warm with `~/.config/herdr/scripts/keepwarm.sh`, never with hand-sent pings. While armed, it sends the fixed text `Reply with exactly: ok` after 50 minutes without an assistant turn, only while the advisor is idle, checks that each ping read the cache, and stops itself when the cache went cold, the window ends, or the session leaves the pane. Its arguments are the advisor's pane ID, not its agent name.
+Optional: use it only when the advisor will idle more than 50 minutes and a cold cache would cost more than the pings. Use `~/.config/herdr/scripts/keepwarm.sh` with the advisor's pane ID, never hand-sent pings. While armed, it sends `Reply with exactly: ok` after 50 minutes without an assistant turn, only while the advisor is idle, and stops itself when the cache went cold, the window ends, or the session leaves the pane.
 
-Run `keepwarm.sh check <pane>` after the advisor's first turn (the planning packet), not right after launch: a fresh session has no transcript until its first turn. If the check fails, do not warm the advisor; record the reason in the handover.
-
-A ping can collide with a real prompt, and `agent prompt --wait` may then accept the ping's turn as the reply. Once the check passes, wrap every later advisor prompt:
+To warm it, first run `keepwarm.sh check <pane>` after the advisor's first turn; a fresh session has no transcript before that. If the check fails, do not warm it and record why. Once armed, wrap every advisor prompt, because a ping can collide with it and `--wait` may accept the ping's turn:
 
 ```bash
 KEEPWARM_QUIET=1 ~/.config/herdr/scripts/keepwarm.sh disarm <pane>
-herdr agent prompt herd-<run>-advisor "<packet>" --wait --timeout 550000
+herdr agent prompt <advisor-name> "<packet>" --wait --timeout 550000
 KEEPWARM_QUIET=1 ~/.config/herdr/scripts/keepwarm.sh arm <pane>
 ```
 
-`disarm` returns only after any in-flight ping has finished. `arm` keeps the advisor warm for 8 hours by default; pass a duration such as `2h` or `90m` when you know when the advisor is next needed. `KEEPWARM_QUIET=1` skips the arm/disarm notifications; stop and failure notifications still reach the user.
+`disarm` waits out an in-flight ping; `arm` lasts 8 hours unless given a duration such as `2h`; `KEEPWARM_QUIET=1` silences only arm and disarm notices. Check `keepwarm.sh status` rather than assuming it is armed. A ping reply is never progress or acceptance evidence.
 
-The runner can stop on its own; check `keepwarm.sh status` rather than assuming it is still armed. A ping response is maintenance, not progress, approval, or acceptance evidence. Record the session handle, armed state, and deadline in the handover. Disarm after acceptance or when the session will not be reused, then close its tab. On final acceptance, resume this session but send a fresh evidence packet rather than relying solely on memory.
+## Freeze and integrate
 
-Each ping's cache read and write counts are logged in `~/.local/state/herdr-keepwarm/log`, including pings that `disarm` waited out (marked `(disarm)`); use them for keep-warm accounting.
+Freeze a worker's unit only after `herdr agent get <name>` shows it `idle` or `done` and its report for the current attempt is saved, because freezing writes to the worktree's index. Only the orchestrator freezes; workers never stage.
 
-## Monorepo verification environments
+First list what actually changed, not only what the report says:
 
-Worker worktrees provide source isolation. Install dependencies there only for checks the assignment requires and the brief authorizes. A pnpm store can be shared, but each worktree may still need its own dependency links and generated state.
+```bash
+git -C <worker-dir> diff --name-only <baseline-oid>
+git -C <worker-dir> -c core.quotePath=false ls-files -o --exclude-standard
+```
 
-The orchestrator maintains a single canonical integration worktree for combined checks. After integrating reviewed commits, follow repository instructions for installation (for example, `pnpm install --frozen-lockfile` where prescribed), build, lint, typecheck, and tests. Run the final gate against the final combined tree, not an earlier worker snapshot.
+First set aside unchanged pre-existing files recorded in the handover. Every remaining path must be within the brief's writable scope and accounted for by the report. Otherwise block the unit. Do not exclude changes to a user-owned file merely because its path existed at the baseline. Then mark the worker's new files and save the diff:
 
-The orchestrator owns service startup, fixtures, databases, and e2e execution in the canonical acceptance environment. Follow any user-specified environment skill. A worker may touch this environment only during an explicitly delegated named phase. Include code revision, dependency/configuration state, working directory, commands, exit status, and salient outputs in the advisor's final evidence packet.
+```bash
+git -C <worker-dir> add -N -- <new-path>...
+git -C <worker-dir> diff --full-index --binary <baseline-oid> > <absolute-run-dir>/<task>-reviewed.diff
+```
 
-## Reports, retries, and integration
+Run the later staging, compare, and commit commands with the same `git -C <worker-dir>`, and stage by explicit path, never broadly. `--full-index` writes full blob IDs even for text files (`--binary` alone does not), so an identical diff means identical content. After review, stage exactly the reviewed paths and check that `git -C <worker-dir> diff --cached --full-index --binary <baseline-oid>` is byte-identical to the reviewed diff (`cmp`). Any difference means the content changed; freeze and review again. After committing, check that `git -C <worker-dir> diff --full-index --binary <baseline-oid> <commit>` still matches, then cherry-pick into the integration branch.
 
-Name reports with unique task and attempt IDs, and verify the IDs inside the report. If delivery, lifecycle, or a report is uncertain, inspect before retrying. Default to one cause-addressing recovery retry, unless the user specifies otherwise. Do not silently drop required scope. After review, commit only reviewed paths in the worker worktree and cherry-pick into the integration branch. Escalate substantive conflicts to a worker; record commit IDs and verification state in the handover. Never push or deploy without authorization.
+A cherry-pick onto a moved integration branch can merge into different content, and blob IDs then differ even for the same change, so compare patch IDs instead: `git diff <commit>^ <commit> | git patch-id --stable` in the worker worktree must equal the same for the new integration commit. Resolve mechanical conflicts yourself, send conflicts that need judgment to a worker, and review any integration commit whose patch ID differs before continuing. Record commit IDs in the handover. Never push or deploy without authorization.
 
-## Usage and run accounting
+Worktrees isolate source, not runtime. Install dependencies in one only for checks its brief authorizes; a shared pnpm store still needs per-worktree links. In the canonical integration worktree, follow the repository's install (for example `pnpm install --frozen-lockfile`), build, lint, typecheck, and test procedure, and run the final gate on the final combined tree. For services and e2e, follow the user's skill, and give the advisor the revision, configuration, commands, exit status, and salient output.
 
-Record dispatch/completion boundaries per assignment, especially when sessions are reused. Measure elapsed time from those boundaries; avoid counting one session's cumulative usage twice. Claude transcript records commonly expose `message.usage` fields such as `input_tokens`, `output_tokens`, `cache_read_input_tokens`, and `cache_creation_input_tokens`. The previous setup located Claude transcripts at `~/.claude/projects/<cwd-slug>/<agent_session.value>.jsonl`; verify the path and schema in the current installation. Pi session usage has a different schema and can include events outside ordinary assistant messages. Inspect actual records and aggregate usage within assignment boundaries, including corrections and maintenance turns as separately labeled activity.
+## Usage accounting
 
-Record effective route, model, effort/thinking, outcome, elapsed time, input/output/cache-read/cache-creation tokens when available, and correction cycles in `.agents/runs/<run-id>/agent-stats.md`. Mark absent or incomparable telemetry `unknown`; do not delay otherwise completed work for token accounting. Compare keep-warm cost and observed cache reads before claiming it saved money.
+Write `agent-stats.md` in the run directory, or in `round-<k>/` in review mode, with one row per assignment: agent, task, effective model and effort, elapsed time, outcome, input, output, cache-read, and cache-creation tokens, correction cycles, and a short evidence-based assessment.
+
+Count usage only between each assignment's dispatch and completion, so a reused session is not counted twice; label corrections and pings separately. Claude records expose `message.usage` (`input_tokens`, `output_tokens`, `cache_read_input_tokens`, `cache_creation_input_tokens`); count each `message.id` once, from its last record. pi records expose `usage` (`input`, `output`, `cacheRead`, `cacheWrite`, `cost.total`); inspect real records first, since schemas change. Keep-warm logs each ping's cache counts in `~/.local/state/herdr-keepwarm/log`, including `(disarm)` pings; compare that cost with observed cache reads before claiming savings. Mark missing values `unknown`.

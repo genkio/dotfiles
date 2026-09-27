@@ -23,6 +23,10 @@ herdr/.config/herdr/**
 !herdr/.config/herdr/scripts/
 !herdr/.config/herdr/scripts/**
 
+karabiner/.config/karabiner/**
+!karabiner/.config/karabiner/
+!karabiner/.config/karabiner/karabiner.json
+
 git/.gitconfig.local
 
 skills/.DS_Store

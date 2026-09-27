@@ -1,4 +1,4 @@
-TARGETS := menu all bootstrap macos core apps dev touchid update stow ssh gpg sublime tailscale
+TARGETS := menu all bootstrap macos core apps dev touchid update stow ssh gpg sublime tailscale karabiner
 
 FLOW := ./scripts/opinionated-flow.sh
 
@@ -70,3 +70,6 @@ tailscale:
 
 sublime:
 	./scripts/setup-sublime.sh
+
+karabiner:
+	./scripts/setup-karabiner.sh

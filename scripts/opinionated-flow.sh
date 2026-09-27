@@ -291,6 +291,9 @@ if command -v tailscale >/dev/null 2>&1 &&
   ! tailscale status --json 2>/dev/null | grep -q '"BackendState": *"Running"'; then
   NEXT_STEPS+=("make tailscale   # tailnet login; prints a URL to authorize in the browser")
 fi
+if [[ ! -L "$HOME/.config/karabiner" ]]; then
+  NEXT_STEPS+=("make karabiner   # only if this Mac's keyboard drives another Mac via Deskflow: install Deskflow and Karabiner-Elements first")
+fi
 MAESTRAL_BIN="$(command -v maestral || true)"
 [[ -n "$MAESTRAL_BIN" ]] || MAESTRAL_BIN="$HOME/.local/bin/maestral"
 MAESTRAL_PENDING=""

@@ -1,0 +1,23 @@
+{
+  "profiles": [
+    {
+      "name": "Default profile",
+      "selected": true,
+      "virtual_hid_keyboard": { "keyboard_type_v2": "ansi" },
+      "complex_modifications": {
+        "rules": [
+          {
+            "description": "Right Command to Hyper (for rcmd over Deskflow)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "from": { "key_code": "right_command", "modifiers": { "optional": ["caps_lock"] } },
+                "to": [{ "key_code": "left_command", "modifiers": ["left_option", "left_control", "left_shift"] }]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

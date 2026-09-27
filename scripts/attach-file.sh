@@ -3,7 +3,7 @@ set -euo pipefail
 
 self=$0
 . "${0%/*}/attach-lib.sh"
-start_dir="${ATTACH_ROOT:-$HOME/box}"
+start_dir="${ATTACH_ROOT:-$HOME}"
 
 browse() {
   local d=$1 p base
@@ -20,6 +20,38 @@ browse() {
         *)  printf '%s\n' "${p##*/}" ;;
       esac
     done
+}
+
+preview() {
+  local f=$1 cols=${FZF_PREVIEW_COLUMNS:-60} rows=${FZF_PREVIEW_LINES:-20} img='' dims iw ih fit
+  printf '%s\n%s\n\n' "${f##*/}" "$(file -b "$f" 2>/dev/null | head -1 || true)"
+  rows=$(( rows - 3 ))
+  [ "$rows" -ge 2 ] || rows=2
+
+  case $(printf '%s' "${f##*.}" | tr 'A-Z' 'a-z') in
+    jpg|jpeg|png|gif|webp|bmp) img=$f ;;
+    heic|heif|tif|tiff)
+      # viu can't decode these
+      img="${TMPDIR:-/tmp}/attach-file-preview.jpg"
+      sips -s format jpeg -Z 1600 "$f" --out "$img" >/dev/null 2>&1 || img='' ;;
+  esac
+
+  if [ -n "$img" ] && command -v viu >/dev/null 2>&1; then
+    fit=(-h "$rows")
+    dims=$(sips -g pixelWidth -g pixelHeight "$img" 2>/dev/null |
+           awk '/pixelWidth/{w=$2} /pixelHeight/{h=$2} END{if (w && h) print w, h}')
+    if [ -n "$dims" ]; then
+      iw=${dims%% *}; ih=${dims##* }
+      [ "$(( iw * rows * 2 ))" -le "$(( ih * cols ))" ] || fit=(-w "$cols")
+    fi
+    viu -b -s "${fit[@]}" -- "$img" 2>/dev/null || printf 'viu could not render this image\n'
+  elif [ ! -s "$f" ] || file -b --mime-encoding "$f" 2>/dev/null | grep -qv binary; then
+    if command -v bat >/dev/null 2>&1; then
+      bat --color=always --style=plain --paging=never --line-range=":$rows" -- "$f" 2>/dev/null || true
+    else
+      head -n "$rows" -- "$f" 2>/dev/null || true
+    fi
+  fi
 }
 
 go() {
@@ -44,10 +76,7 @@ case ${1:-} in
     case $3 in
       ../) ls -Ap "$(dirname "$cur")" 2>/dev/null | head -40 || true ;;
       */)  ls -Ap "$cur/${3%/}" 2>/dev/null | head -40 || true ;;
-      *)   file -b "$cur/$3" 2>/dev/null || true
-           if command -v sips >/dev/null 2>&1; then
-             sips -g pixelWidth -g pixelHeight "$cur/$3" 2>/dev/null | sed -n '2,3p' || true
-           fi ;;
+      *)   preview "$cur/$3" ;;
     esac
     exit 0 ;;
 esac
@@ -67,7 +96,7 @@ selection=$(browse "$start_dir" | fzf --multi --reverse --border \
   --prompt="${start_dir##*/}/ " --header='Enter open/attach   ^h up   Tab mark   Esc cancel' \
   --bind "enter:transform:$self --nav $state {}" \
   --bind "ctrl-h:transform:$self --up $state" \
-  --preview="$self --prev $state {}" --preview-window='down,8,wrap') || exit 0
+  --preview="$self --prev $state {}" --preview-window='right,55%,border-left') || exit 0
 [ -n "$selection" ] || exit 0
 
 dir=$(cat "$state")

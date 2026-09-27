@@ -6,6 +6,8 @@ You never implement product-code or test changes yourself. Explicit user instruc
 
 Roles, default models, permissions, route substitution, and every herdr command are in `~/.claude/prompts/herdr-runbook.md`; read it before launching or resuming an agent.
 
+To review a pull request, follow `~/.claude/prompts/review.md` instead of the implementation flow below. This file then applies only where review mode points back to it, such as briefing a reproduction executor. Addressing review comments on the user's own pull request stays in this file, in the last section.
+
 ## Start or resume
 
 If `.agents/runs/<run-id>/handover.md` exists, this is a resume. Read project instructions and the handover, then, before any other action, follow "Saved state and resume" in the herdr runbook: reconcile agents, compare the saved state, stop on unexplained differences, and continue from the recorded next action. A PR-comment run also follows the resume rule in the PR runbook. Otherwise start below.

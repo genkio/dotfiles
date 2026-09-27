@@ -8,11 +8,14 @@ Roles, default models, read-only tools, naming, and every herdr command are in `
 
 ## What may change in the worktree
 
-Nobody changes the pull request's code: no commits, pushes, or rewrites of the PR branch, and outside `.agents/reviews/pr<N>/` never overwrite a tracked or existing file. Only three changes are allowed:
+Nobody changes the pull request's code: no commits, pushes, or rewrites of the PR branch, and outside `.agents/reviews/pr<N>/` never overwrite a tracked or existing file. Only four changes are allowed:
 
 - The sync fast-forward.
 - Review artifacts under `.agents/reviews/pr<N>/`.
 - Temporary reproduction files at new paths, handled as in "Temporary reproduction files".
+- Environment setup for the round's checks and reproduction, limited to gitignored paths: installing dependencies from the lockfile (such as `pnpm install --frozen-lockfile`), building workspace packages, and the documented setup commands of the user's sandbox.
+
+Run environment setup only for checks the round needs. Record each command and its exit status in `round-<k>/repro.md`, and confirm afterwards that `git status --porcelain` shows no tracked change. If setup fails, do not edit tracked files, lockfiles, or credentials to get past it; stop and tell the user what failed.
 
 ## Start or resume
 
@@ -45,7 +48,9 @@ If the PR came from the orchestration flow, `.agents/runs/<run-id>/` holds the b
 
 Use one advisor per session of work. Reuse a live one found while reconciling; give a new one the handover. Every advisor packet carries a TASK/ATTEMPT such as `pr<N>-r<k>-plan/1` or `pr<N>-r<k>-judge/1`, is dispatched with the runbook's packet line, and states that the advisor may read files but must not edit files, run tests, or operate environments. Save each packet and response in the round directory: `advisor-plan-packet.md`, `advisor-plan.md`, `advisor-judge-packet.md`, and `advisor-judgment.md`.
 
-The planning packet gives the PR intent, CONTEXT, the round number, rung, and ladder rule, previous findings and statuses, the diff scope including any force-push gap, and the discussion digest. Ask for focus areas phrased as areas or questions rather than suspected findings, whether to split a large diff, what deserves reproduction, and questions for the user marked blocking or not. Stop only for blocking questions; carry the rest into the report.
+The planning packet gives the PR intent, CONTEXT, the round number, rung, and ladder rule, previous findings and statuses, the diff scope including any force-push gap, and the discussion digest. Ask for focus areas phrased as neutral questions that name an area or behavior to examine, without stating a suspected defect, its location, or its fix. Ask the advisor to list its own suspicions in a separate section, which you keep for the judgment and leave out of the review packet. Also ask whether to split a large diff, what deserves reproduction, and questions for the user marked blocking or not. Stop only for blocking questions; carry the rest into the report.
+
+Before writing the review packet, reread the focus areas and rewrite any that still state a finding, such as "reports are not gitignored", as a question, such as "where do reports land and what do they contain?". Treat the advisor's claims about environment state as unverified until you check them yourself.
 
 ## Send the review packet
 
@@ -68,9 +73,15 @@ There is no quota; the count may rise when admissible findings justify it. Recor
 
 Merge the three lists, combining same-root-cause findings and noting who raised each. Confirm every cited location and proof at the frozen SHA. Agreement is supporting evidence, not proof, and one reviewer's finding with solid proof stands.
 
-## Reproduce when asked
+When the candidates are too many or span too much code to check well yourself, such as findings that cite both the PR and the base branch's code, run a verification pass with read-only verifiers through the Agent tool, one per reviewer or area, in parallel. Each verifier prompt names the frozen SHA, the base SHA and how to read base code (`git show <base>:<path>`), and the reviewer response files to check. It allows only reading files, grep, and git commands that change no state, and forbids edits, tests, services, and other files under `.agents/`. Ask each verifier to try to disprove every finding and return one line per finding: `CONFIRMED`, `PARTLY`, or `REFUTED`, a suggested severity, evidence with `file:line`, and any correction, followed by overlaps between findings. Save each report as `round-<k>/checks-<label>.md`, adding the spot checks you ran yourself.
 
-When the user prepared a sandbox and asks for reproduction, it is the strongest evidence. Before the judgment packet, try to reproduce every blocker and major, and minors where cheap. Follow the user's sandbox instructions, confirm the sandbox runs the frozen SHA, and never run against production. You do this yourself. If it needs real coding, launch an executor and brief it as in `~/.claude/prompts/orchestrator.md` "Brief workers in writing", including its worker rules and report; the rest of that implementation flow does not apply. The brief repeats "What may change in the worktree" and "Temporary reproduction files".
+A verifier's report is evidence, not a substitute for your check. For every blocker and major, and for every refutation, confirm the key evidence yourself before the judgment packet. Record each verifier in the handover's Agents list with its label, task, report path, and the duration, tool uses, and total tokens from its completion notification; see the herdr runbook's "Usage accounting".
+
+## Reproduce
+
+Reproduction runs when the user asks for it. A user who says they prepared a sandbox for this review has asked for it; otherwise ask before reproducing anything that needs a sandbox. The PR's own unit tests, lint, and typecheck need no sandbox, and you may run them when the advisor's plan asks for them.
+
+Before relying on the sandbox, check that it is ready with its own diagnostic, such as the sandbox skill's `doctor`, and do not trust an earlier claim that it is up. If it is not ready, run its documented setup under "What may change in the worktree", or tell the user what is missing. Reproduction is the strongest evidence. Before the judgment packet, try to reproduce every blocker and major, and minors where cheap. Follow the user's sandbox instructions, confirm the sandbox runs the frozen SHA, and never run against production. You do this yourself. If it needs real coding, launch an executor and brief it as in `~/.claude/prompts/orchestrator.md` "Brief workers in writing", including its worker rules and report; the rest of that implementation flow does not apply. The brief repeats "What may change in the worktree" and "Temporary reproduction files".
 
 Keep throwaway scripts in `round-<k>/`; they are round artifacts and stay. Record command, SHA, and observed result in `round-<k>/repro.md` and cite it in the proof (`repro: <command> -> <observed>`). A blocker or major that does not reproduce goes back to the advisor; never keep its severity without saying it was not reproduced.
 

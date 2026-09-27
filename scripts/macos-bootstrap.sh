@@ -504,9 +504,17 @@ else
   fi
 fi
 
-echo "Menu Bar: Reduce item spacing"
-defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
-defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
+if [[ "$MACOS_MAJOR" -ge 27 ]]; then
+  # 27 ignores these for Apple's icons, so tightening only third-party ones looks uneven.
+  echo "Menu Bar: Keep default item spacing (macOS 27+)"
+  for key in NSStatusItemSpacing NSStatusItemSelectionPadding; do
+    run defaults -currentHost delete -globalDomain "$key" 2>/dev/null || true
+  done
+else
+  echo "Menu Bar: Reduce item spacing"
+  defaults_current_host_write -globalDomain NSStatusItemSpacing -int 2
+  defaults_current_host_write -globalDomain NSStatusItemSelectionPadding -int 2
+fi
 
 echo "Applying changes..."
 if [[ "$DRY_RUN" -eq 1 ]]; then

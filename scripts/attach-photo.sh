@@ -170,7 +170,8 @@ sqlite3 "$db" 'select 1 from ZASSET limit 1' >/dev/null 2>&1 ||
 out=$("$self" --list | fzf --multi --reverse --border \
   --delimiter="$tab" --with-nth=1 \
   --prompt='photos > ' \
-  --header='Enter attach   ^o get the original   Tab mark   ☁ not local' \
+  --header='j/k move   / search   Enter attach   ^o get the original   Tab mark   ☁ not local' \
+  "${attach_fzf_nav[@]}" \
   --expect=ctrl-o \
   --preview="$self --prev {2} {3} {4} {5}" \
   --preview-window='right,55%,border-left') || exit 0

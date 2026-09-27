@@ -57,7 +57,8 @@ preview() {
 go() {
   local state=$1 nd=$2
   printf '%s\n' "$nd" > "$state"
-  printf 'change-prompt(%s/ )+clear-query+reload(%q --browse %q)\n' "${nd##*/}" "$self" "$nd"
+  printf 'change-prompt(%s/ )+change-border-label( %s/ )+clear-query+reload(%q --browse %q)\n' \
+    "${nd##*/}" "${nd##*/}" "$self" "$nd"
 }
 
 case ${1:-} in
@@ -69,6 +70,20 @@ case ${1:-} in
       */)  go "$2" "$cur/${3%/}" ;;
       *)   printf 'accept\n' ;;
     esac
+    exit 0 ;;
+  --rm)
+    cur=$(cat "$2"); shift 2
+    names=()
+    for n in "$@"; do [ "$n" = ../ ] || names+=("${n%/}"); done
+    [ "${#names[@]}" -gt 0 ] || exit 0
+    printf 'Move to Trash from %s:\n' "$cur"
+    printf '  %s\n' "${names[@]}"
+    printf 'Confirm? [y/N] '
+    read -r -n 1 ans < /dev/tty || ans=''
+    printf '\n'
+    [ "$ans" = y ] || [ "$ans" = Y ] || exit 0
+    ( cd "$cur" && /usr/bin/trash -- "${names[@]}" ) ||
+      { printf 'Press any key... '; read -r -n 1 _ < /dev/tty || true; }
     exit 0 ;;
   --up) go "$2" "$(dirname "$(cat "$2")")"; exit 0 ;;
   --prev)
@@ -93,9 +108,13 @@ trap 'rm -f "$state"' EXIT
 printf '%s\n' "$start_dir" > "$state"
 
 selection=$(browse "$start_dir" | fzf --multi --reverse --border \
-  --prompt="${start_dir##*/}/ " --header='Enter open/attach   ^h up   Tab mark   Esc cancel' \
+  --prompt="${start_dir##*/}/ " --border-label=" ${start_dir##*/}/ " \
+  --header='j/k move   / search   Enter open/attach   ^h up   ^d trash   Tab mark   Esc cancel' \
+  "${attach_fzf_nav[@]}" \
   --bind "enter:transform:$self --nav $state {}" \
+  --bind 'load:hide-input+rebind(j,k,/)' \
   --bind "ctrl-h:transform:$self --up $state" \
+  --bind "ctrl-d:execute($self --rm $state {+})+clear-selection+reload($self --browse \"\$(cat $state)\")" \
   --preview="$self --prev $state {}" --preview-window='right,55%,border-left') || exit 0
 [ -n "$selection" ] || exit 0
 

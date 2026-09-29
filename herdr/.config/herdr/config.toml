@@ -104,3 +104,9 @@ command = "$HOME/dotfiles/scripts/attach-photo.sh"
 description = "attach photo"
 width = "90%"
 height = "90%"
+
+[[keys.command]]
+key = "prefix+m"
+type = "shell"
+command = "herdr pane move \"$HERDR_ACTIVE_PANE_ID\" --new-tab --focus"
+description = "move pane to new tab"

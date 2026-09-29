@@ -70,10 +70,23 @@ print_url() {
   echo "  link:  https://$host$ROUTE/#t=$(cat "$TOKEN_FILE")  (opens with the token saved)"
 }
 
+# Epoch seconds when the running agent started, or 0.
+agent_started() {
+  local pid
+  pid="$(launchctl print "$DOMAIN/$LABEL" 2>/dev/null | awk '$1 == "pid" { print $3; exit }')"
+  [[ -n "$pid" ]] && LC_ALL=C date -j -f "%a %b %d %T %Y" "$(LC_ALL=C ps -o lstart= -p "$pid")" +%s 2>/dev/null || echo 0
+}
+
 if [[ "$MODE" == serve || "$MODE" == funnel ]] && [[ -s "$TOKEN_FILE" ]] &&
   launchctl print "$DOMAIN/$LABEL" 2>/dev/null | grep -q 'state = running' &&
   [[ "$(route_mode)" == "$MODE" ]]; then
-  echo "ccr-web already running (tailscale $MODE)"
+  # launchd runs the script from the repo, so an edit only needs a restart.
+  if [[ "$(stat -f %m "$SCRIPT_DIR/ccr-web")" -gt "$(agent_started)" ]]; then
+    launchctl kickstart -k "$DOMAIN/$LABEL"
+    echo "ccr-web restarted with the updated script (tailscale $MODE)"
+  else
+    echo "ccr-web already running (tailscale $MODE)"
+  fi
   print_url
   exit 0
 fi

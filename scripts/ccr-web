@@ -70,31 +70,68 @@ def session_file(pid):
         return {}
 
 
-def transcript_effort(session_id):
+# What each transcript showed so far, keyed by path, with how many bytes were
+# read, so a refresh only parses what was appended since.
+transcripts = {}
+transcripts_lock = threading.Lock()
+
+
+def read_transcript(st, line):
+    try:
+        d = json.loads(line)
+    except ValueError:
+        return
+    if d.get("isSidechain"):
+        return
+    if d.get("type") == "attachment":
+        # Written at the start and again on every /model switch.
+        model = ((d.get("attachment") or {}).get("identity") or {}).get("modelId")
+        if model:
+            st["model"] = model
+    elif d.get("type") == "assistant":
+        # Each assistant turn records the effort it ran at; the last one is current.
+        if d.get("effort"):
+            st["effort"] = d["effort"]
+        msg = d.get("message") or {}
+        u = msg.get("usage") or {}
+        used = sum(u.get(k) or 0 for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+        # Synthetic turns, like API errors, carry zero usage.
+        if used and msg.get("model") != "<synthetic>":
+            st["used"] = used
+
+
+def transcript_state(session_id):
     paths = glob.glob(os.path.join(HOME, ".claude", "projects", "*", "%s.jsonl" % session_id))
     if not paths:
-        return ""
-    # Each assistant turn records the effort it ran at; the last one is current.
-    try:
-        with open(paths[0], "rb") as f:
-            f.seek(0, os.SEEK_END)
-            size = f.tell()
-            for chunk in (256 << 10, 4 << 20):
-                f.seek(max(0, size - chunk))
-                for line in reversed(f.read().splitlines()):
-                    if b'"perTurnEffort"' not in line:
-                        continue
-                    try:
-                        d = json.loads(line)
-                    except ValueError:
-                        continue
-                    if d.get("type") == "assistant" and d.get("effort"):
-                        return d["effort"]
-                if chunk >= size:
-                    break
-    except OSError:
-        pass
-    return ""
+        return {}
+    path = paths[0]
+    with transcripts_lock:
+        st = transcripts.get(path)
+        try:
+            with open(path, "rb") as f:
+                size = os.fstat(f.fileno()).st_size
+                if not st or size < st["offset"]:
+                    st = transcripts[path] = {"offset": 0, "model": "", "effort": "", "used": 0}
+                f.seek(st["offset"])
+                while st["offset"] < size:
+                    data = f.read(min(size - st["offset"], 8 << 20))
+                    # A partly written last line waits for the next refresh.
+                    end = data.rfind(b"\n") + 1
+                    if not end:
+                        break
+                    for line in data[:end].splitlines():
+                        if b'"modelId"' in line or b'"type":"assistant"' in line:
+                            read_transcript(st, line)
+                    st["offset"] += end
+                    f.seek(st["offset"])
+        except OSError:
+            return dict(st or {})
+        return dict(st)
+
+
+def context_size(model, used):
+    # The 1M-token variant carries a [1m] suffix; the rest run at 200k.
+    return 1000000 if "[1m]" in model or used > 200000 else 200000
 
 
 def argv_effort(pid):
@@ -106,13 +143,14 @@ def argv_effort(pid):
     return argv[argv.index("--effort") + 1] if "--effort" in argv[:-1] else ""
 
 
-def session_effort(a):
-    return (transcript_effort(a.get("sessionId", "")) or started_effort.get(a.get("id"))
-            or argv_effort(a.get("pid")))
+def session_effort(a, t):
+    return t.get("effort") or started_effort.get(a.get("id")) or argv_effort(a.get("pid"))
 
 
 def session_row(a):
     f = session_file(a.get("pid"))
+    t = transcript_state(a.get("sessionId", ""))
+    used = t.get("used", 0)
     bridge = f.get("bridgeSessionId") or ""
     # `claude agents` reports "shell" (waiting, background jobs still up) as
     # busy; the session file keeps them apart.
@@ -123,7 +161,8 @@ def session_row(a):
         "attach": "claude attach %s" % a["id"] if a.get("kind") == "background" and a.get("id") else "",
         # The iOS app claims claude.ai/code/* as a universal link.
         "url": "https://claude.ai/code/%s" % bridge if bridge.startswith("session_") else "",
-        "effort": session_effort(a),
+        "effort": session_effort(a, t),
+        "contextUsed": used, "contextSize": context_size(t.get("model", ""), used) if used else 0,
     }
 
 
@@ -302,28 +341,39 @@ button:disabled { opacity: .5; }
 pre { white-space: pre-wrap; word-break: break-word; margin: 18px 0 0; padding: 12px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); font-size: 13px; }
 pre:empty { display: none; }
 h2 { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; margin: 28px 0 8px; }
+h2 .count { margin-left: 6px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
 h2 button { width: auto; margin: 0; padding: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 500; }
 ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
-li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); cursor: pointer; }
+li { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-top: 1px solid var(--line); cursor: pointer; }
+li:active:not(.empty) { background: var(--bg); }
 li:first-child { border-top: 0; }
 li .main { flex: 1; min-width: 0; }
 li .title { display: flex; align-items: center; gap: 8px; min-width: 0; }
 li .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .badge { flex: none; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 500; color: var(--muted); }
-li .meta { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-li .open { display: inline-block; margin-top: 4px; font-size: 14px; font-weight: 500; color: var(--accent); text-decoration: none; }
-li .cmd { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); opacity: .8; margin-top: 2px; user-select: all; -webkit-user-select: all; cursor: text; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
-.dot.busy { background: var(--accent); }
+.ctx { position: relative; overflow: hidden; font-variant-numeric: tabular-nums; }
+.ctx::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--pct); background: currentColor; opacity: .18; }
+.ctx.warn { color: var(--accent); border-color: currentColor; }
+.ctx.full { color: var(--bad); border-color: currentColor; }
+li .meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+li .meta .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+li .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; }
+li .actions:empty { display: none; }
+li .open { font-size: 14px; font-weight: 500; color: var(--accent); text-decoration: none; }
+li .cmd { width: auto; margin: 0; padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--muted); font: 12px ui-monospace, Menlo, monospace; }
+li .cmd.copied { color: var(--ok); }
+.dot { width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.busy { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
 .dot.idle { background: var(--ok); }
 .dot.shell { background: var(--info); }
-.end { flex: none; width: 32px; height: 32px; margin: 0; padding: 0; border-radius: 8px; background: none; color: var(--muted); font-size: 22px; font-weight: 400; line-height: 1; }
+.end { flex: none; width: 32px; height: 32px; margin: -4px -6px 0 0; padding: 0; border-radius: 8px; background: none; color: var(--muted); font-size: 22px; font-weight: 400; line-height: 1; }
 .end:disabled { opacity: .6; }
 .spin { display: inline-block; width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -0.15em; animation: spin .7s linear infinite; }
 button .spin { margin-right: 8px; }
 .end .spin, h2 .spin { margin: 0; width: 16px; height: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } .dot.busy { animation: none; } }
 .empty { padding: 12px; color: var(--muted); font-size: 14px; }
 .ok { color: var(--ok); } .bad { color: var(--bad); }
 #auth[hidden], #form[hidden] { display: none; }
@@ -349,7 +399,7 @@ button .spin { margin-right: 8px; }
   </select>
   <button id="go" type="submit">Start</button>
   <pre id="out"></pre>
-  <h2>Running <button id="refresh" type="button">Refresh</button></h2>
+  <h2><span>Running<span class="count" id="count"></span></span> <button id="refresh" type="button">Refresh</button></h2>
   <ul id="sessions"><li class="empty"><span class="spin"></span></li></ul>
   <button class="link" id="forget" type="button">Forget token</button>
 </form>
@@ -365,7 +415,7 @@ const m = location.hash.match(/[#&]t=([^&]+)/);
 if (m) { store.set("ccr-token", decodeURIComponent(m[1])); history.replaceState(null, "", location.pathname); }
 let token = store.get("ccr-token");
 // Served under a route like /ccr, with or without the trailing slash.
-const base = location.pathname.replace(/\/?$/, "/");
+const base = location.pathname.replace(/\\/?$/, "/");
 
 async function api(path, body) {
   const r = await fetch(base + path, {
@@ -377,24 +427,30 @@ async function api(path, body) {
   return r.json();
 }
 
+const el = (tag, props) => Object.assign(document.createElement(tag), props);
+
+function context(s) {
+  const pct = Math.min(100, Math.round(100 * s.contextUsed / s.contextSize));
+  const badge = el("span", {
+    className: "badge ctx" + (pct >= 85 ? " full" : pct >= 60 ? " warn" : ""),
+    textContent: pct + "%",
+    title: "Context window used",
+  });
+  badge.style.setProperty("--pct", pct + "%");
+  return badge;
+}
+
 function title(s) {
-  const row = Object.assign(document.createElement("div"), { className: "title" });
-  row.append(Object.assign(document.createElement("span"), { className: "name", textContent: s.name }));
-  if (s.effort) row.append(Object.assign(document.createElement("span"), { className: "badge", textContent: s.effort, title: "Effort" }));
+  const row = el("div", { className: "title" });
+  row.append(el("span", { className: "name", textContent: s.name }));
+  if (s.effort) row.append(el("span", { className: "badge", textContent: s.effort, title: "Effort" }));
   return row;
 }
 
 const STATUS = { busy: "working", shell: "bg jobs", idle: "idle" };
 
-function ago(ms) {
-  const m = Math.floor((Date.now() - ms) / 60000);
-  if (m < 60) return m + "m";
-  if (m < 1440) return Math.floor(m / 60) + "h";
-  return Math.floor(m / 1440) + "d";
-}
-
 function spinner() {
-  return Object.assign(document.createElement("span"), { className: "spin", role: "status", ariaLabel: "Loading" });
+  return el("span", { className: "spin", role: "status", ariaLabel: "Loading" });
 }
 
 // Shows a spinner in the button until the returned done() is called.
@@ -405,57 +461,75 @@ function busy(button, label) {
   return () => { button.disabled = false; button.replaceChildren(...old); };
 }
 
+function copyButton(text) {
+  const b = el("button", { type: "button", className: "cmd", textContent: text, title: "Copy, then run on the mac to bring it to the foreground" });
+  b.onclick = async (e) => {
+    e.stopPropagation();
+    try { await navigator.clipboard.writeText(text); } catch { return; }
+    b.textContent = "Copied";
+    b.classList.add("copied");
+    setTimeout(() => { b.textContent = text; b.classList.remove("copied"); }, 1200);
+  };
+  return b;
+}
+
+function sessionRow(s) {
+  const li = el("li", { title: "Tap to start another session in " + s.folder });
+  const dot = el("span", { className: "dot " + s.status, title: STATUS[s.status] || s.status });
+  const main = el("div", { className: "main" });
+  const meta = el("div", { className: "meta" });
+  meta.append(el("span", { className: "where", textContent: s.folder }));
+  if (s.contextSize) meta.append(context(s));
+  const actions = el("div", { className: "actions" });
+  if (s.url) {
+    const open = el("a", { className: "open", href: s.url, textContent: "Open in Claude ›" });
+    open.onclick = (e) => e.stopPropagation();
+    actions.append(open);
+  }
+  if (s.attach) actions.append(copyButton(s.attach));
+  main.append(title(s), meta, actions);
+  const end = el("button", { type: "button", className: "end", textContent: "×", title: "End session" });
+  end.setAttribute("aria-label", "End " + s.name);
+  end.onclick = async (e) => {
+    e.stopPropagation();
+    if (!confirm("End " + s.name + "?\\n\\nAny background jobs in it are stopped too.")) return;
+    busy(end);
+    const out = $("out");
+    try {
+      const r = await api("end", { id: s.id });
+      out.className = r.ok ? "ok" : "bad";
+      out.textContent = r.output;
+    } catch (err) {
+      out.className = "bad"; out.textContent = String(err.message || err);
+    }
+    loadSessions();
+  };
+  li.append(dot, main, end);
+  // Tap to reuse the folder for another session there.
+  li.onclick = () => { $("path").value = s.folder; $("path").scrollIntoView({ block: "center" }); $("path").focus({ preventScroll: true }); };
+  return li;
+}
+
 let loading = false;
-async function loadSessions() {
+// Quiet loads come from the timer and leave the Refresh button alone.
+async function loadSessions(quiet) {
   if (loading) return;
   loading = true;
-  const done = busy($("refresh"));
+  const done = quiet === true ? () => {} : busy($("refresh"));
   const ul = $("sessions");
   let sessions;
-  try { ({ sessions } = await api("sessions")); } catch { return; } finally { loading = false; done(); }
+  try {
+    ({ sessions } = await api("sessions"));
+  } catch (err) {
+    if (token && !ul.querySelector("li:not(.empty)")) ul.replaceChildren(el("li", { className: "empty bad", textContent: "Could not load sessions." }));
+    return;
+  } finally { loading = false; done(); }
+  $("count").textContent = sessions.length ? String(sessions.length) : "";
   if (!sessions.length) {
-    ul.replaceChildren(Object.assign(document.createElement("li"), { className: "empty", textContent: "No sessions running." }));
+    ul.replaceChildren(el("li", { className: "empty", textContent: "No sessions running." }));
     return;
   }
-  ul.replaceChildren(...sessions.map((s) => {
-    const li = document.createElement("li");
-    const dot = Object.assign(document.createElement("span"), { className: "dot " + s.status });
-    const main = Object.assign(document.createElement("div"), { className: "main" });
-    main.append(
-      title(s),
-      Object.assign(document.createElement("div"), { className: "meta", textContent: [s.folder, STATUS[s.status] || s.status, ago(s.startedAt), s.kind === "interactive" ? "terminal" : ""].filter(Boolean).join(" · ") }),
-    );
-    if (s.url) {
-      const open = Object.assign(document.createElement("a"), { className: "open", href: s.url, textContent: "Open in Claude ›" });
-      open.onclick = (e) => e.stopPropagation();
-      main.append(open);
-    }
-    if (s.attach) {
-      const cmd = Object.assign(document.createElement("div"), { className: "cmd", textContent: s.attach, title: "Run on the mac to bring it to the foreground" });
-      cmd.onclick = (e) => e.stopPropagation();
-      main.append(cmd);
-    }
-    const end = Object.assign(document.createElement("button"), { type: "button", className: "end", textContent: "×", title: "End session" });
-    end.setAttribute("aria-label", "End " + s.name);
-    end.onclick = async (e) => {
-      e.stopPropagation();
-      if (!confirm("End " + s.name + "?\\n\\nAny background jobs in it are stopped too.")) return;
-      busy(end);
-      const out = $("out");
-      try {
-        const r = await api("end", { id: s.id });
-        out.className = r.ok ? "ok" : "bad";
-        out.textContent = r.output;
-      } catch (err) {
-        out.className = "bad"; out.textContent = String(err.message || err);
-      }
-      loadSessions();
-    };
-    li.append(dot, main, end);
-    // Tap to reuse the folder for another session there.
-    li.onclick = () => { $("path").value = s.folder; $("path").scrollIntoView({ block: "center" }); };
-    return li;
-  }));
+  ul.replaceChildren(...sessions.map(sessionRow));
 }
 
 async function show() {
@@ -471,8 +545,9 @@ async function show() {
 }
 
 $("save").onclick = () => { token = $("token").value.trim(); if (token) { store.set("ccr-token", token); show(); } };
-$("refresh").onclick = loadSessions;
+$("refresh").onclick = () => loadSessions();
 document.addEventListener("visibilitychange", () => { if (!document.hidden && token) loadSessions(); });
+setInterval(() => { if (!document.hidden && token) loadSessions(true); }, 15000);
 $("forget").onclick = () => { store.set("ccr-token", null); token = null; show(); };
 $("form").onsubmit = async (e) => {
   e.preventDefault();

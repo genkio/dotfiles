@@ -19,10 +19,11 @@ HERDR="${HERDR_BIN:-}"
 [ -n "$HERDR" ] || HERDR="$HOME/.local/share/mise/shims/herdr"
 [ -x "$HERDR" ] || { echo "ccr: herdr not found" >&2; exit 1; }
 
-usage="ccr: usage: ccr <path-under-home> [-el|-em|-eh|-ex|-emax] [-o]"
+usage="ccr: usage: ccr <path-under-home> [-el|-em|-eh|-ex|-emax] [-o] [-n]"
 arg=""
 effort=""
 orch=""
+new=""
 # Flags may come before or after the path.
 for a in "$@"; do
   case "$a" in
@@ -32,6 +33,7 @@ for a in "$@"; do
     -ex) effort=xhigh ;;
     -emax) effort=max ;;
     -o) orch=1 ;;
+    -n) new=1 ;;
     -*) echo "ccr: unknown option: $a" >&2; echo "$usage" >&2; exit 1 ;;
     *) [ -z "$arg" ] || { echo "$usage" >&2; exit 1; }; arg="$a" ;;
   esac
@@ -76,8 +78,8 @@ for a in d.get("result", {}).get("agents", []):
         print(a.get("name") or a.get("pane_id"))
         break
 ' "$dir")"
-if [ -n "$existing" ]; then
-  echo "ccr: already running at $dir ($existing)"
+if [ -n "$existing" ] && [ -z "$new" ]; then
+  echo "ccr: already running at $dir ($existing) - pass -n for another session"
   exit 0
 fi
 
@@ -113,6 +115,20 @@ import json, sys
 print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])
 ')"
 
+list_names() {
+  "$CLAUDE" agents --json 2>/dev/null | "$PY" -c '
+import json, sys
+try:
+    rows = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for a in rows:
+    if a.get("cwd") == sys.argv[1] and a.get("kind") == "interactive":
+        print(a.get("name", ""))
+' "$dir" 2>/dev/null || true
+}
+before="$(list_names)"
+
 # --remote-control takes an optional value, so it goes last.
 set --
 [ -z "$effort" ] || set -- --effort "$effort"
@@ -126,17 +142,7 @@ fi
 shown="$name"
 i=0
 while [ "$i" -lt 10 ]; do
-  found="$("$CLAUDE" agents --json 2>/dev/null | "$PY" -c '
-import json, sys
-try:
-    rows = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-for a in rows:
-    if a.get("cwd") == sys.argv[1] and a.get("kind") == "interactive":
-        print(a.get("name", ""))
-        break
-' "$dir" 2>/dev/null || true)"
+  found="$(list_names | grep -vxF -e "$before" -e '' | head -n 1 || true)"
   [ -n "$found" ] && { shown="$found"; break; }
   sleep 1
   i=$((i + 1))

@@ -1,4 +1,4 @@
-TARGETS := menu all bootstrap macos core apps dev touchid update stow ssh gpg sublime tailscale karabiner
+TARGETS := menu all bootstrap macos core apps dev touchid update stow ssh gpg sublime tailscale karabiner ccr
 
 FLOW := ./scripts/opinionated-flow.sh
 
@@ -73,3 +73,6 @@ sublime:
 
 karabiner:
 	./scripts/setup-karabiner.sh
+
+ccr:
+	./scripts/install-ccr-web.sh --$(or $(call cli,MODE),funnel)

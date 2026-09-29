@@ -84,4 +84,4 @@ require('config.statusline').setup()
 require('config.which_key').setup()
 require('config.yank_highlight').setup()
 
-vim.lsp.enable 'ts_ls'
+vim.lsp.enable 'tsgo'

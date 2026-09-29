@@ -1,31 +1,11 @@
-local function global_tsserver_lib()
-  local tsserver = vim.fn.exepath 'tsserver'
-  if tsserver == '' then
-    return nil
-  end
-  local pkg = vim.fs.dirname(vim.fs.dirname(vim.fn.resolve(tsserver)))
-  local lib = vim.fs.joinpath(pkg, 'lib')
-  if vim.uv.fs_stat(vim.fs.joinpath(lib, 'tsserver.js')) then
-    return lib
-  end
-  return nil
-end
-
-local init_options = { hostInfo = 'neovim' }
-local tsserver_lib = global_tsserver_lib()
-if tsserver_lib then
-  init_options.tsserver = { fallbackPath = tsserver_lib }
-end
-
 return {
-  cmd = { 'typescript-language-server', '--stdio' },
+  cmd = { 'tsc', '--lsp', '--stdio' },
   filetypes = {
     'javascript',
     'javascriptreact',
     'typescript',
     'typescriptreact',
   },
-  init_options = init_options,
   root_dir = function(bufnr, on_dir)
     local root_markers = { 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock' }
     local workspace_markers = { 'pnpm-workspace.yaml' }

@@ -330,16 +330,24 @@ gpl() {
   git pull origin "$br"
 }
 
+# Same remote order as git itself, so a branch tracking a fork never lands on origin.
+_git_push_remote() {
+  git config --get "branch.$1.pushRemote" \
+    || git config --get remote.pushDefault \
+    || git config --get "branch.$1.remote" \
+    || echo origin
+}
+
 gpu() {
   local br
   br=$(git symbolic-ref --short HEAD) || return
-  git push origin "$br"
+  git push "$(_git_push_remote "$br")" "$br"
 }
 
 gpuf() {
   local br
   br=$(git symbolic-ref --short HEAD) || return
-  git push origin "$br" --force-with-lease
+  git push "$(_git_push_remote "$br")" "$br" --force-with-lease
 }
 
 gundo() {

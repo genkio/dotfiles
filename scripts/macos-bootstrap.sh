@@ -92,7 +92,6 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ "$DRY_RUN" -eq 0 && "${EUID:-$(id -u)}" -ne 0 && -z "${DOTFILES_SUDO_WARMED:-}" ]]; then
-  repair_sudo_if_broken || exit 1
   sudo -v
   ( while true; do sudo -n true; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
   SUDO_KEEPALIVE_PID=$!
@@ -564,15 +563,6 @@ else
   warn "FileVault is about to print the recovery key on screen: store it in your"
   warn "password manager, and keep it out of any saved transcript of this run."
   sudo fdesetup enable
-fi
-
-if [[ -z "${DOTFILES_DEFER_TOUCHID:-}" ]]; then
-  TOUCHID_SCRIPT="$(dirname -- "${BASH_SOURCE[0]}")/touchid-sudo.sh"
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    bash "$TOUCHID_SCRIPT" --dry-run
-  else
-    bash "$TOUCHID_SCRIPT"
-  fi
 fi
 
 echo "Done."

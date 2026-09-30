@@ -1,4 +1,4 @@
-TARGETS := menu all bootstrap macos core apps dev touchid update stow ssh gpg sublime tailscale karabiner ccr
+TARGETS := menu all bootstrap macos core apps dev update stow ssh gpg sublime tailscale karabiner ccr
 
 FLOW := ./scripts/opinionated-flow.sh
 
@@ -30,7 +30,7 @@ menu:
 	@./scripts/pick-phases.sh $(NAME_ARG)
 
 all:
-	$(FLOW) --phase macos --phase core --phase apps --phase dev --phase touchid $(NAME_ARG)
+	$(FLOW) --phase macos --phase core --phase apps --phase dev $(NAME_ARG)
 
 macos:
 	$(FLOW) --phase macos $(NAME_ARG)
@@ -44,11 +44,8 @@ apps:
 dev:
 	$(FLOW) --phase dev
 
-touchid:
-	$(FLOW) --phase touchid
-
 bootstrap:
-	$(FLOW) --phase macos --phase core --phase touchid $(NAME_ARG)
+	$(FLOW) --phase macos --phase core $(NAME_ARG)
 
 update:
 	./scripts/update.sh $(if $(call cli,DRY_RUN),--dry-run)

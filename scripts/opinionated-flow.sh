@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -h|--help)
-      echo "Usage: $(basename "$0") --phase macos|core|apps|dev|touchid [--phase ...] [--name NAME]"
+      echo "Usage: $(basename "$0") --phase macos|core|apps|dev [--phase ...] [--name NAME]"
       echo "  --name NAME  Rename the machine; only the macos phase uses it."
       exit 0
       ;;
@@ -36,14 +36,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${#PHASES[@]} -eq 0 ]]; then
-  err "no --phase given (want macos, core, apps, dev or touchid); see 'make' targets."
+  err "no --phase given (want macos, core, apps or dev); see 'make' targets."
   exit 1
 fi
 
 for phase in "${PHASES[@]}"; do
   case "$phase" in
-    macos|core|apps|dev|touchid) ;;
-    *) err "unknown phase: $phase (want macos, core, apps, dev or touchid)"; exit 1 ;;
+    macos|core|apps|dev) ;;
+    *) err "unknown phase: $phase (want macos, core, apps or dev)"; exit 1 ;;
   esac
 done
 
@@ -95,8 +95,6 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   export DOTFILES_SUDO_PASSWORD
   export DOTFILES_SUDO_WARMED=1
 
-  repair_sudo_if_broken || exit 1
-
   if ! printf '%s\n' "$DOTFILES_SUDO_PASSWORD" | sudo -S -v 2>/dev/null; then
     err "sudo authentication failed."
     unset DOTFILES_SUDO_PASSWORD DOTFILES_SUDO_WARMED
@@ -134,7 +132,7 @@ if has_phase macos; then
   MACOS_ARGS=()
   [[ -n "$COMPUTER_NAME" ]] && MACOS_ARGS+=(--name "$COMPUTER_NAME")
 
-  DOTFILES_DEFER_TOUCHID=1 bash scripts/macos-bootstrap.sh "${MACOS_ARGS[@]+"${MACOS_ARGS[@]}"}"
+  bash scripts/macos-bootstrap.sh "${MACOS_ARGS[@]+"${MACOS_ARGS[@]}"}"
   phase_end macos
 fi
 
@@ -254,16 +252,6 @@ if has_phase dev; then
   require_brew dev
   bash scripts/setup-dev.sh
   phase_end dev
-fi
-
-if has_phase touchid; then
-  phase_start "touchid: pam_tid for sudo"
-  if [[ -n "${SUDO_KEEPALIVE_PID:-}" ]]; then
-    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
-    SUDO_KEEPALIVE_PID=""
-  fi
-  bash scripts/touchid-sudo.sh || warn "Touch ID for sudo not configured; rerun 'bash scripts/touchid-sudo.sh'"
-  phase_end touchid
 fi
 
 if [[ ${#PHASE_TIMES[@]} -gt 0 ]]; then

@@ -7,7 +7,6 @@ brew "fd"
 brew "genkio/tap/carbonyl"
 brew "htop"
 brew "jq"
-brew "pam-reattach" unless in_vm
 brew "pngpaste" unless in_vm
 brew "ripgrep"
 brew "stow"

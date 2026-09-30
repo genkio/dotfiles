@@ -5,22 +5,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
-PHASES=(macos core apps dev touchid)
+PHASES=(macos core apps dev)
 WHAT=(
   "system prefs, remote login, updates off"
   "homebrew + mise, CLI tools, stow"
   "GUI casks, hammerspoon, sublime, mpv"
   "Brewfile.dev, mise toolchains, agents"
-  "pam_tid for sudo"
 )
 NOTE=(
   "start here"
   "installs homebrew"
   ""
   "slow on Intel"
-  "runs last"
 )
-PICKED=(1 1 1 1 1)
+PICKED=(1 1 1 1)
 
 if ! { exec 3<>/dev/tty; } 2>/dev/null; then
   err "no terminal to prompt on. Name the phases instead:"

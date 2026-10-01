@@ -92,7 +92,7 @@ height = "20%"
 [[keys.command]]
 key = "prefix+shift+f"
 type = "popup"
-command = "$HOME/dotfiles/scripts/attach-file.sh"
+command = "ATTACH_ROOT=\"$HOME/Downloads\" $HOME/dotfiles/scripts/attach-file.sh"
 description = "attach file"
 width = "90%"
 height = "90%"

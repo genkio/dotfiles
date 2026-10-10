@@ -75,6 +75,9 @@
       }
     ]
   },
+  "worktree": {
+    "bgIsolation": "none"
+  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -85,7 +88,8 @@
     "security-guidance@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true
+    "swift-lsp@claude-plugins-official": true,
+    "cc-plugin-you-should-know@builtin": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -105,16 +109,8 @@
   "editorMode": "vim",
   "autoScrollEnabled": false,
   "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "disableDeepLinkRegistration": "disable",
-  "diffsidebarOpen": false,
-  "agentPushNotifEnabled": true,
-  "modelSettings": {
-    "claude-opus-5": {
-      "effortLevel": "high"
-    }
-  },
-  "worktree": {
-    "bgIsolation": "none"
-  }
+  "diffsidebarOpen": false
 }

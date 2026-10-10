@@ -113,5 +113,8 @@
     "claude-opus-5": {
       "effortLevel": "high"
     }
+  },
+  "worktree": {
+    "bgIsolation": "none"
   }
 }

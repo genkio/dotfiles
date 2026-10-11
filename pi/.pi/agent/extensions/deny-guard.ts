@@ -52,14 +52,87 @@ const BASH_RULES: BashRule[] = [
     matches: (segment) => {
       const sub = gitSubcommand(tokens(segment));
       if (sub?.name !== "clean") return false;
-      const dryRun = sub.rest.some((word) => isLongOption(word, "--dry-run") || /^-[A-Za-z]*n/.test(word));
-      return !dryRun && sub.rest.some((word) => isLongOption(word, "--force") || /^-[A-Za-z]*f/.test(word));
+      let force = sub.globals.some((word) => /^clean\.requireforce=(?:false|no|off|0)$/i.test(word));
+      let dryRun = false;
+      for (let index = 0; index < sub.rest.length; index++) {
+        const word = sub.rest[index];
+        if (word === "--") break;
+        if (isLongOption(word, "--force")) force = true;
+        else if (isLongOption(word, "--dry-run")) dryRun = true;
+        else if (isLongOption(word, "--exclude") && !word.includes("=")) index++;
+        else if (/^-[A-Za-z]/.test(word) && !word.startsWith("--")) {
+          const exclude = word.indexOf("e", 1);
+          const flags = exclude < 0 ? word.slice(1) : word.slice(1, exclude);
+          if (flags.includes("f")) force = true;
+          if (flags.includes("n")) dryRun = true;
+          if (exclude === word.length - 1) index++;
+        }
+      }
+      return force && !dryRun;
     },
+  },
+  {
+    label: "Bash(git checkout -- .)",
+    reason: "checking out every path discards uncommitted work",
+    matches: (segment) => {
+      const sub = gitSubcommand(tokens(segment));
+      return sub?.name === "checkout" && sub.rest.some((word) => word === "." || word === ":/");
+    },
+  },
+  {
+    label: "Bash(git restore .)",
+    reason: "restoring every path discards uncommitted work",
+    matches: (segment) => {
+      const sub = gitSubcommand(tokens(segment));
+      if (sub?.name !== "restore" || !sub.rest.some((word) => word === "." || word === ":/")) return false;
+      const staged = sub.rest.some((word) => isLongOption(word, "--staged") || /^-[A-Za-z]*S/.test(word));
+      const worktree = sub.rest.some((word) => isLongOption(word, "--worktree") || /^-[A-Za-z]*W/.test(word));
+      return !staged || worktree;
+    },
+  },
+  {
+    label: "Bash(git stash clear*)",
+    reason: "clearing the stash drops every stashed change",
+    matches: (segment) => {
+      const sub = gitSubcommand(tokens(segment));
+      return sub?.name === "stash" && sub.rest[0] === "clear";
+    },
+  },
+  {
+    label: "Bash($variable as a command)",
+    reason: "the command comes from a variable, so the guard can't check it",
+    matches: (segment) => isDynamicCommand(rawCommandWord(segment)),
   },
   {
     label: "Bash(aws <variable or substitution>)",
     reason: "the service or operation is only known at run time, so the guard can't check it",
-    matches: (segment) => awsPositionals(segment)?.positional.some((word) => /[$`]/.test(word)) ?? false,
+    matches: (segment) => awsPositionals(segment)?.positional.some((word) => /[$`{}*?[\]]/.test(word)) ?? false,
+  },
+  {
+    label: "Bash(*.aws/*)",
+    reason: "AWS credentials and CLI aliases live under ~/.aws",
+    matches: (segment) => shellWords(segment).some((word) => /^\.aws\/|\/\.aws(?:\/|$)/.test(word.replace(/^~/, ""))),
+  },
+  {
+    label: "Bash(aws configure set *)",
+    reason: "it overwrites AWS credentials or settings in ~/.aws",
+    matches: (segment) => isAws(segment, "configure", (operation) => operation === "set"),
+  },
+  {
+    label: "Bash(aws configure import *)",
+    reason: "it overwrites AWS credentials in ~/.aws",
+    matches: (segment) => isAws(segment, "configure", (operation) => operation === "import"),
+  },
+  {
+    label: "Bash(aws configure export-credentials*)",
+    reason: "it prints AWS credentials",
+    matches: (segment) => isAws(segment, "configure", (operation) => operation === "export-credentials"),
+  },
+  {
+    label: "Bash(aws configure get *secret*)",
+    reason: "it prints an AWS secret",
+    matches: (segment) =>
+      isAws(segment, "configure", (operation, rest) => operation === "get" && rest.some((word) => /secret|token/i.test(word))),
   },
   {
     label: "Bash(aws * delete-*)",
@@ -192,6 +265,11 @@ export function shellWords(text: string): string[] {
     inWord = true;
     if (char === "\\") {
       current += text[++index] ?? "";
+    } else if (char === "$" && text[index + 1] === "{") {
+      const end = text.indexOf("}", index);
+      const stop = end < 0 ? text.length - 1 : end;
+      current += text.slice(index, stop + 1);
+      index = stop;
     } else if (char === "$" && text[index + 1] === "'") {
       index += 2;
       while (index < text.length && text[index] !== "'") {
@@ -229,7 +307,7 @@ export function shellWords(text: string): string[] {
 function ansiCEscape(text: string, start: number): [string, number] {
   const rest = text.slice(start);
   const hex = /^x([0-9A-Fa-f]{1,2})/.exec(rest) ?? /^u([0-9A-Fa-f]{1,4})/.exec(rest) ?? /^U([0-9A-Fa-f]{1,8})/.exec(rest);
-  if (hex) return [String.fromCodePoint(parseInt(hex[1], 16)), hex[0].length];
+  if (hex) return [String.fromCodePoint(Math.min(parseInt(hex[1], 16), 0x10ffff)), hex[0].length];
   const octal = /^[0-7]{1,3}/.exec(rest);
   if (octal) return [String.fromCharCode(parseInt(octal[0], 8)), octal[0].length];
   const simple: Record<string, string> = { n: "\n", t: "\t", r: "\r", e: "\x1b", E: "\x1b" };
@@ -237,9 +315,35 @@ function ansiCEscape(text: string, start: number): [string, number] {
   return [simple[char] ?? char, char.length];
 }
 
+function expandBraces(word: string): string[] {
+  if (!/\{[^{}]*,[^{}]*\}/.test(word)) return [word];
+  if (word.length > 1000 || (word.match(/\{/g)?.length ?? 0) > 8) throw new Error("brace expansion too large to check");
+  for (let open = word.indexOf("{"); open >= 0; open = word.indexOf("{", open + 1)) {
+    let depth = 0;
+    const commas: number[] = [];
+    for (let index = open; index < word.length; index++) {
+      const char = word[index];
+      if (char === "{") depth++;
+      else if (char === "," && depth === 1) commas.push(index);
+      else if (char === "}" && --depth === 0) {
+        if (commas.length === 0) break;
+        const bounds = [open, ...commas, index];
+        const options = bounds.slice(0, -1).map((start, part) => word.slice(start + 1, bounds[part + 1]));
+        const expanded = options.flatMap((option) => expandBraces(word.slice(0, open) + option + word.slice(index + 1)));
+        if (expanded.length > 64) throw new Error("brace expansion too large to check");
+        return expanded;
+      }
+    }
+  }
+  return [word];
+}
+
 const RESERVED_WORDS = new Set(["if", "then", "else", "elif", "while", "until", "do", "{", "!"]);
 const SHELL = /^(?:ba|z|da|k)?sh$/;
-const RUNS_STDIN = new Set(["eval", "source", "."]);
+const HEREDOC_SINKS = new Set([
+  "cat", "tee", "chmod", "mkdir", "echo", "printf", "cd", "ls", "wc", "true", "sed", "awk", "grep", "sort", "diff",
+  "jq", "git", "patch", "kubectl", "python", "python3", "node", "psql", "mysql",
+]);
 
 const WRAPPERS = new Map<string, Set<string>>([
   ["env", new Set(["-u", "--unset", "-C", "--chdir"])],
@@ -253,15 +357,18 @@ const WRAPPERS = new Map<string, Set<string>>([
   ["xargs", new Set(["-I", "-n", "-P", "-L", "-s", "-d", "-E", "-a"])],
 ]);
 
+let lastTokens: { segment: string; words: string[]; raw: string } | undefined;
+
 function tokens(segment: string): string[] {
-  const words = shellWords(segment);
+  if (lastTokens?.segment === segment) return lastTokens.words;
+  const words = shellWords(segment).flatMap(expandBraces);
   let index = 0;
   while (index < words.length) {
     if (RESERVED_WORDS.has(words[index]) || /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[index])) {
       index++;
       continue;
     }
-    const name = basename(words[index]);
+    const name = basename(words[index]).toLowerCase();
     const valued = WRAPPERS.get(name);
     if (valued === undefined) break;
     if (name === "command" && /^-[A-Za-z]*[vV]/.test(words[index + 1] ?? "")) return [];
@@ -277,25 +384,44 @@ function tokens(segment: string): string[] {
     if (name === "timeout") index++;
   }
   const command = words.slice(index);
-  if (command.length > 0) command[0] = basename(command[0]);
+  const raw = command[0] ?? "";
+  if (command.length > 0) command[0] = basename(command[0]).toLowerCase();
+  lastTokens = { segment, words: command, raw };
   return command;
+}
+
+function rawCommandWord(segment: string): string {
+  tokens(segment);
+  return lastTokens?.raw ?? "";
+}
+
+function isDynamicCommand(word: string): boolean {
+  if (word.startsWith("`")) return true;
+  const variable = /^\$(?:\{[^}]*\}|[A-Za-z_][A-Za-z0-9_]*|[@*#?!0-9-])/.exec(word);
+  return variable !== null && !word.slice(variable[0].length).startsWith("/");
 }
 
 export function unwrap(segment: string): string {
   const words = tokens(segment);
   if (SHELL.test(words[0] ?? "")) {
     const flag = words.findIndex((word, index) => index > 0 && (word === "--command" || /^-[A-Za-z]*c[A-Za-z]*$/.test(word)));
-    const payload = words[flag + 1] === "--" ? flag + 2 : flag + 1;
+    let payload = flag + 1;
+    while (flag >= 0 && words[payload]?.startsWith("-")) payload++;
     if (flag >= 0 && words[payload] !== undefined) return words[payload];
     const herestring = words.findIndex((word) => word.startsWith("<<<"));
     if (herestring > 0) return words[herestring].length > 3 ? words[herestring].slice(3) : (words[herestring + 1] ?? segment);
   }
   if (words[0] === "eval") return words.slice(1).join(" ");
+  if (words[0] === "find") {
+    const exec = words.findIndex((word) => ["-exec", "-execdir", "-ok", "-okdir"].includes(word));
+    const end = words.findIndex((word, index) => index > exec && (word === ";" || word === "+"));
+    if (exec >= 0) return words.slice(exec + 1, end < 0 ? undefined : end).join(" ");
+  }
   return segment;
 }
 
-// A heredoc body only runs as commands when a shell reads it, but an unquoted delimiter
-// still expands `$(…)` in the body whoever reads it.
+// A heredoc body is text only when every command on its line just writes it somewhere,
+// and an unquoted delimiter still expands `$(…)` in the body whoever reads it.
 function heredocs(command: string): { commands: string; expanded: string } {
   let commands = "";
   let expanded = "";
@@ -330,10 +456,7 @@ function heredocs(command: string): { commands: string; expanded: string } {
     commands += line;
     expanded += line;
     if (pending.length > 0) {
-      const runs = splitCommands(line).some((segment) => {
-        const word = tokens(segment)[0] ?? "";
-        return SHELL.test(word) || RUNS_STDIN.has(word);
-      });
+      const runs = splitCommands(line).some((segment) => !HEREDOC_SINKS.has(tokens(segment)[0] ?? ""));
       for (const doc of pending) {
         let body = "";
         let closed = false;
@@ -432,13 +555,15 @@ function isRecursiveForceRm(segment: string): boolean {
   return recursive && force;
 }
 
-function gitSubcommand(words: string[]): { name: string; rest: string[] } | undefined {
+function gitSubcommand(words: string[]): { name: string; rest: string[]; globals: string[] } | undefined {
   if (words[0] !== "git") return undefined;
   const takesValue = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"]);
+  const globals: string[] = [];
   let index = 1;
   while (index < words.length) {
     const word = words[index];
     if (takesValue.has(word)) {
+      if (word === "-c") globals.push(words[index + 1] ?? "");
       index += 2;
       continue;
     }
@@ -446,7 +571,7 @@ function gitSubcommand(words: string[]): { name: string; rest: string[] } | unde
       index += 1;
       continue;
     }
-    return { name: word, rest: words.slice(index + 1) };
+    return { name: word, rest: words.slice(index + 1), globals };
   }
   return undefined;
 }
@@ -499,31 +624,40 @@ function isForcePush(segment: string): boolean {
     (word) =>
       word.startsWith("--force") ||
       isLongOption(word, "--force") ||
+      isLongOption(word, "--mirror") ||
       (/^-[A-Za-z]+$/.test(word) && word.includes("f")) ||
       word.startsWith("+"),
   );
 }
 
-export function scanBash(command: string, depth = 3): string | undefined {
+const TOO_DEEP = "Denied by deny-guard: the command nests shells or substitutions too deeply to check. Hand this to the user instead.";
+
+export function scanBash(command: string): string | undefined {
+  try {
+    return scan(command, 8);
+  } catch (error) {
+    return `Denied by deny-guard: it couldn't check this command (${String(error)}). Hand this to the user instead.`;
+  }
+}
+
+function scan(command: string, depth: number): string | undefined {
   const { commands, expanded } = heredocs(command);
   for (const segment of splitCommands(commands)) {
     const rule = BASH_RULES.find((candidate) => candidate.matches(segment));
     if (rule) {
       return `Denied by deny-guard: ${rule.label} — ${rule.reason}. Hand this to the user instead.`;
     }
-    if (depth > 0) {
-      const inner = unwrap(segment);
-      if (inner !== segment) {
-        const nested = scanBash(inner, depth - 1);
-        if (nested) return nested;
-      }
-    }
-  }
-  if (depth > 0) {
-    for (const body of substitutions(expanded)) {
-      const nested = scanBash(body, depth - 1);
+    const inner = unwrap(segment);
+    if (inner !== segment) {
+      if (depth === 0) return TOO_DEEP;
+      const nested = scan(inner, depth - 1);
       if (nested) return nested;
     }
+  }
+  for (const body of substitutions(expanded)) {
+    if (depth === 0) return TOO_DEEP;
+    const nested = scan(body, depth - 1);
+    if (nested) return nested;
   }
   return undefined;
 }

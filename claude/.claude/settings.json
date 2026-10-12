@@ -148,5 +148,6 @@
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "disableDeepLinkRegistration": "disable",
-  "diffsidebarOpen": false
+  "diffsidebarOpen": false,
+  "advisorModel": "fable"
 }

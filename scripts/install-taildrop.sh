@@ -78,6 +78,11 @@ PLIST_EOF
 
 DOMAIN="gui/$(id -u)"
 launchctl bootout "$DOMAIN/$LABEL" >/dev/null 2>&1 || true
+# bootout returns before the job is gone, and bootstrap fails until it is.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 || break
+  sleep 0.5
+done
 
 if launchctl bootstrap "$DOMAIN" "$PLIST" 2>/dev/null; then
   echo "taildrop receiver running; files from the tailnet land in $DEST"

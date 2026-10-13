@@ -93,7 +93,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "skillOverrides": {
     "code-review": "user-invocable-only"
   },
@@ -137,17 +137,18 @@
   },
   "outputStyle": "Concise",
   "alwaysThinkingEnabled": true,
+  "advisorModel": "fable",
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "theme": "auto",
   "editorMode": "vim",
+  "idleCompaction": false,
   "autoScrollEnabled": false,
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "disableDeepLinkRegistration": "disable",
-  "diffsidebarOpen": false,
-  "advisorModel": "fable"
+  "diffsidebarOpen": false
 }

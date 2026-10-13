@@ -175,6 +175,36 @@ local function open_from_netrw()
   end)
 end
 
+-- Built-in `x` resolves tree-view entries against the tree root, so nested entries open the wrong path.
+local function netrw_entry_path()
+  local line = vim.api.nvim_get_current_line()
+  if line:match '^"' or line == '' then
+    return nil
+  end
+
+  if vim.w.netrw_liststyle ~= 3 then
+    return vim.fs.joinpath(vim.b.netrw_curdir, line)
+  end
+
+  local path = vim.fn['netrw#Call']('NetrwTreePath', vim.w.netrw_treetop)
+  if line:sub(-1) ~= '/' then
+    local depth = vim.fn['netrw#Expose'] 'treedepthstring'
+    while vim.startswith(line, depth) do
+      line = line:sub(#depth + 1)
+    end
+    path = path .. line
+  end
+
+  return path
+end
+
+local function open_externally()
+  local path = netrw_entry_path()
+  if path then
+    vim.ui.open(path)
+  end
+end
+
 local function return_to_explorer()
   if vim.bo.filetype == 'netrw' then
     vim.cmd.Rexplore()
@@ -213,6 +243,12 @@ function M.setup()
         buffer = event.buf,
         silent = true,
         desc = 'Open from explorer',
+      })
+
+      vim.keymap.set('n', 'x', open_externally, {
+        buffer = event.buf,
+        silent = true,
+        desc = 'Open with system app',
       })
 
       vim.api.nvim_create_autocmd('CursorMoved', {

@@ -535,7 +535,12 @@ hmr() {
 }
 
 hmb() {
-  if pkill -f 'ssh .*remote-client-bridge'; then
+  local killed=0
+  # Herdr's ssh uses ControlPersist: the master lives on as "ssh: <socket> [mux]", and a
+  # new bridge reuses it, along with any RemoteForward it failed to set up.
+  pkill -f 'ssh: /tmp/hssh-[0-9]+/.*\[mux\]' && killed=1
+  pkill -f 'ssh .*remote-client-bridge' && killed=1
+  if (( killed )); then
     echo "hmb: bridge sessions killed; herdr will reconnect"
   else
     echo "hmb: no bridge sessions running"

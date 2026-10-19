@@ -346,27 +346,31 @@ def load_claude_credentials() -> dict[str, Any] | None:
             oauth["scopes"] = env_scopes
         return {"source": "env", "payload": {"claudeAiOauth": oauth}}
 
-    file_payload = read_json_file(CLAUDE_CREDENTIALS_PATH)
-    if isinstance(file_payload, dict):
-        oauth = file_payload.get("claudeAiOauth")
-        if isinstance(oauth, dict) and oauth.get("accessToken"):
-            return {"source": "file", "path": CLAUDE_CREDENTIALS_PATH, "payload": file_payload}
-
-    for state_path in CLAUDE_STATE_PATHS:
-        state_payload = read_json_file(state_path)
-        if not isinstance(state_payload, dict):
-            continue
-        oauth = state_payload.get("claudeAiOauth")
-        if isinstance(oauth, dict) and oauth.get("accessToken"):
-            return {"source": "file", "path": state_path, "payload": state_payload}
-
+    candidates: list[dict[str, Any]] = []
+    for path in [CLAUDE_CREDENTIALS_PATH, *CLAUDE_STATE_PATHS]:
+        payload = read_json_file(path)
+        if isinstance(payload, dict):
+            candidates.append({"source": "file", "path": path, "payload": payload})
     keychain_payload = keychain_read_json(CLAUDE_KEYCHAIN_SERVICE)
     if isinstance(keychain_payload, dict):
-        oauth = keychain_payload.get("claudeAiOauth")
-        if isinstance(oauth, dict) and oauth.get("accessToken"):
-            return {"source": "keychain", "service": CLAUDE_KEYCHAIN_SERVICE, "payload": keychain_payload}
+        candidates.append({"source": "keychain", "service": CLAUDE_KEYCHAIN_SERVICE, "payload": keychain_payload})
 
-    return None
+    def expires_at(state: dict[str, Any]) -> float:
+        value = state["payload"]["claudeAiOauth"].get("expiresAt")
+        return value if isinstance(value, (int, float)) else 0
+
+    # A leftover credentials file can hold a dead token while Claude Code keeps
+    # the live one in the keychain. Refreshing from the stale store would rotate
+    # the refresh token out from under Claude Code, so use the freshest one.
+    valid = [
+        state
+        for state in candidates
+        if isinstance(state["payload"].get("claudeAiOauth"), dict)
+        and state["payload"]["claudeAiOauth"].get("accessToken")
+    ]
+    if not valid:
+        return None
+    return max(valid, key=expires_at)
 
 
 def save_claude_credentials(state: dict[str, Any]) -> None:
@@ -511,8 +515,10 @@ def fetch_claude_status_result() -> FetchResult:
 
     if claude_needs_refresh(oauth):
         refreshed = refresh_claude_access_token(state)
-        if refreshed:
-            access_token = refreshed
+        if not refreshed:
+            # The usage endpoint answers an expired token with a long 429.
+            return FetchResult(load_shared_claude_usage(), failed=True)
+        access_token = refreshed
 
     headers = {
         "Authorization": f"Bearer {access_token}",

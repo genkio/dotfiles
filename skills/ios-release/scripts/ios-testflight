@@ -1,0 +1,192 @@
+#!/bin/bash
+# ios-testflight - archive an iOS app, sign it with the App Store Connect API key of the asc
+# profile the repo pins in .asc/config.json, and upload it for TestFlight. No Apple ID in Xcode
+# is involved, so accounts on different teams never mix.
+# Signing needs the login keychain, so from a non-GUI shell (ssh, an agent) the build runs in a
+# Terminal.app window and this waits on its log.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: ios-testflight [dir] [--scheme NAME] [--wait] [--dry-run]
+
+  dir             the app's directory: project.yml (run through xcodegen), *.xcworkspace or
+                  *.xcodeproj, here or in its ios/ subdirectory (default: current directory)
+  --scheme NAME   scheme to archive; default is the only scheme, or the one named after the project
+  --wait          wait for App Store Connect to finish processing the build
+  --dry-run       print the project, scheme, bundle ID, team, profile and next build number, then stop
+
+Needs a repo-level .asc/config.json with "default_key_name" naming an asc profile stored in
+~/.asc/config.json (asc auth login --bypass-keychain --name NAME ...), and an App Store Connect
+app for the bundle ID (the dry run too: it asks for the next build number).
+The build number is passed as CURRENT_PROJECT_VERSION, so the app needs GENERATE_INFOPLIST_FILE
+or a CFBundleVersion of $(CURRENT_PROJECT_VERSION). Artifacts go to .asc/artifacts/ next to the
+pinned config.
+EOF
+}
+
+name="$(basename "$0")"
+self="$(cd "$(dirname "$0")" && pwd)/$name"
+die() { echo "$name: $*" >&2; exit 1; }
+
+# --- inner: the actual build, in a GUI login session ---------------------------
+
+release() {
+  local target="" scheme="" wait=0 dry=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --scheme) [ $# -ge 2 ] || die "--scheme needs a name"; scheme="$2"; shift ;;
+      --wait) wait=1 ;;
+      --dry-run) dry=1 ;;
+      -h|--help) usage; exit 0 ;;
+      -*) usage >&2; die "unknown option: $1" ;;
+      *) [ -z "$target" ] || die "more than one dir: $target, $1"; target="$1" ;;
+    esac
+    shift
+  done
+
+  local dir
+  dir="$(cd "${target:-.}" && pwd)" || die "no such directory: $target"
+  has_project() { [ -f "$1/project.yml" ] || compgen -G "$1/*.xcodeproj" >/dev/null || compgen -G "$1/*.xcworkspace" >/dev/null; }
+  if ! has_project "$dir" && has_project "$dir/ios"; then dir="$dir/ios"; fi
+  has_project "$dir" || die "no project.yml, .xcworkspace or .xcodeproj in $dir"
+
+  # asc reads the nearest .asc/config.json up from here; xcodebuild needs the same key as a file
+  local pin="" d="$dir"
+  while [ "$d" != "/" ]; do [ -f "$d/.asc/config.json" ] && { pin="$d/.asc/config.json"; break; }; d="$(dirname "$d")"; done
+  [ -n "$pin" ] || die "no .asc/config.json in $dir or above: pin an asc profile there first"
+  local root; root="$(dirname "$(dirname "$pin")")"
+  local vars
+  vars="$(python3 - "$pin" "$HOME/.asc/config.json" <<'PY'
+import json, shlex, sys
+name = json.load(open(sys.argv[1])).get("default_key_name")
+if not name:
+    sys.exit(f"{sys.argv[1]} has no default_key_name")
+keys = json.load(open(sys.argv[2])).get("keys", [])
+key = next((k for k in keys if k.get("name") == name), None)
+if not key:
+    sys.exit(f"no asc profile named {name!r} in {sys.argv[2]}")
+for var, field in (("KEY_ID", "key_id"), ("ISSUER_ID", "issuer_id"), ("KEY_PATH", "private_key_path")):
+    print(f"{var}={shlex.quote(key[field])}")
+PY
+)" || exit 1
+  eval "$vars"
+  local auth=(-authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID" -authenticationKeyPath "$KEY_PATH")
+
+  cd "$dir"
+  if [ -f project.yml ]; then xcodegen generate --spec project.yml --project . >/dev/null; fi
+  local container
+  if compgen -G "*.xcworkspace" >/dev/null; then container=(-workspace "$(ls -d ./*.xcworkspace | head -1)")
+  else container=(-project "$(ls -d ./*.xcodeproj | head -1)"); fi
+
+  if [ -z "$scheme" ]; then
+    scheme="$(xcodebuild "${container[@]}" -list -json 2>/dev/null | python3 -c '
+import json, os, sys
+d = json.load(sys.stdin); info = d.get("workspace") or d.get("project")
+schemes = info.get("schemes", []); named = info.get("name")
+print(schemes[0] if len(schemes) == 1 else named if named in schemes else "")')"
+    [ -n "$scheme" ] || die "several schemes; pick one with --scheme"
+  fi
+
+  # the app target's bundle ID and team, from the scheme's Release settings
+  eval "$(xcodebuild "${container[@]}" -scheme "$scheme" -configuration Release -showBuildSettings -json 2>/dev/null | python3 -c '
+import json, shlex, sys
+for t in json.load(sys.stdin):
+    s = t["buildSettings"]
+    if s.get("PRODUCT_TYPE") == "com.apple.product-type.application":
+        bundle, team = s["PRODUCT_BUNDLE_IDENTIFIER"], s.get("DEVELOPMENT_TEAM", "")
+        print("BUNDLE_ID=" + shlex.quote(bundle) + " TEAM_ID=" + shlex.quote(team))
+        break')"
+  [ -n "${BUNDLE_ID:-}" ] || die "scheme $scheme has no app target"
+  [ -n "${TEAM_ID:-}" ] || die "the app target has no DEVELOPMENT_TEAM"
+
+  # the build number comes from App Store Connect, so the project's own number never matters
+  local build
+  build="$(asc builds next-build-number --app "$BUNDLE_ID" --platform IOS \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["nextBuildNumber"])')" \
+    || die "App Store Connect has no app for $BUNDLE_ID yet, or the pinned profile can't see it"
+  if [ "$dry" = 1 ]; then
+    echo "project ${container[*]}, scheme $scheme, bundle $BUNDLE_ID, team $TEAM_ID, key $KEY_ID, next build $build"
+    return
+  fi
+  echo "Archiving $scheme ($BUNDLE_ID) as build $build"
+
+  local out="$root/.asc/artifacts"
+  rm -rf "$out/$scheme.xcarchive" "$out/export"
+  mkdir -p "$out"
+
+  xcodebuild archive "${container[@]}" \
+    -scheme "$scheme" \
+    -configuration Release \
+    -destination generic/platform=iOS \
+    -archivePath "$out/$scheme.xcarchive" \
+    -allowProvisioningUpdates \
+    "${auth[@]}" \
+    CURRENT_PROJECT_VERSION="$build"
+
+  cat >"$out/ExportOptions.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key><string>app-store-connect</string>
+    <key>destination</key><string>export</string>
+    <key>teamID</key><string>$TEAM_ID</string>
+    <key>signingStyle</key><string>automatic</string>
+</dict>
+</plist>
+EOF
+
+  xcodebuild -exportArchive \
+    -archivePath "$out/$scheme.xcarchive" \
+    -exportPath "$out/export" \
+    -exportOptionsPlist "$out/ExportOptions.plist" \
+    -allowProvisioningUpdates \
+    "${auth[@]}"
+
+  local ipa; ipa="$(ls "$out"/export/*.ipa | head -1)"
+  local up=(asc builds upload --app "$BUNDLE_ID" --ipa "$ipa")
+  [ "$wait" = 1 ] && up+=(--wait)
+  "${up[@]}"
+  echo "Uploaded build $build of $BUNDLE_ID."
+}
+
+if [ "${1:-}" = "--here" ]; then shift; release "$@"; exit; fi
+case "${1:-}" in -h|--help) usage; exit 0 ;; esac
+# a dry run signs nothing, so it needs no GUI session
+if [ "$(launchctl managername)" = "Aqua" ] || [[ " $* " == *" --dry-run "* ]]; then release "$@"; exit; fi
+
+# --- outer: no GUI session, so hand the build to a Terminal window and wait -----
+
+[ "$(stat -f %Su /dev/console)" = "$(id -un)" ] || die "$(id -un) is not logged in on the mac's screen"
+TIMEOUT="${IOS_TESTFLIGHT_TIMEOUT:-3600}"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/ios-testflight.XXXXXX")"
+log="$tmp/log"; status="$tmp/status"; job="$tmp/ios-testflight.command"
+
+{
+  echo '#!/bin/bash'
+  # Terminal starts the job in the home directory; relative dirs and the default "." mean this one
+  printf 'cd %q || exit 1\n' "$PWD"
+  printf '%q --here' "$self"
+  if [ $# -gt 0 ]; then printf ' %q' "$@"; fi
+  printf ' 2>&1 | tee %q\n' "$log"
+  echo 'code=${PIPESTATUS[0]}'
+  printf 'echo "$code" >%q\n' "$status"
+  echo 'exit "$code"'
+} >"$job"
+chmod +x "$job"
+
+/usr/bin/open -a Terminal "$job" || die "could not open Terminal"
+echo "$name: building in a Terminal window on the mac ($log)"
+
+i=0
+while [ ! -s "$status" ]; do
+  [ "$i" -lt "$TIMEOUT" ] || die "timed out after ${TIMEOUT}s - check Terminal on the mac ($log)"
+  sleep 2; i=$((i + 2))
+done
+
+code="$(cat "$status")"
+grep -E '^Archiving |\*\* (ARCHIVE|EXPORT) (SUCCEEDED|FAILED)|error:|^Uploaded build' "$log" || tail -n 20 "$log"
+rm -rf "$tmp"
+[ "$code" = 0 ] || die "failed (exit $code)"

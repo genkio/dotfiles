@@ -107,6 +107,10 @@ Apart from this packet and the files it names, do not open `.agents/`; it holds 
 reviews. You can read files but not run code. When a proof depends on behavior, give the input, the
 expected result, and the result the code produces.
 
+Ask first whether this is the right change, then whether it is correct. A finding about
+the approach counts when it has proof: the other places that encode the same rule
+(file:line), the layer that owns the decision, or the smaller change and what it removes.
+
 A few real bugs beat ten defensive comments. Leave out confirmations that correct code is
 correct, linter nits, speculative performance concerns, and defensive code for impossible
 cases. If a finding is not worth the author's time, do not write it.

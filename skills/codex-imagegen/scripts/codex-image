@@ -1,0 +1,81 @@
+#!/bin/bash
+# codex-image - generate one image with the Codex CLI's built-in image tool and save it to a path.
+# Runs `codex exec` on this machine with the signed-in ChatGPT account: no API key, no cloud task.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+usage: codex-image <out.png> [-i ref.png]... [--aspect W:H] [-f prompt.txt | prompt]
+
+  out.png         where the image goes; it must not exist yet
+  -i ref.png      attach a reference image (repeatable)
+  --aspect W:H    aspect ratio, e.g. 9:16 (default 1:1)
+  -f file         read the prompt from a file; otherwise from the argument or stdin
+
+Codex's logs land beside the image as .<name>.events.jsonl and .<name>.stderr.txt.
+Runs the latest Codex; set CODEX_VERSION to pin one if a release breaks it.
+EOF
+}
+
+name="$(basename "$0")"
+die() { echo "$name: $*" >&2; exit 1; }
+abs() { echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; }
+
+out="" aspect="1:1" file="" desc="" refs=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -i) [ $# -ge 2 ] || die "-i needs a file"; [ -f "$2" ] || die "no such file: $2"; refs+=(-i "$(abs "$2")"); shift ;;
+    --aspect) [ $# -ge 2 ] || die "--aspect needs W:H"; aspect="$2"; shift ;;
+    -f) [ $# -ge 2 ] || die "-f needs a file"; [ -f "$2" ] || die "no such file: $2"; file="$2"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    -*) usage >&2; die "unknown option: $1" ;;
+    *)
+      if [ -z "$out" ]; then out="$1"
+      elif [ -z "$desc" ]; then desc="$1"
+      else die "more than one prompt argument: quote the prompt"
+      fi ;;
+  esac
+  shift
+done
+
+[ -n "$out" ] || { usage >&2; exit 1; }
+[[ "$out" == *.png ]] || die "out must end in .png: $out"
+[ -d "$(dirname "$out")" ] || die "no such directory: $(dirname "$out")"
+[ ! -e "$out" ] || die "$out exists: pick a new name or remove it first"
+[[ "$aspect" =~ ^[0-9]+:[0-9]+$ ]] || die "--aspect must look like 9:16, got $aspect"
+
+if [ -n "$file" ]; then desc="$(cat "$file")"
+elif [ -z "$desc" ] && [ ! -t 0 ]; then desc="$(cat)"
+fi
+[ -n "${desc//[[:space:]]/}" ] || die "no prompt: pass it as an argument, with -f, or on stdin"
+
+out="$(abs "$out")"
+dir="$(dirname "$out")"
+base="$(basename "$out")"
+stem="${base%.png}"
+events="$dir/.$stem.events.jsonl"
+errlog="$dir/.$stem.stderr.txt"
+
+prompt="\$imagegen Generate exactly one image. $desc
+Aspect ratio $aspect. Save the final image as ./$base in the current directory. Do not create or modify any other files."
+
+# -i takes several values, so --json has to sit between the last reference and the prompt
+status=0
+npx -y "@openai/codex@${CODEX_VERSION:-latest}" exec --skip-git-repo-check -C "$dir" -s workspace-write \
+  ${refs[@]+"${refs[@]}"} --json "$prompt" < /dev/null > "$events" 2> "$errlog" || status=$?
+
+if [ ! -f "$out" ]; then
+  thread="$(sed -n '1s/.*"thread_id": *"\([^"]*\)".*/\1/p' "$events")"
+  gen="${CODEX_HOME:-$HOME/.codex}/generated_images/$thread"
+  if [ -n "$thread" ] && [ -d "$gen" ]; then
+    latest="$(ls -t "$gen"/*.png 2>/dev/null | head -1 || true)"
+    [ -z "$latest" ] || cp "$latest" "$out"
+  fi
+fi
+
+if [ ! -f "$out" ]; then
+  tail -n 5 "$errlog" >&2
+  die "no image (codex exit $status); logs: $events, $errlog"
+fi
+file "$out"

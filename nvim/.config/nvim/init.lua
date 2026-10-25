@@ -35,6 +35,8 @@ vim.o.splitbelow = true
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
+vim.o.fileencodings = 'ucs-bom,utf-8,gb18030,latin1'
+
 local paths = require 'config.paths'
 local dotfiles_root = paths.dotfiles_root
 

@@ -85,7 +85,11 @@ For testing, create an internal group with `--internal --access-all-builds` and 
 
 Keep the listing in `metadata/` and publish it with `asc metadata pull`, `plan`, `approve --all`, `apply --confirm`. Keywords are capped at 100 characters, and words already in the name or subtitle are wasted. Don't put a currency price in the description. A privacy policy URL is required.
 
-For screenshots, capture the iPhone Pro Max simulator after `xcrun simctl status_bar <SIM> override --time 9:41 --batteryState charged --batteryLevel 100`; a launch argument that opens each screen in a demo state makes captures repeatable. Build the deck with `app-store-screenshots`, then upload only the 6.9" set, which App Store Connect scales down: `asc screenshots upload ... --device-type IPHONE_69`.
+For screenshots, capture the iPhone Pro Max simulator after `xcrun simctl status_bar <SIM> override --time 9:41 --batteryState charged --batteryLevel 100`; a launch argument that opens each screen in a demo state makes captures repeatable. Build the deck with `app-store-screenshots`.
+
+App Store Connect lists one required iPhone size, "iPhone with Dynamic Island (medium display)", and scales it down to smaller iPhones. Upload the deck's 6.3" export (1206 × 2622) there: `asc screenshots upload ... --device-type IPHONE_61`. Don't use `IPHONE_69`: asc files it, and `APP_IPHONE_69`, under `APP_IPHONE_67`, which App Store Connect doesn't show. The API lists that set, but the version page and Media Manager say "No assets added". Have the user confirm the screenshots appear under medium display before submitting.
+
+Upload every screenshot size before submitting. A version in review can't get a new screenshot set ("Can't Create Screenshot Set while In Review"). Adding one later means `asc review submissions-cancel --id <ID> --confirm`, uploading, and a new submission with the same items (see 8).
 
 `asc validate --app <APP_ID> --version <v> --platform IOS` lists what's still missing. The usual fields:
 
@@ -116,7 +120,7 @@ asc review items add --submission <ID> --item-type inAppPurchaseVersions --item-
 asc review submissions-submit --id <ID> --confirm
 ```
 
-A submission cancelled in App Store Connect leaves the version and its IAP versions `DEVELOPER_REJECTED`. Keep the same version: upload a new build, stage it onto the version, and submit a new multi-item submission with the same items.
+A submission cancelled in App Store Connect leaves the version and its IAP versions `DEVELOPER_REJECTED`. Keep the same version: attach a build (`asc versions attach-build`, a new one if the code changed), and submit a new multi-item submission with the same items. Before cancelling, note what the submission holds: `asc review submissions-items-ids --id <ID>` lists item IDs that are base64 of `<submission>|<type>|<id>`, where type 6 is the app version and 17 an IAP version.
 
 The release type defaults to after approval, so an approved version goes live on its own.
 

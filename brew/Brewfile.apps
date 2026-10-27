@@ -4,10 +4,7 @@ in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
 on_silicon = `/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null`.strip == "1"
 
 cask "aldente" if macos_major.positive? && macos_major < 26 && !in_vm
-tap "nikitabobko/tap"
-cask "nikitabobko/tap/aerospace"
 tap "FelixKratz/formulae"
-brew "FelixKratz/formulae/borders"
 brew "FelixKratz/formulae/sketchybar"
 cask "firefox" unless in_vm
 cask "hammerspoon"

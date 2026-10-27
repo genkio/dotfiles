@@ -16,7 +16,6 @@ local appPickerTimeout = nil
 local configOverlayDrawings = {}
 local configOverlayVisible = false
 local rightCommandHoldTimer = nil
-local suspended = false
 local currentBindings = {}
 local rawFlagMasks = hs.eventtap.event.rawFlagMasks or {}
 local leftCommandMask = rawFlagMasks.deviceLeftCommand or 0
@@ -1378,26 +1377,6 @@ local function triggerBinding(triggerKey, binding)
   end
 end
 
-local function setSuspended(value)
-  if suspended == value then
-    return
-  end
-
-  suspended = value
-
-  if suspended then
-    rightCommandHeld = false
-    cancelRightCommandHoldTimer()
-    dismissConfigOverlay()
-    dismissAppPicker()
-    setLauncherHotkeysEnabled(false)
-  end
-end
-
-function M.isSuspended()
-  return suspended
-end
-
 function M.start()
   hs.hotkey.setLogLevel("warning")
 
@@ -1427,10 +1406,6 @@ function M.start()
   currentBindings = bindings
 
   launcherTap = hs.eventtap.new({ hs.eventtap.event.types.flagsChanged }, function(event)
-    if suspended then
-      return false
-    end
-
     local wasRightCommandHeld = rightCommandHeld
     rightCommandHeld = hasOnlyRightCommandModifier(event)
 
@@ -1484,7 +1459,6 @@ function M.start()
   end
 
   setLauncherHotkeysEnabled(false)
-  require("aerospace_leader").onRunningChanged(setSuspended)
   return true
 end
 

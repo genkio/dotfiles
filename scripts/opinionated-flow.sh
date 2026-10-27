@@ -235,11 +235,11 @@ phase_end core
 fi
 
 if has_phase apps; then
-  phase_start "apps: GUI casks, hammerspoon, aerospace, sketchybar, sublime"
+  phase_start "apps: GUI casks, hammerspoon, sketchybar, sublime"
   require_brew apps
   trust_brewfile_taps brew/Brewfile.apps
   brew_bundle_install brew/Brewfile.apps
-  stow -t "$HOME" hammerspoon aerospace sketchybar
+  stow -t "$HOME" hammerspoon sketchybar
   brew services start sketchybar \
     || warn "SketchyBar service failed to start; run 'brew services start sketchybar' later."
   bash scripts/setup-sublime.sh \

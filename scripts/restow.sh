@@ -85,7 +85,7 @@ run_stow() {
   return "$rc"
 }
 
-HOME_PKGS=(alacritty brew mpv nvim yazi zsh hammerspoon aerospace sketchybar mise claude pi vim herdr launchd)
+HOME_PKGS=(alacritty brew mpv nvim yazi zsh hammerspoon sketchybar mise claude pi vim herdr launchd)
 for pkg in "${HOME_PKGS[@]}"; do
   run_stow "$HOME" "$pkg into ~" "$pkg"
 done

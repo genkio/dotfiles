@@ -49,7 +49,6 @@ configWatcher = hs.pathwatcher.new(hs.fs.pathToAbsolute(hs.configdir), reloadOnL
 
 require("hs.ipc")
 
-require("aerospace_leader").start()
 require("rcmd").start()
 require("raycast").start()
 require("selection_ocr").start()

@@ -1,7 +1,6 @@
 PLUGIN_DIR="$CONFIG_DIR/plugins"
 
 PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-AEROSPACE="$(command -v aerospace)"
 
 sketchybar --bar position=bottom height=40 blur_radius=30 color=0x40000000
 
@@ -16,43 +15,15 @@ default=(
 )
 sketchybar --default "${default[@]}"
 
-sketchybar --add event aerospace_workspace_change \
-           --add event aerospace_state_change
-
-for sid in 1 2 3 4 5 6 7 8 9
-do
-  workspace=(
-    label="$sid"
-    label.padding_left=7
-    label.padding_right=7
-    background.drawing=on
-    background.color=0x00000000
-    background.border_width=1
-    background.border_color=0x60ffffff
-    background.corner_radius=4
-    background.height=22
-    drawing=off
-    script="$PLUGIN_DIR/aerospace.sh $sid"
-    click_script="$AEROSPACE workspace $sid"
-  )
-  sketchybar --add item space."$sid" left \
-             --set space."$sid" "${workspace[@]}" \
-             --subscribe space."$sid" aerospace_workspace_change
-done
-
 sketchybar --add item mail left \
            --set mail update_freq=30 drawing=off \
                  script="$PLUGIN_DIR/mail.sh" \
-           --subscribe mail front_app_switched system_woke aerospace_state_change
+           --subscribe mail front_app_switched system_woke
 
 sketchybar --add item wechat left \
            --set wechat update_freq=10 drawing=off \
                  script="$PLUGIN_DIR/wechat.sh" \
            --subscribe wechat front_app_switched system_woke
-
-sketchybar --add item quit right \
-           --set quit label="-" drawing=off \
-                 click_script="$HOME/.config/aerospace/scripts/quit.sh"
 
 sketchybar --add item clock right \
            --set clock update_freq=10 script="$PLUGIN_DIR/clock.sh"
@@ -84,10 +55,5 @@ sketchybar --add item maestral right \
 sketchybar --add item network right \
            --set network update_freq=10 drawing=off \
                  script="$PLUGIN_DIR/network.sh"
-
-sketchybar --add item aerospace_state right \
-           --set aerospace_state drawing=off update_freq=30 \
-                 script="$PLUGIN_DIR/aerospace-state.sh" \
-           --subscribe aerospace_state aerospace_state_change
 
 sketchybar --update

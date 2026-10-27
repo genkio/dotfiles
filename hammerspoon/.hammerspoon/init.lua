@@ -55,6 +55,7 @@ require("raycast").start()
 require("selection_ocr").start()
 require("homerow").start()
 require("input_source").start()
+require("iphone_mirroring").start()
 if hs.fs.attributes("/Applications/UURemote.app", "mode") == "directory" then
   require("uuremote_lock").start()
   if package.searchpath("uuremote_monitor", package.path) then

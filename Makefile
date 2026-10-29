@@ -71,5 +71,6 @@ sublime:
 karabiner:
 	./scripts/setup-karabiner.sh
 
+# Defaults to serve: Funnel is per port, and other tailnet-only routes share 443.
 ccr:
-	./scripts/install-ccr-web.sh --$(or $(call cli,MODE),funnel)
+	./scripts/install-ccr-web.sh --$(or $(call cli,MODE),serve)

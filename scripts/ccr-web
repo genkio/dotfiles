@@ -147,6 +147,51 @@ def session_effort(a, t):
     return t.get("effort") or started_effort.get(a.get("id")) or argv_effort(a.get("pid"))
 
 
+def job_state(short_id):
+    try:
+        with open(os.path.join(HOME, ".claude", "jobs", short_id, "state.json")) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+# Registering with Remote Control takes a few seconds; past this the session
+# is reported as unreachable.
+BRIDGE_GRACE = 30
+# Why a background session never reached Remote Control, as `claude logs`
+# shows it.
+LOG_REASONS = (
+    ("Not logged in", "Background sessions are not logged in. On this mac, run claude and /login in "
+                      "Terminal.app (not over SSH), then end this session and start a new one."),
+)
+# Keyed by short id: a stuck session stays stuck, so its logs are read once.
+bridge_reasons = {}
+
+
+def bridge_reason(short_id):
+    if short_id not in bridge_reasons:
+        try:
+            out = subprocess.run([CLAUDE, "logs", short_id], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, timeout=15).stdout.decode(errors="replace")
+        except Exception:
+            out = ""
+        bridge_reasons[short_id] = next((r for needle, r in LOG_REASONS if needle in out),
+                                        "Run claude logs %s on the mac to see why." % short_id)
+    return bridge_reasons[short_id]
+
+
+def bridge_problem(a, bridge):
+    short_id = a.get("id")
+    if a.get("kind") != "background" or not short_id or bridge:
+        return ""
+    job = job_state(short_id)
+    if job.get("bridgeSessionId") or "--remote-control" not in (job.get("respawnFlags") or []):
+        return ""
+    if time.time() - (a.get("startedAt") or 0) / 1000 < BRIDGE_GRACE:
+        return ""
+    return "Not connected to Remote Control, so the Claude app cannot see it. " + bridge_reason(short_id)
+
+
 def session_row(a):
     f = session_file(a.get("pid"))
     t = transcript_state(a.get("sessionId", ""))
@@ -161,6 +206,7 @@ def session_row(a):
         "attach": "claude attach %s" % a["id"] if a.get("kind") == "background" and a.get("id") else "",
         # The iOS app claims claude.ai/code/* as a universal link.
         "url": "https://claude.ai/code/%s" % bridge if bridge.startswith("session_") else "",
+        "problem": bridge_problem(a, bridge),
         "effort": session_effort(a, t),
         "contextUsed": used, "contextSize": context_size(t.get("model", ""), used) if used else 0,
     }
@@ -359,6 +405,8 @@ li .meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-s
 li .meta .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 li .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; }
 li .actions:empty { display: none; }
+li .problem { margin-top: 6px; font-size: 13px; color: var(--bad); }
+.dot.problem { background: var(--bad); }
 li .open { font-size: 14px; font-weight: 500; color: var(--accent); text-decoration: none; }
 li .cmd { width: auto; margin: 0; padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--muted); font: 12px ui-monospace, Menlo, monospace; }
 li .cmd.copied { color: var(--ok); }
@@ -475,7 +523,9 @@ function copyButton(text) {
 
 function sessionRow(s) {
   const li = el("li", { title: "Tap to start another session in " + s.folder });
-  const dot = el("span", { className: "dot " + s.status, title: STATUS[s.status] || s.status });
+  const dot = s.problem
+    ? el("span", { className: "dot problem", title: "Not reachable from the app" })
+    : el("span", { className: "dot " + s.status, title: STATUS[s.status] || s.status });
   const main = el("div", { className: "main" });
   const meta = el("div", { className: "meta" });
   meta.append(el("span", { className: "where", textContent: s.folder }));
@@ -487,7 +537,9 @@ function sessionRow(s) {
     actions.append(open);
   }
   if (s.attach) actions.append(copyButton(s.attach));
-  main.append(title(s), meta, actions);
+  main.append(title(s), meta);
+  if (s.problem) main.append(el("div", { className: "problem", textContent: s.problem }));
+  main.append(actions);
   const end = el("button", { type: "button", className: "end", textContent: "×", title: "End session" });
   end.setAttribute("aria-label", "End " + s.name);
   end.onclick = async (e) => {

@@ -12,7 +12,7 @@ This is the single source for roles, default models, and permissions. Per-run us
 | Advisor | both modes | Claude Fable, medium effort | `--kind claude -- --model claude-fable-5-1 --effort medium` |
 | Executor | orchestrator; review reproduction | Claude Opus, medium effort | `--kind claude -- --model opus --effort medium` |
 | Reviewer (Reviewer A in review mode) | both modes | DeepSeek Flash, maximum thinking, read-only | `--kind pi -- --provider fireworks --model accounts/fireworks/models/deepseek-v4p1-flash-1017 --thinking max --tools read,grep,find,ls` |
-| Second reviewer (critical changes; Reviewer B in review mode) | both modes | Codex GPT-5.6 Sol, medium thinking, read-only | `--kind pi -- --provider openai-codex --model openai-codex/gpt-5.6-sol --thinking medium --tools read,grep,find,ls` |
+| Second reviewer (critical changes; Reviewer B in review mode) | both modes | Codex GPT-6.1 Sol, medium thinking, read-only | `--kind pi -- --provider openai-codex --model openai-codex/gpt-6.1-sol --thinking medium --tools read,grep,find,ls` |
 | Reviewer C | review mode | Claude Opus, high effort, read-only | `--kind claude -- --model opus --effort high --tools Read,Grep,Glob --strict-mcp-config` |
 | Small read-only lookup | both modes | Sonnet or Haiku | Agent tool, not a pane |
 | Finding verifier | review mode | inherited from the orchestrator | Agent tool, not a pane; read-only by instruction, as `review.md` "Merge and check" describes |

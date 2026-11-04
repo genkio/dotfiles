@@ -6,7 +6,7 @@ return {
     },
     {
       name = "Ask ChatGPT",
-      link = "https://chatgpt.com/?q={query}&temporary-chat=true&model=gpt-5-instant",
+      link = "https://chatgpt.com/?q={query}&temporary-chat=true&model=gpt-6.1-sol",
     },
     {
       name = "Ask Grok",
@@ -16,7 +16,7 @@ return {
       name = "Ask All",
       links = {
         "https://grok.com/?q={query}",
-        "https://chatgpt.com/?q={query}&temporary-chat=true&model=gpt-5-instant",
+        "https://chatgpt.com/?q={query}&temporary-chat=true&model=gpt-6.1-sol",
         "https://google.com/search?q={query}&udm=50",
       },
     },

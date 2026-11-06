@@ -198,10 +198,10 @@ local function netrw_entry_path()
   return path
 end
 
-local function open_externally()
+local function reveal_in_finder()
   local path = netrw_entry_path()
   if path then
-    vim.ui.open(path)
+    vim.system { 'open', '-R', path }
   end
 end
 
@@ -245,10 +245,10 @@ function M.setup()
         desc = 'Open from explorer',
       })
 
-      vim.keymap.set('n', 'x', open_externally, {
+      vim.keymap.set('n', 'x', reveal_in_finder, {
         buffer = event.buf,
         silent = true,
-        desc = 'Open with system app',
+        desc = 'Reveal in Finder',
       })
 
       vim.api.nvim_create_autocmd('CursorMoved', {

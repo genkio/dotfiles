@@ -4,7 +4,6 @@ in_vm = `/usr/sbin/sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1" ||
 brew "bat"
 brew "eza"
 brew "fd"
-brew "genkio/tap/carbonyl"
 brew "htop"
 brew "jq"
 brew "pngpaste" unless in_vm

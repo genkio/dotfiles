@@ -54,3 +54,5 @@ Backups.backupdb
 .MobileBackups.trash
 MobileBackups.trash
 tmbootpicker.efi
+# argent (mobile MCP) screen recordings in a worktree
+.argent/

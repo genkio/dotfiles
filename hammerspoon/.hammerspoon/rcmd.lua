@@ -523,10 +523,16 @@ local function loadAppSpaces()
     return
   end
 
+  local runningPids = {}
+
+  for _, app in ipairs(hs.application.runningApplications()) do
+    runningPids[app:pid()] = true
+  end
+
   for pidText, spaceList in pairs(stored) do
     local pid = tonumber(pidText)
 
-    if pid and type(spaceList) == "table" then
+    if pid and runningPids[pid] and type(spaceList) == "table" then
       local spaceSet = {}
 
       for _, spaceId in ipairs(spaceList) do
@@ -555,20 +561,28 @@ local function existingSpaces()
   return existing
 end
 
-local function pidsOnFocusedSpace()
-  local pids = {}
+-- allWindows() spans every display, so attribute each window to its own space rather than the focused one.
+local function pidsByActiveSpace(activeSpaceIds)
+  local pidsBySpace = {}
+
+  for spaceId in pairs(activeSpaceIds) do
+    pidsBySpace[spaceId] = {}
+  end
 
   for _, window in ipairs(hs.window.allWindows()) do
-    if window:isStandard() then
-      local app = window:application()
+    local app = window:isStandard() and window:application()
+    local ok, windowSpaces = pcall(hs.spaces.windowSpaces, window)
 
-      if app then
-        pids[app:pid()] = true
+    if app and ok and type(windowSpaces) == "table" then
+      for _, spaceId in ipairs(windowSpaces) do
+        if pidsBySpace[spaceId] then
+          pidsBySpace[spaceId][app:pid()] = true
+        end
       end
     end
   end
 
-  return pids
+  return pidsBySpace
 end
 
 local function reconcileFocusedSpace()
@@ -576,28 +590,35 @@ local function reconcileFocusedSpace()
     return
   end
 
-  local ok, spaceId = pcall(hs.spaces.focusedSpace)
+  local ok, activeSpaces = pcall(hs.spaces.activeSpaces)
 
-  if not ok or not spaceId then
+  if not ok or type(activeSpaces) ~= "table" then
     return
   end
 
-  local present = pidsOnFocusedSpace()
-  local changed = false
+  local activeSpaceIds = {}
 
-  for pid in pairs(present) do
-    appSpaces[pid] = appSpaces[pid] or {}
-
-    if not appSpaces[pid][spaceId] then
-      appSpaces[pid][spaceId] = true
-      changed = true
-    end
+  for _, spaceId in pairs(activeSpaces) do
+    activeSpaceIds[spaceId] = true
   end
 
-  for pid, spaceSet in pairs(appSpaces) do
-    if spaceSet[spaceId] and not present[pid] then
-      spaceSet[spaceId] = nil
-      changed = true
+  local changed = false
+
+  for spaceId, present in pairs(pidsByActiveSpace(activeSpaceIds)) do
+    for pid in pairs(present) do
+      appSpaces[pid] = appSpaces[pid] or {}
+
+      if not appSpaces[pid][spaceId] then
+        appSpaces[pid][spaceId] = true
+        changed = true
+      end
+    end
+
+    for pid, spaceSet in pairs(appSpaces) do
+      if spaceSet[spaceId] and not present[pid] then
+        spaceSet[spaceId] = nil
+        changed = true
+      end
     end
   end
 
@@ -657,21 +678,26 @@ local function focusWindow(window)
   window:focus()
 end
 
-local function focusAppWindowOnCurrentSpace(app, retriesRemaining)
-  app:activate(true)
+local function appWindowOnSpace(app, spaceId)
+  local ok, windowIds = pcall(hs.spaces.windowsForSpace, spaceId)
 
-  local windows = standardWindowsForApp(app)
-
-  if #windows > 0 then
-    focusWindow(windows[1])
-    return
+  if not ok or type(windowIds) ~= "table" then
+    return nil
   end
 
-  if retriesRemaining > 0 then
-    hs.timer.doAfter(0.15, function()
-      focusAppWindowOnCurrentSpace(app, retriesRemaining - 1)
-    end)
+  local onSpace = {}
+
+  for _, windowId in ipairs(windowIds) do
+    onSpace[windowId] = true
   end
+
+  for _, window in ipairs(standardWindowsForApp(app)) do
+    if onSpace[window:id()] then
+      return window
+    end
+  end
+
+  return nil
 end
 
 local function cycleAppSpaces(app)
@@ -697,14 +723,14 @@ local function cycleAppSpaces(app)
     return false
   end
 
-  hs.spaces.gotoSpace(nextSpace)
+  -- Not hs.spaces.gotoSpace: on macOS 27 it fails to read Mission Control and leaves it open.
+  local window = appWindowOnSpace(app, nextSpace)
 
-  if hs.spaces.spaceType(nextSpace) ~= "fullscreen" then
-    hs.timer.doAfter(0.25, function()
-      focusAppWindowOnCurrentSpace(app, 5)
-    end)
+  if not window then
+    return false
   end
 
+  focusWindow(window)
   return true
 end
 

@@ -37,6 +37,7 @@ command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
 
 set -o vi
 setopt HIST_IGNORE_SPACE
+zshaddhistory() { [[ $1 != *' --name herd-'* ]] }
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_FIND_NO_DUPS
 setopt HIST_REDUCE_BLANKS
